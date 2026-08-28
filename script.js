@@ -26061,4 +26061,12764 @@
             dt
         );
     }
-    
+        /* =====================================================
+       PARTE 3/3 — INTERFACE, RENDER, SAVE E CONTROLES
+    ===================================================== */
+
+    const CURRENT_SAVE_KEY =
+        "veyra_save_v17_routes_dash";
+
+
+    const darknessBufferRuntime =
+        document.createElement(
+            "canvas"
+        );
+
+
+    const darknessBufferCtxRuntime =
+        darknessBufferRuntime.getContext(
+            "2d"
+        );
+
+
+    /* =====================================================
+       UI EXTRA
+
+       CRIADA PELO JS PARA NÃO PRECISAR ALTERAR
+       O HTML/CSS ATUAL.
+    ===================================================== */
+
+    function ensureRuntimeUI() {
+
+        /* ============================
+           FADE
+        ============================ */
+
+        if (
+            !$(
+                "uiFade"
+            )
+        ) {
+
+            const fade =
+                document.createElement(
+                    "div"
+                );
+
+
+            fade.id =
+                "uiFade";
+
+
+            fade.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            document.body
+                .appendChild(
+                    fade
+                );
+        }
+
+
+        /* ============================
+           CSS DAS NOVAS INTERFACES
+        ============================ */
+
+        if (
+            !$(
+                "veyraRuntimeStyle"
+            )
+        ) {
+
+            const style =
+                document.createElement(
+                    "style"
+                );
+
+
+            style.id =
+                "veyraRuntimeStyle";
+
+
+            style.textContent = `
+
+                #uiFade {
+                    position: fixed;
+                    inset: 0;
+                    background: #050507;
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 20000;
+                    transition: opacity .28s ease;
+                }
+
+                #uiFade.active {
+                    opacity: 1;
+                }
+
+
+                /* ============================
+                   COLETA SEGURANDO E
+                ============================ */
+
+                #holdProgress {
+                    position: fixed;
+                    left: 50%;
+                    bottom: 108px;
+                    transform: translateX(-50%);
+                    z-index: 8500;
+
+                    width: min(
+                        360px,
+                        78vw
+                    );
+
+                    padding: 11px 14px;
+
+                    border:
+                        1px solid
+                        rgba(
+                            236,
+                            203,
+                            130,
+                            .28
+                        );
+
+                    border-radius: 12px;
+
+                    background:
+                        rgba(
+                            13,
+                            14,
+                            16,
+                            .88
+                        );
+
+                    box-shadow:
+                        0 12px 30px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            .35
+                        );
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    color:
+                        #f3e3bf;
+
+                    pointer-events:
+                        none;
+                }
+
+
+                #holdProgress.hidden {
+                    display: none;
+                }
+
+
+                #holdProgressTitle {
+                    display: block;
+
+                    font-size:
+                        12px;
+
+                    margin-bottom:
+                        7px;
+
+                    letter-spacing:
+                        .04em;
+                }
+
+
+                #holdProgressTrack {
+                    height: 8px;
+
+                    border-radius:
+                        99px;
+
+                    background:
+                        rgba(
+                            255,
+                            255,
+                            255,
+                            .09
+                        );
+
+                    overflow:
+                        hidden;
+                }
+
+
+                #holdProgressFill {
+                    height: 100%;
+                    width: 0;
+
+                    background:
+                        linear-gradient(
+                            90deg,
+                            #c99a50,
+                            #f4d487
+                        );
+
+                    transition:
+                        width .06s linear;
+                }
+
+
+                /* ============================
+                   BARRA DE BOSS
+                ============================ */
+
+                #bossBarRuntime {
+                    position:
+                        fixed;
+
+                    right:
+                        22px;
+
+                    top:
+                        92px;
+
+                    z-index:
+                        8200;
+
+                    width:
+                        min(
+                            430px,
+                            46vw
+                        );
+
+                    padding:
+                        12px 14px;
+
+                    border-radius:
+                        14px;
+
+                    background:
+                        rgba(
+                            10,
+                            10,
+                            13,
+                            .88
+                        );
+
+                    border:
+                        1px solid
+                        rgba(
+                            216,
+                            163,
+                            95,
+                            .32
+                        );
+
+                    box-shadow:
+                        0 14px 40px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            .42
+                        );
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    color:
+                        #f8e6c1;
+
+                    pointer-events:
+                        none;
+                }
+
+
+                #bossBarRuntime.hidden {
+                    display:
+                        none;
+                }
+
+
+                #bossBarRuntime
+                .boss-name {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    gap:
+                        12px;
+
+                    font-size:
+                        13px;
+
+                    font-weight:
+                        800;
+
+                    letter-spacing:
+                        .06em;
+                }
+
+
+                #bossBarRuntime
+                .boss-track {
+
+                    height:
+                        12px;
+
+                    margin-top:
+                        8px;
+
+                    border-radius:
+                        99px;
+
+                    background:
+                        rgba(
+                            255,
+                            255,
+                            255,
+                            .09
+                        );
+
+                    overflow:
+                        hidden;
+
+                    border:
+                        1px solid
+                        rgba(
+                            255,
+                            255,
+                            255,
+                            .05
+                        );
+                }
+
+
+                #bossBarRuntime
+                .boss-fill {
+
+                    height:
+                        100%;
+
+                    width:
+                        100%;
+
+                    background:
+                        linear-gradient(
+                            90deg,
+                            #a32632,
+                            #e14c54
+                        );
+
+                    transition:
+                        width .12s linear;
+                }
+
+
+                #bossBarRuntime
+                .boss-meta {
+
+                    display:
+                        flex;
+
+                    justify-content:
+                        space-between;
+
+                    margin-top:
+                        6px;
+
+                    font-size:
+                        11px;
+
+                    opacity:
+                        .72;
+                }
+
+
+                /* ============================
+                   HABILIDADES
+                ============================ */
+
+                #skillHudRuntime {
+
+                    position:
+                        fixed;
+
+                    left:
+                        50%;
+
+                    bottom:
+                        20px;
+
+                    transform:
+                        translateX(-50%);
+
+                    z-index:
+                        8100;
+
+                    display:
+                        flex;
+
+                    gap:
+                        8px;
+
+                    pointer-events:
+                        auto;
+                }
+
+
+                #skillHudRuntime
+                .runtime-skill {
+
+                    min-width:
+                        112px;
+
+                    padding:
+                        8px 10px;
+
+                    border:
+                        1px solid
+                        rgba(
+                            230,
+                            201,
+                            139,
+                            .25
+                        );
+
+                    border-radius:
+                        11px;
+
+                    background:
+                        rgba(
+                            12,
+                            13,
+                            15,
+                            .82
+                        );
+
+                    color:
+                        #f1dfb8;
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    text-align:
+                        left;
+
+                    box-shadow:
+                        0 8px 22px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            .27
+                        );
+                }
+
+
+                #skillHudRuntime
+                .runtime-skill b {
+
+                    display:
+                        block;
+
+                    font-size:
+                        11px;
+
+                    letter-spacing:
+                        .04em;
+                }
+
+
+                #skillHudRuntime
+                .runtime-skill small {
+
+                    display:
+                        block;
+
+                    margin-top:
+                        3px;
+
+                    opacity:
+                        .62;
+
+                    font-size:
+                        10px;
+                }
+
+
+                #skillHudRuntime
+                .runtime-skill.locked {
+
+                    filter:
+                        grayscale(
+                            1
+                        );
+
+                    opacity:
+                        .45;
+                }
+
+
+                #skillHudRuntime
+                .runtime-skill.cooldown {
+
+                    opacity:
+                        .63;
+                }
+
+
+                /* ============================
+                   STATUS
+                ============================ */
+
+                #statusBtnRuntime {
+                    position:
+                        relative;
+                }
+
+
+                #statusPointBadge {
+
+                    position:
+                        absolute;
+
+                    right:
+                        -7px;
+
+                    top:
+                        -7px;
+
+                    min-width:
+                        18px;
+
+                    height:
+                        18px;
+
+                    padding:
+                        0 4px;
+
+                    border-radius:
+                        99px;
+
+                    background:
+                        #c94a45;
+
+                    color:
+                        #ffffff;
+
+                    font:
+                        700 10px/18px
+                        Arial;
+
+                    text-align:
+                        center;
+
+                    box-shadow:
+                        0 2px 8px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            .35
+                        );
+                }
+
+
+                /* ============================
+                   DANO NA TELA
+                ============================ */
+
+                #damageOverlayRuntime {
+
+                    position:
+                        fixed;
+
+                    inset:
+                        0;
+
+                    z-index:
+                        16000;
+
+                    pointer-events:
+                        none;
+
+                    opacity:
+                        0;
+
+                    background:
+                        radial-gradient(
+                            circle at center,
+                            transparent 42%,
+                            rgba(
+                                130,
+                                0,
+                                0,
+                                .10
+                            ) 66%,
+                            rgba(
+                                193,
+                                15,
+                                20,
+                                .75
+                            ) 100%
+                        );
+
+                    mix-blend-mode:
+                        screen;
+                }
+
+
+                @media (
+                    max-width:
+                    900px
+                ) {
+
+                    #bossBarRuntime {
+                        top:
+                            132px;
+
+                        width:
+                            min(
+                                360px,
+                                70vw
+                            );
+                    }
+
+
+                    #skillHudRuntime {
+
+                        bottom:
+                            14px;
+
+                        gap:
+                            5px;
+                    }
+
+
+                    #skillHudRuntime
+                    .runtime-skill {
+
+                        min-width:
+                            88px;
+
+                        padding:
+                            7px;
+
+                        font-size:
+                            10px;
+                    }
+                }
+            `;
+
+
+            document.head
+                .appendChild(
+                    style
+                );
+        }
+
+
+        /* ============================
+           HOLD E
+        ============================ */
+
+        if (
+            !$(
+                "holdProgress"
+            )
+        ) {
+
+            const hold =
+                document.createElement(
+                    "div"
+                );
+
+
+            hold.id =
+                "holdProgress";
+
+
+            hold.className =
+                "hidden";
+
+
+            hold.innerHTML = `
+
+                <span id="holdProgressTitle">
+                    Coletando...
+                </span>
+
+                <div id="holdProgressTrack">
+
+                    <div id="holdProgressFill">
+                    </div>
+
+                </div>
+            `;
+
+
+            screens.game
+                .appendChild(
+                    hold
+                );
+        }
+
+
+        /* ============================
+           BOSS BAR
+        ============================ */
+
+        if (
+            !$(
+                "bossBarRuntime"
+            )
+        ) {
+
+            const boss =
+                document.createElement(
+                    "div"
+                );
+
+
+            boss.id =
+                "bossBarRuntime";
+
+
+            boss.className =
+                "hidden";
+
+
+            boss.innerHTML = `
+
+                <div class="boss-name">
+
+                    <span id="bossBarName">
+                        BOSS
+                    </span>
+
+                    <span id="bossBarIcon">
+                        ☠
+                    </span>
+
+                </div>
+
+
+                <div class="boss-track">
+
+                    <div
+                        id="bossBarFill"
+                        class="boss-fill"
+                    ></div>
+
+                </div>
+
+
+                <div class="boss-meta">
+
+                    <span id="bossBarHp">
+                        0 / 0
+                    </span>
+
+                    <span id="bossBarState">
+                    </span>
+
+                </div>
+            `;
+
+
+            screens.game
+                .appendChild(
+                    boss
+                );
+        }
+
+
+        /* ============================
+           SKILLS
+        ============================ */
+
+        if (
+            !$(
+                "skillHudRuntime"
+            )
+        ) {
+
+            const hud =
+                document.createElement(
+                    "div"
+                );
+
+
+            hud.id =
+                "skillHudRuntime";
+
+
+            hud.innerHTML = `
+
+                <button
+                    class="runtime-skill"
+                    type="button"
+                    data-runtime-skill="q"
+                >
+
+                    <b>
+                        Q
+                    </b>
+
+                    <small>
+                        Habilidade
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="runtime-skill"
+                    type="button"
+                    data-runtime-skill="r"
+                >
+
+                    <b>
+                        R
+                    </b>
+
+                    <small>
+                        Nível 5
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="runtime-skill"
+                    type="button"
+                    data-runtime-skill="f"
+                >
+
+                    <b>
+                        F
+                    </b>
+
+                    <small>
+                        Nível 10
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="runtime-skill locked"
+                    type="button"
+                    data-runtime-skill="dash"
+                >
+
+                    <b>
+                        ESPAÇO
+                    </b>
+
+                    <small>
+                        Dash bloqueado
+                    </small>
+
+                </button>
+            `;
+
+
+            screens.game
+                .appendChild(
+                    hud
+                );
+        }
+
+
+        /* ============================
+           BOTÃO STATUS
+        ============================ */
+
+        if (
+            !$(
+                "statusBtnRuntime"
+            )
+        ) {
+
+            const hudRight =
+                document.querySelector(
+                    ".hud-right"
+                );
+
+
+            if (
+                hudRight
+            ) {
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                button.id =
+                    "statusBtnRuntime";
+
+
+                button.className =
+                    "hud-btn";
+
+
+                button.type =
+                    "button";
+
+
+                button.title =
+                    "Status";
+
+
+                button.innerHTML =
+                    `📊<span
+                        id="statusPointBadge"
+                        hidden
+                    >0</span>`;
+
+
+                hudRight.insertBefore(
+                    button,
+                    $(
+                        "saveBtn"
+                    ) ||
+                    null
+                );
+            }
+        }
+
+
+        /* ============================
+           FLASH DE DANO
+        ============================ */
+
+        if (
+            !$(
+                "damageOverlayRuntime"
+            )
+        ) {
+
+            const overlay =
+                document.createElement(
+                    "div"
+                );
+
+
+            overlay.id =
+                "damageOverlayRuntime";
+
+
+            document.body
+                .appendChild(
+                    overlay
+                );
+        }
+    }
+
+
+    /* =====================================================
+       ATUALIZAR AJUDA DO HTML ANTIGO
+    ===================================================== */
+
+    function patchHowToRuntimeText() {
+
+        const grid =
+            document.querySelector(
+                "#howScreen .help-grid"
+            );
+
+
+        if (
+            !grid
+        ) {
+
+            return;
+        }
+
+
+        for (
+            const card of
+            grid.querySelectorAll(
+                ".help-card"
+            )
+        ) {
+
+            const strong =
+                card.querySelector(
+                    "strong"
+                );
+
+
+            const span =
+                card.querySelector(
+                    "span"
+                );
+
+
+            if (
+                strong
+                    ?.textContent
+                    .trim() ===
+                    "E" &&
+                span
+            ) {
+
+                span.textContent =
+                    "Interagir, conversar, coletar itens e usar objetos próximos.";
+            }
+        }
+
+
+        const hint =
+            $(
+                "controlsHint"
+            );
+
+
+        if (
+            hint
+        ) {
+
+            hint.innerHTML =
+                "<span>WASD</span> mover • " +
+                "<span>MOUSE</span> atacar • " +
+                "<span>E</span> ação • " +
+                "<span>Q/R/F</span> habilidades • " +
+                "<span>ESPAÇO</span> Dash • " +
+                "<span>P</span> status";
+        }
+
+
+        if (
+            grid.querySelector(
+                '[data-runtime-help="mouse"]'
+            )
+        ) {
+
+            return;
+        }
+
+
+        const mouse =
+            document.createElement(
+                "div"
+            );
+
+
+        mouse.className =
+            "help-card";
+
+
+        mouse.dataset
+            .runtimeHelp =
+            "mouse";
+
+
+        mouse.innerHTML = `
+
+            <strong>
+                MOUSE ESQUERDO
+            </strong>
+
+            <span>
+                Atacar na direção do mouse.
+                Cada golpe exige um novo clique.
+            </span>
+        `;
+
+
+        grid.insertBefore(
+            mouse,
+            grid.children[
+                1
+            ] ||
+            null
+        );
+
+
+        const skills =
+            document.createElement(
+                "div"
+            );
+
+
+        skills.className =
+            "help-card";
+
+
+        skills.dataset
+            .runtimeHelp =
+            "skills";
+
+
+        skills.innerHTML = `
+
+            <strong>
+                Q / R / F
+            </strong>
+
+            <span>
+                Usar habilidades da classe.
+                R libera no nível 5
+                e F no nível 10.
+            </span>
+        `;
+
+
+        grid.appendChild(
+            skills
+        );
+
+
+        const dash =
+            document.createElement(
+                "div"
+            );
+
+
+        dash.className =
+            "help-card";
+
+
+        dash.dataset
+            .runtimeHelp =
+            "dash";
+
+
+        dash.innerHTML = `
+
+            <strong>
+                ESPAÇO
+            </strong>
+
+            <span>
+                Usar Dash na direção do mouse
+                depois de desbloquear essa técnica.
+            </span>
+        `;
+
+
+        grid.appendChild(
+            dash
+        );
+
+
+        const status =
+            document.createElement(
+                "div"
+            );
+
+
+        status.className =
+            "help-card";
+
+
+        status.dataset
+            .runtimeHelp =
+            "status";
+
+
+        status.innerHTML = `
+
+            <strong>
+                P
+            </strong>
+
+            <span>
+                Abrir o painel de status e distribuir
+                pontos recebidos ao subir de nível.
+            </span>
+        `;
+
+
+        grid.appendChild(
+            status
+        );
+    }
+
+
+    /* =====================================================
+       CÂMERA
+    ===================================================== */
+
+    function updateCamera() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const viewW =
+            window.innerWidth;
+
+
+        const viewH =
+            window.innerHeight;
+
+
+        if (
+            state.houseMode
+        ) {
+
+            const room =
+                getHouseRoom();
+
+
+            state.camera.x =
+                clamp(
+
+                    room.x +
+                    room.w /
+                        2 -
+                    viewW /
+                        2,
+
+                    0,
+
+                    Math.max(
+                        0,
+                        state.world.width -
+                            viewW
+                    )
+                );
+
+
+            state.camera.y =
+                clamp(
+
+                    room.y +
+                    room.h /
+                        2 -
+                    viewH /
+                        2,
+
+                    0,
+
+                    Math.max(
+                        0,
+                        state.world.height -
+                            viewH
+                    )
+                );
+
+
+            return;
+        }
+
+
+        state.camera.x =
+            clamp(
+
+                state.player.x -
+                    viewW /
+                        2,
+
+                0,
+
+                Math.max(
+                    0,
+                    state.world.width -
+                        viewW
+                )
+            );
+
+
+        state.camera.y =
+            clamp(
+
+                state.player.y -
+                    viewH /
+                        2,
+
+                0,
+
+                Math.max(
+                    0,
+                    state.world.height -
+                        viewH
+                )
+            );
+    }
+
+
+    /* =====================================================
+       HUD
+    ===================================================== */
+
+    function setBar(
+        id,
+        value,
+        max
+    ) {
+
+        const element =
+            $(
+                id
+            );
+
+
+        if (
+            !element
+        ) {
+
+            return;
+        }
+
+
+        const percentage =
+
+            max >
+            0
+
+                ? clamp(
+                    value /
+                        max *
+                        100,
+                    0,
+                    100
+                )
+
+                : 0;
+
+
+        element.style.width =
+            `${percentage}%`;
+    }
+
+
+    function updateHUD() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+        ) {
+
+            return;
+        }
+
+
+        $(
+            "hudAvatar"
+        ).textContent =
+            player.icon;
+
+
+        $(
+            "hudClass"
+        ).textContent =
+            player.className;
+
+
+        $(
+            "hudName"
+        ).textContent =
+            player.name;
+
+
+        $(
+            "moneyText"
+        ).textContent =
+            Math.floor(
+                player.money
+            );
+
+
+        $(
+            "levelText"
+        ).textContent =
+            `${player.level}/${MAX_LEVEL}`;
+
+
+        $(
+            "xpText"
+        ).textContent =
+
+            player.level >=
+            MAX_LEVEL
+
+                ? "MÁXIMO"
+
+                : `${Math.floor(player.xp)} / ${player.xpToNext}`;
+
+
+        $(
+            "hpText"
+        ).textContent =
+            `${Math.ceil(player.hp)}/${Math.ceil(player.maxHp)}`;
+
+
+        $(
+            "magicText"
+        ).textContent =
+            `${Math.ceil(player.magic)}/${Math.ceil(player.maxMagic)}`;
+
+
+        $(
+            "energyText"
+        ).textContent =
+            `${Math.ceil(player.energy)}/${Math.ceil(player.maxEnergy)}`;
+
+
+        $(
+            "hungerText"
+        ).textContent =
+            `${Math.ceil(player.hunger)}/${Math.ceil(player.maxHunger)}`;
+
+
+        $(
+            "fatigueText"
+        ).textContent =
+            `${Math.ceil(player.fatigue)}/${Math.ceil(player.maxFatigue)}`;
+
+
+        setBar(
+            "hpBar",
+            player.hp,
+            player.maxHp
+        );
+
+
+        setBar(
+            "magicBar",
+            player.magic,
+            player.maxMagic
+        );
+
+
+        setBar(
+            "energyBar",
+            player.energy,
+            player.maxEnergy
+        );
+
+
+        const badge =
+            $(
+                "statusPointBadge"
+            );
+
+
+        if (
+            badge
+        ) {
+
+            const points =
+                Math.max(
+                    0,
+                    Math.floor(
+                        player.statPoints ||
+                        0
+                    )
+                );
+
+
+            badge.hidden =
+                points <=
+                0;
+
+
+            badge.textContent =
+
+                points >
+                99
+                    ? "99+"
+                    : String(
+                        points
+                    );
+        }
+
+
+        updateInteractionHint();
+
+        updateSkillHUD();
+
+        updateBossBarUI();
+
+        updateDamageOverlayDOM();
+    }
+
+
+    /* =====================================================
+       HUD DE SKILLS
+    ===================================================== */
+
+    function updateSkillHUD() {
+
+        if (
+            !state.player ||
+            !$(
+                "skillHudRuntime"
+            )
+        ) {
+
+            return;
+        }
+
+
+        const skills =
+            getCharacterSkills();
+
+
+        const player =
+            state.player;
+
+
+        document
+            .querySelectorAll(
+                "#skillHudRuntime [data-runtime-skill]"
+            )
+            .forEach(
+                button => {
+
+                    const slot =
+                        button.dataset
+                            .runtimeSkill;
+
+
+                    const small =
+                        button.querySelector(
+                            "small"
+                        );
+
+
+                    button.classList.remove(
+                        "locked",
+                        "cooldown"
+                    );
+
+
+                    if (
+                        slot ===
+                        "dash"
+                    ) {
+
+                        if (
+                            !player.abilities
+                                ?.dash
+                        ) {
+
+                            button.classList.add(
+                                "locked"
+                            );
+
+
+                            small.textContent =
+                                "Dash bloqueado";
+                        }
+
+
+                        else if (
+                            player.dashCooldown >
+                            0
+                        ) {
+
+                            button.classList.add(
+                                "cooldown"
+                            );
+
+
+                            small.textContent =
+                                `Dash • ${player.dashCooldown.toFixed(1)}s`;
+                        }
+
+
+                        else {
+
+                            small.textContent =
+                                "Dash pronto";
+                        }
+
+
+                        return;
+                    }
+
+
+                    const skill =
+                        skills[
+                            slot
+                        ];
+
+
+                    if (
+                        !skill
+                    ) {
+
+                        return;
+                    }
+
+
+                    button.querySelector(
+                        "b"
+                    ).textContent =
+                        `${slot.toUpperCase()} — ${skill.name}`;
+
+
+                    if (
+                        player.level <
+                        skill.level
+                    ) {
+
+                        button.classList.add(
+                            "locked"
+                        );
+
+
+                        small.textContent =
+                            `Libera no nível ${skill.level}`;
+                    }
+
+
+                    else if (
+                        (
+                            player
+                                .skillCooldowns
+                                ?.[slot] ||
+                            0
+                        ) >
+                        0
+                    ) {
+
+                        button.classList.add(
+                            "cooldown"
+                        );
+
+
+                        small.textContent =
+                            `${player.skillCooldowns[slot].toFixed(1)}s`;
+                    }
+
+
+                    else {
+
+                        const cost =
+
+                            skill.costMagic
+
+                                ? `${skill.costMagic} magia`
+
+                                : skill.costEnergy
+
+                                ? `${skill.costEnergy} energia`
+
+                                : "Pronta";
+
+
+                        small.textContent =
+                            cost;
+                    }
+                }
+            );
+    }
+
+
+    /* =====================================================
+       BARRA GRANDE DO BOSS
+    ===================================================== */
+
+    function updateBossBarUI() {
+
+        const panel =
+            $(
+                "bossBarRuntime"
+            );
+
+
+        if (
+            !panel
+        ) {
+
+            return;
+        }
+
+
+        const boss =
+            state.bossBarTarget;
+
+
+        if (
+            !boss ||
+            boss.dead ||
+            !boss.aggressive
+        ) {
+
+            panel.classList.add(
+                "hidden"
+            );
+
+
+            return;
+        }
+
+
+        panel.classList.remove(
+            "hidden"
+        );
+
+
+        $(
+            "bossBarName"
+        ).textContent =
+            boss.name;
+
+
+        $(
+            "bossBarIcon"
+        ).textContent =
+            boss.icon ||
+            "☠";
+
+
+        $(
+            "bossBarHp"
+        ).textContent =
+            `${Math.ceil(boss.hp)} / ${Math.ceil(boss.maxHp)}`;
+
+
+        $(
+            "bossBarFill"
+        ).style.width =
+            `${clamp(
+                boss.hp /
+                boss.maxHp *
+                100,
+                0,
+                100
+            )}%`;
+
+
+        if (
+            boss.id ===
+                "monarch" &&
+            boss.staggerTimer >
+                0
+        ) {
+
+            $(
+                "bossBarState"
+            ).textContent =
+                `💫 DESNORTEADO ${boss.staggerTimer.toFixed(1)}s`;
+        }
+
+
+        else if (
+            boss.id ===
+            "monarch"
+        ) {
+
+            $(
+                "bossBarState"
+            ).textContent =
+                `Stagger ${boss.hitCounter || 0}/10`;
+        }
+
+
+        else {
+
+            $(
+                "bossBarState"
+            ).textContent =
+                `FASE ${boss.phase || 1}`;
+        }
+    }
+
+
+    /* =====================================================
+       OVERLAY VERMELHO
+    ===================================================== */
+
+    function updateDamageOverlayDOM() {
+
+        const overlay =
+            $(
+                "damageOverlayRuntime"
+            );
+
+
+        if (
+            !overlay
+        ) {
+
+            return;
+        }
+
+
+        const strength =
+            clamp(
+                state.damageFlash ||
+                0,
+                0,
+                0.55
+            );
+
+
+        overlay.style.opacity =
+            String(
+                clamp(
+                    strength *
+                        1.45,
+                    0,
+                    0.72
+                )
+            );
+    }
+
+
+    /* =====================================================
+       PAINÉIS
+    ===================================================== */
+
+    function isGameplayOverlayOpen() {
+
+        if (
+            state.dialogue ||
+            state.travel ||
+            state.battle
+        ) {
+
+            return true;
+        }
+
+
+        const ids = [
+
+            "inventoryPanel",
+            "mapPanel",
+            "bookPanel",
+            "shopPanel",
+            "questPanel",
+            "deathPanel"
+        ];
+
+
+        if (
+            ids.some(
+                id =>
+                    $(
+                        id
+                    ) &&
+                    !$(
+                        id
+                    ).classList.contains(
+                        "hidden"
+                    )
+            )
+        ) {
+
+            return true;
+        }
+
+
+        const dynamicIds = [
+
+            "gateRequirementPanelDynamic",
+            "statusPanelDynamic",
+            "forgePanelDynamic"
+        ];
+
+
+        if (
+            dynamicIds.some(
+                id =>
+                    dynamicPanelOpen(
+                        id
+                    )
+            )
+        ) {
+
+            return true;
+        }
+
+
+        return false;
+    }
+
+
+    function closeAllPanels(
+        exceptionId =
+            null
+    ) {
+
+        [
+            "inventoryPanel",
+            "mapPanel",
+            "bookPanel",
+            "shopPanel",
+            "questPanel"
+        ]
+            .forEach(
+                id => {
+
+                    if (
+                        id !==
+                            exceptionId &&
+                        $(
+                            id
+                        )
+                    ) {
+
+                        $(
+                            id
+                        ).classList.add(
+                            "hidden"
+                        );
+                    }
+                }
+            );
+
+
+        [
+            "gateRequirementPanelDynamic",
+            "statusPanelDynamic",
+            "forgePanelDynamic"
+        ]
+            .forEach(
+                id => {
+
+                    if (
+                        id !==
+                        exceptionId
+                    ) {
+
+                        closeDynamicPanel(
+                            id
+                        );
+                    }
+                }
+            );
+    }
+
+
+    function togglePanel(
+        id,
+        beforeOpen =
+            null
+    ) {
+
+        const panel =
+            $(
+                id
+            );
+
+
+        if (
+            !panel ||
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const opening =
+            panel.classList.contains(
+                "hidden"
+            );
+
+
+        closeAllPanels(
+            opening
+                ? id
+                : null
+        );
+
+
+        if (
+            opening
+        ) {
+
+            if (
+                typeof beforeOpen ===
+                "function"
+            ) {
+
+                beforeOpen();
+            }
+
+
+            panel.classList.remove(
+                "hidden"
+            );
+
+
+            state.pointer.down =
+                false;
+
+
+            state.keys.clear();
+
+
+            cancelHoldInteraction();
+        }
+
+
+        else {
+
+            panel.classList.add(
+                "hidden"
+            );
+        }
+    }
+
+
+    /* =====================================================
+       INTERACTION HINT
+    ===================================================== */
+
+    function updateInteractionHint() {
+
+        const hint =
+            $(
+                "interactionHint"
+            );
+
+
+        if (
+            !hint
+        ) {
+
+            return;
+        }
+
+
+        if (
+            !state.player ||
+            state.paused ||
+            state.dialogue ||
+            state.travel ||
+            state.battle ||
+            isGameplayOverlayOpen()
+        ) {
+
+            hint.classList.add(
+                "hidden"
+            );
+
+
+            return;
+        }
+
+
+        const interaction =
+            getInteraction();
+
+
+        if (
+            !interaction
+        ) {
+
+            hint.classList.add(
+                "hidden"
+            );
+
+
+            return;
+        }
+
+
+        hint.classList.remove(
+            "hidden"
+        );
+
+
+        const keyEl =
+            $(
+                "interactionKey"
+            );
+
+
+        const textEl =
+            $(
+                "interactionText"
+            );
+
+
+        if (
+            interaction.type ===
+            "house"
+        ) {
+
+            keyEl.textContent =
+                "Z";
+
+
+            textEl.textContent =
+                `Entrar — ${interaction.object.name}`;
+
+
+            return;
+        }
+
+
+        if (
+            interaction.type ===
+            "exitHouse"
+        ) {
+
+            keyEl.textContent =
+                "Z";
+
+
+            textEl.textContent =
+                "Sair";
+
+
+            return;
+        }
+
+
+        keyEl.textContent =
+            "E";
+
+
+        const labels = {
+
+            npc:
+
+                interaction.object
+                    .merchant
+
+                    ? "Abrir loja"
+
+                    : interaction.object
+                        .questId
+
+                    ? "Ver missão"
+
+                    : "Conversar",
+
+
+            blacksmith:
+                "Abrir forja",
+
+
+            tree:
+                "Segure E — cortar árvore",
+
+
+            resource:
+
+                `Segure E — coletar ${
+                    ITEMS[
+                        interaction.object
+                            .type
+                    ]?.name ||
+                    "recurso"
+                }`,
+
+
+            drop:
+
+                `Pegar ${
+                    ITEMS[
+                        interaction.object
+                            .type
+                    ]?.name ||
+                    "item"
+                }`,
+
+
+            food:
+
+                interaction.object
+                    .type ===
+                    "carrot"
+
+                    ? "Comer cenoura"
+
+                    : "Comer",
+
+
+            secret:
+                "Investigar",
+
+
+            dashAltar:
+
+                state.player
+                    .abilities
+                    ?.dash
+
+                    ? "Examinar altar"
+
+                    : "Examinar altar do poder",
+
+
+            trial:
+                "Iniciar desafio",
+
+
+            gate:
+
+                `Examinar ${
+                    interaction.object
+                        .title ||
+                    "portão"
+                }`,
+
+
+            sleep:
+                "DORMIR",
+
+
+            boss:
+
+                interaction.object
+                    .accepted
+
+                    ? "Enfrentar"
+
+                    : "Desafiar Guardião"
+        };
+
+
+        textEl.textContent =
+            labels[
+                interaction.type
+            ] ||
+            "Interagir";
+    }
+
+
+    /* =====================================================
+       Z — PORTAS
+    ===================================================== */
+
+    function handleZ() {
+
+        if (
+            !state.player ||
+            state.paused ||
+            state.dialogue ||
+            state.travel ||
+            state.battle
+        ) {
+
+            return;
+        }
+
+
+        if (
+            state.houseMode
+        ) {
+
+            const interaction =
+                getInteraction();
+
+
+            if (
+                interaction
+                    ?.type ===
+                "exitHouse"
+            ) {
+
+                exitHouse();
+            }
+
+
+            else {
+
+                showToast(
+                    "Aproxime-se da porta para sair."
+                );
+            }
+
+
+            return;
+        }
+
+
+        enterNearestHouse();
+    }
+
+
+    /* =====================================================
+       RECOMPENSAS DE PROGRESSÃO
+    ===================================================== */
+
+    function updateProgressionRewards() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        /*
+            GUARDIÃO DO CAMINHO:
+            A FLAUTA CAI NO CHÃO.
+
+            SE O PLAYER SAIR DA ÁREA SEM PEGAR,
+            ELA VOLTA A APARECER AO RETORNAR.
+        */
+
+        if (
+            state.area ===
+                "sky" &&
+            hasDefeatedBoss(
+                "path_guardian"
+            ) &&
+            !hasItem(
+                "flautaMemoria"
+            )
+        ) {
+
+            const exists =
+                state.world
+                    .drops
+                    .some(
+                        drop =>
+                            drop.type ===
+                                "flautaMemoria" &&
+                            !drop.collected
+                    );
+
+
+            if (
+                !exists
+            ) {
+
+                createWorldDrop(
+
+                    2860,
+                    1100,
+
+                    "flautaMemoria",
+
+                    1,
+
+                    {
+                        permanent:
+                            true,
+
+                        source:
+                            "GUARDIÃO DO CAMINHO"
+                    }
+                );
+
+
+                state.player
+                    .pathFluteDropSpawned =
+                    true;
+            }
+        }
+    }
+
+
+    /* =====================================================
+       MONARCA — CORREÇÃO DO STAGGER
+
+       updateEnemies() JÁ DIMINUI staggerTimer E
+       specialTimer.
+
+       POR ISSO NÃO DIMINUÍMOS NOVAMENTE AQUI.
+       ASSIM OS 5 SEGUNDOS SÃO REAIS.
+    ===================================================== */
+
+    function updateMonarch(
+        monarch,
+        dt
+    ) {
+
+        if (
+            monarch.dead ||
+            !monarch.aggressive
+        ) {
+
+            return;
+        }
+
+
+        if (
+            monarch.staggerTimer >
+            0
+        ) {
+
+            monarch._wasStaggered =
+                true;
+
+
+            return;
+        }
+
+
+        if (
+            monarch._wasStaggered
+        ) {
+
+            monarch._wasStaggered =
+                false;
+
+
+            state.world
+                .effects
+                .push({
+
+                    type:
+                        "monarchRecover",
+
+                    x:
+                        monarch.x,
+
+                    y:
+                        monarch.y,
+
+                    radius:
+                        110,
+
+                    color:
+                        "#9b68bd",
+
+                    life:
+                        0.75,
+
+                    maxLife:
+                        0.75
+                });
+
+
+            spawnParticles(
+                monarch.x,
+                monarch.y,
+                "#9b68bd",
+                24
+            );
+
+
+            showToast(
+                "O Monarca recuperou os sentidos."
+            );
+        }
+
+
+        monarch.summonTimer =
+            (
+                monarch.summonTimer ??
+                5
+            ) -
+            dt;
+
+
+        if (
+            monarch.summonTimer <=
+            0
+        ) {
+
+            summonMonarchClones(
+                monarch
+            );
+
+
+            monarch.summonTimer =
+                monarch.summonCooldown ||
+                6.5;
+        }
+
+
+        if (
+            (
+                monarch.specialTimer ??
+                0
+            ) >
+            0
+        ) {
+
+            return;
+        }
+
+
+        monarch.specialTimer =
+            random(
+                2.7,
+                4.4
+            );
+
+
+        const attack =
+            randomInt(
+                0,
+                2
+            );
+
+
+        /* ============================
+           PEDRAS
+        ============================ */
+
+        if (
+            attack ===
+            0
+        ) {
+
+            const count =
+                randomInt(
+                    5,
+                    8
+                );
+
+
+            for (
+                let i = 0;
+                i <
+                count;
+                i++
+            ) {
+
+                addHazard(
+
+                    state.player.x +
+                        random(
+                            -180,
+                            180
+                        ),
+
+                    state.player.y +
+                        random(
+                            -180,
+                            180
+                        ),
+
+                    62,
+
+                    0.85 +
+                        i *
+                        0.05,
+
+                    Math.round(
+                        monarch.damage *
+                            1.18
+                    ),
+
+                    {
+                        kind:
+                            "monarchRock",
+
+                        color:
+                            "#aa3e48"
+                    }
+                );
+            }
+
+
+            state.world
+                .effects
+                .push({
+
+                    type:
+                        "monarchCast",
+
+                    x:
+                        monarch.x,
+
+                    y:
+                        monarch.y,
+
+                    color:
+                        "#954f71",
+
+                    radius:
+                        145,
+
+                    life:
+                        0.9,
+
+                    maxLife:
+                        0.9
+                });
+
+
+            return;
+        }
+
+
+        /* ============================
+           SOMBRAS AO REDOR
+        ============================ */
+
+        if (
+            attack ===
+            1
+        ) {
+
+            for (
+                let i = 0;
+                i <
+                4;
+                i++
+            ) {
+
+                const angle =
+                    Math.PI *
+                    2 *
+                    i /
+                    4;
+
+
+                addHazard(
+
+                    state.player.x +
+                        Math.cos(
+                            angle
+                        ) *
+                            125,
+
+                    state.player.y +
+                        Math.sin(
+                            angle
+                        ) *
+                            125,
+
+                    85,
+
+                    0.95,
+
+                    Math.round(
+                        monarch.damage *
+                            1.10
+                    ),
+
+                    {
+                        kind:
+                            "monarchShadow",
+
+                        color:
+                            "#623b73"
+                    }
+                );
+            }
+
+
+            return;
+        }
+
+
+        /* ============================
+           ESMAGAMENTO DIRETO
+        ============================ */
+
+        addHazard(
+
+            state.player.x,
+            state.player.y,
+
+            105,
+
+            1.05,
+
+            Math.round(
+                monarch.damage *
+                    1.35
+            ),
+
+            {
+                kind:
+                    "monarchCrush",
+
+                color:
+                    "#c3444e"
+            }
+        );
+
+
+        addHazard(
+
+            state.player.x +
+                random(
+                    -100,
+                    100
+                ),
+
+            state.player.y +
+                random(
+                    -100,
+                    100
+                ),
+
+            65,
+
+            1.20,
+
+            Math.round(
+                monarch.damage
+            ),
+
+            {
+                kind:
+                    "monarchCrush",
+
+                color:
+                    "#7a436e"
+            }
+        );
+    }
+
+
+    /* =====================================================
+       UPDATE PRINCIPAL
+
+       NÃO HÁ AUTO-ATAQUE COM MOUSE SEGURADO.
+    ===================================================== */
+
+    function update(
+        dt
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        state.portalCooldown =
+            Math.max(
+                0,
+                state.portalCooldown -
+                    dt
+            );
+
+
+        updateCooldowns(
+            dt
+        );
+
+
+        const overlay =
+            isGameplayOverlayOpen();
+
+
+        if (
+            !state.paused &&
+            !overlay
+        ) {
+
+            updatePlayerDash(
+                dt
+            );
+
+
+            updateMovement(
+                dt
+            );
+
+
+            updateSurvival(
+                dt
+            );
+
+
+            updateEnemies(
+                dt
+            );
+
+
+            updateHazards(
+                dt
+            );
+
+
+            updateHoldInteraction(
+                dt
+            );
+
+
+            updateSkyTrial();
+
+
+            checkPortals();
+        }
+
+
+        else if (
+            state.holdAction
+        ) {
+
+            cancelHoldInteraction();
+        }
+
+
+        updateProgressionRewards();
+
+
+        updateResources(
+            dt
+        );
+
+
+        updateVisualEffects(
+            dt
+        );
+
+
+        updateCamera();
+
+
+        updateHUD();
+
+
+        if (
+            $(
+                "mapPanel"
+            ) &&
+            !$(
+                "mapPanel"
+            ).classList.contains(
+                "hidden"
+            )
+        ) {
+
+            drawLargeMap();
+        }
+    }
+
+
+    /* =====================================================
+       GAME LOOP
+    ===================================================== */
+
+    function gameLoop(
+        timestamp
+    ) {
+
+        if (
+            !state.running
+        ) {
+
+            return;
+        }
+
+
+        const dt =
+            Math.min(
+
+                (
+                    timestamp -
+                    state.lastTime
+                ) /
+                    1000,
+
+                0.05
+            );
+
+
+        state.lastTime =
+            timestamp;
+
+
+        state.time +=
+            dt;
+
+
+        update(
+            dt
+        );
+
+
+        draw();
+
+
+        requestAnimationFrame(
+            gameLoop
+        );
+    }
+
+
+    /* =====================================================
+       DRAW PRINCIPAL
+    ===================================================== */
+
+    function draw() {
+
+        ctx.clearRect(
+            0,
+            0,
+            window.innerWidth,
+            window.innerHeight
+        );
+
+
+        let shakeX =
+            0;
+
+
+        let shakeY =
+            0;
+
+
+        if (
+            state.screenShake >
+            0
+        ) {
+
+            shakeX =
+                random(
+                    -state.screenShakePower,
+                    state.screenShakePower
+                );
+
+
+            shakeY =
+                random(
+                    -state.screenShakePower,
+                    state.screenShakePower
+                );
+        }
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            -state.camera.x +
+                shakeX,
+
+            -state.camera.y +
+                shakeY
+        );
+
+
+        if (
+            state.houseMode
+        ) {
+
+            drawHouseInterior();
+
+            drawEffects();
+
+            drawPlayer();
+
+            drawParticles();
+        }
+
+
+        else {
+
+            drawGround();
+
+            drawPaths();
+
+            drawAmbientDetails();
+
+            drawDecorations();
+
+            drawBuildings();
+
+            drawTrees();
+
+            drawResources();
+
+            drawFoods();
+
+            drawSecrets();
+
+            drawObstacles();
+
+            drawGates();
+
+            drawTrials();
+
+            drawPortals();
+
+            drawHazards();
+
+            drawDrops();
+
+            drawEffects();
+
+            drawNPCs();
+
+            drawEnemies();
+
+            drawPlayer();
+
+            drawWorldLabels();
+
+            drawParticles();
+        }
+
+
+        ctx.restore();
+
+
+        /*
+            A ESCURIDÃO É DESENHADA DEPOIS
+            DO MUNDO.
+
+            O HUD PERMANECE VISÍVEL.
+        */
+
+        drawDarknessOverlay();
+
+
+        /*
+            DANO SOBRE A VISÃO DO PLAYER.
+        */
+
+        drawDamageScreenOverlay();
+
+
+        drawMinimap();
+    }
+
+
+    /* =====================================================
+       CHÃO
+    ===================================================== */
+
+    function drawGround() {
+
+        const visual =
+            REGIONS[
+                state.area
+            ].visual;
+
+
+        const colors = {
+
+            village:
+                "#536b4b",
+
+            forest:
+                "#3e6141",
+
+            grove:
+                "#34583a",
+
+            mountains:
+                "#92999b",
+
+            iron:
+                "#292e31",
+
+            ruby:
+                "#48252b",
+
+            monarchMaze:
+                "#121015",
+
+            shadow:
+                "#171d2e",
+
+            fairy:
+                "#56436b",
+
+            sky:
+                "#92b0c7",
+
+            hell:
+                "#45201f",
+
+            final:
+                "#18171b"
+        };
+
+
+        ctx.fillStyle =
+            colors[
+                visual
+            ] ||
+            "#536b4b";
+
+
+        ctx.fillRect(
+            0,
+            0,
+            state.world.width,
+            state.world.height
+        );
+
+
+        const tile =
+            64;
+
+
+        for (
+            let y = 70;
+            y <
+            state.world.height -
+                70;
+            y +=
+            tile
+        ) {
+
+            for (
+                let x = 70;
+                x <
+                state.world.width -
+                    70;
+                x +=
+                tile
+            ) {
+
+                ctx.fillStyle =
+
+                    (
+                        (
+                            x /
+                            tile +
+                            y /
+                            tile
+                        ) %
+                        2 ===
+                        0
+                    )
+
+                        ? "rgba(255,255,255,.014)"
+
+                        : "rgba(0,0,0,.018)";
+
+
+                ctx.fillRect(
+                    x,
+                    y,
+                    tile,
+                    tile
+                );
+            }
+        }
+
+
+        if (
+            visual ===
+            "mountains"
+        ) {
+
+            const gradient =
+                ctx.createLinearGradient(
+                    0,
+                    0,
+                    0,
+                    state.world.height
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(255,255,255,.16)"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "rgba(90,110,125,.06)"
+            );
+
+
+            ctx.fillStyle =
+                gradient;
+
+
+            ctx.fillRect(
+                0,
+                0,
+                state.world.width,
+                state.world.height
+            );
+        }
+
+
+        if (
+            visual ===
+            "ruby"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(255,70,90,.035)";
+
+
+            for (
+                let i = 0;
+                i <
+                28;
+                i++
+            ) {
+
+                ctx.fillRect(
+
+                    (
+                        i *
+                        431
+                    ) %
+                    state.world.width,
+
+                    (
+                        i *
+                        271
+                    ) %
+                    state.world.height,
+
+                    7,
+                    7
+                );
+            }
+        }
+
+
+        if (
+            visual ===
+            "monarchMaze"
+        ) {
+
+            const vignette =
+                ctx.createRadialGradient(
+
+                    state.world.width /
+                        2,
+
+                    state.world.height /
+                        2,
+
+                    100,
+
+                    state.world.width /
+                        2,
+
+                    state.world.height /
+                        2,
+
+                    state.world.width *
+                        0.65
+                );
+
+
+            vignette.addColorStop(
+                0,
+                "rgba(77,52,91,.05)"
+            );
+
+
+            vignette.addColorStop(
+                1,
+                "rgba(0,0,0,.44)"
+            );
+
+
+            ctx.fillStyle =
+                vignette;
+
+
+            ctx.fillRect(
+                0,
+                0,
+                state.world.width,
+                state.world.height
+            );
+        }
+    }
+
+
+    /* =====================================================
+       CAMINHOS
+    ===================================================== */
+
+    function pathColor(
+        kind
+    ) {
+
+        const colors = {
+
+            villageRoad: [
+                "#b79a68",
+                "#90764e"
+            ],
+
+            forestTrail: [
+                "#897653",
+                "#5f573e"
+            ],
+
+            groveTrail: [
+                "#7f7252",
+                "#57563c"
+            ],
+
+            snowTrail: [
+                "#d5d6d2",
+                "#a4aaa8"
+            ],
+
+            mineTrack: [
+                "#55504b",
+                "#2d2d2f"
+            ],
+
+            crystalTrail: [
+                "#74404b",
+                "#4b2931"
+            ],
+
+            shadowTrail: [
+                "#343047",
+                "#222033"
+            ],
+
+            fairyTrail: [
+                "#83709b",
+                "#655276"
+            ],
+
+            skyBridge: [
+                "#d2dce2",
+                "#9caebe"
+            ],
+
+            hellRoad: [
+                "#71372d",
+                "#47231f"
+            ],
+
+            mazeExit: [
+                "#302936",
+                "#1c1920"
+            ]
+        };
+
+
+        return (
+            colors[
+                kind
+            ] ||
+            [
+                "#917a58",
+                "#6b5a42"
+            ]
+        );
+    }
+
+
+    function drawPaths() {
+
+        for (
+            const path of
+            state.world.paths
+        ) {
+
+            if (
+                !path.points ||
+                path.points.length <
+                    2
+            ) {
+
+                continue;
+            }
+
+
+            const [
+                main,
+                edge
+            ] =
+                pathColor(
+                    path.kind
+                );
+
+
+            ctx.save();
+
+
+            ctx.lineCap =
+                "round";
+
+
+            ctx.lineJoin =
+                "round";
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                path.points[0].x,
+                path.points[0].y
+            );
+
+
+            for (
+                let i = 1;
+                i <
+                path.points.length;
+                i++
+            ) {
+
+                ctx.lineTo(
+                    path.points[i].x,
+                    path.points[i].y
+                );
+            }
+
+
+            ctx.strokeStyle =
+                edge;
+
+
+            ctx.lineWidth =
+                path.width +
+                16;
+
+
+            ctx.globalAlpha =
+                0.38;
+
+
+            ctx.stroke();
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                path.points[0].x,
+                path.points[0].y
+            );
+
+
+            for (
+                let i = 1;
+                i <
+                path.points.length;
+                i++
+            ) {
+
+                ctx.lineTo(
+                    path.points[i].x,
+                    path.points[i].y
+                );
+            }
+
+
+            ctx.strokeStyle =
+                main;
+
+
+            ctx.lineWidth =
+                path.width;
+
+
+            ctx.globalAlpha =
+                0.74;
+
+
+            ctx.stroke();
+
+
+            ctx.restore();
+        }
+    }
+
+
+    /* =====================================================
+       DETALHES AMBIENTAIS
+    ===================================================== */
+
+    function drawAmbientDetails() {
+
+        const visual =
+            REGIONS[
+                state.area
+            ].visual;
+
+
+        ctx.save();
+
+
+        if (
+            [
+                "village",
+                "forest",
+                "grove"
+            ].includes(
+                visual
+            )
+        ) {
+
+            ctx.strokeStyle =
+                "rgba(25,65,31,.30)";
+
+
+            ctx.lineWidth =
+                1.4;
+
+
+            for (
+                let y = 115;
+                y <
+                state.world.height -
+                    100;
+                y +=
+                78
+            ) {
+
+                for (
+                    let x = 110;
+                    x <
+                    state.world.width -
+                        100;
+                    x +=
+                    83
+                ) {
+
+                    if (
+                        (
+                            (
+                                x *
+                                7 +
+                                y *
+                                3
+                            ) %
+                            17
+                        ) <
+                        6
+                    ) {
+
+                        ctx.beginPath();
+
+
+                        ctx.moveTo(
+                            x,
+                            y +
+                                5
+                        );
+
+
+                        ctx.lineTo(
+                            x -
+                                4,
+                            y -
+                                4
+                        );
+
+
+                        ctx.moveTo(
+                            x,
+                            y +
+                                5
+                        );
+
+
+                        ctx.lineTo(
+                            x +
+                                5,
+                            y -
+                                5
+                        );
+
+
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+
+        if (
+            visual ===
+            "sky"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.14)";
+
+
+            for (
+                let i = 0;
+                i <
+                20;
+                i++
+            ) {
+
+                const x =
+                    (
+                        i *
+                        503 +
+                        state.time *
+                        8
+                    ) %
+                    state.world.width;
+
+
+                const y =
+                    (
+                        i *
+                        283
+                    ) %
+                    state.world.height;
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+                    x,
+                    y,
+                    75,
+                    24,
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+        }
+
+
+        if (
+            visual ===
+            "hell"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(244,72,31,.16)";
+
+
+            for (
+                let i = 0;
+                i <
+                25;
+                i++
+            ) {
+
+                const x =
+                    (
+                        i *
+                        421
+                    ) %
+                    state.world.width;
+
+
+                const y =
+                    (
+                        i *
+                        257
+                    ) %
+                    state.world.height;
+
+
+                const pulse =
+                    5 +
+                    Math.sin(
+                        state.time *
+                            2 +
+                        i
+                    ) *
+                        2;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    x,
+                    y,
+                    8 +
+                        pulse,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+        }
+
+
+        ctx.restore();
+    }
+
+
+    /* =====================================================
+       DECORAÇÕES
+    ===================================================== */
+
+    function drawDecorations() {
+
+        for (
+            const decoration of
+            state.world
+                .decorations
+        ) {
+
+            if (
+                typeof decoration
+                    .visible ===
+                    "function" &&
+                !decoration.visible()
+            ) {
+
+                continue;
+            }
+
+
+            const {
+                type,
+                x,
+                y
+            } =
+                decoration;
+
+
+            const phase =
+                decoration.phase ||
+                0;
+
+
+            const bob =
+                Math.sin(
+                    state.time *
+                        2 +
+                    phase
+                ) *
+                2;
+
+
+            ctx.save();
+
+
+            ctx.textAlign =
+                "center";
+
+
+            ctx.textBaseline =
+                "middle";
+
+
+            const emoji = {
+
+                pathStone:
+                    "•",
+
+                mushroom:
+                    "🍄",
+
+                fallenLog:
+                    "🪵",
+
+                bush:
+                    "♣",
+
+                fern:
+                    "♧",
+
+                ancientRoot:
+                    "〽",
+
+                flower:
+                    "✿",
+
+                deadPine:
+                    "🌲",
+
+                oreSpark:
+                    "✦",
+
+                snowDrift:
+                    "❄",
+
+                windMark:
+                    "≈",
+
+                mineLantern:
+                    "🏮",
+
+                rail:
+                    "═",
+
+                toolCrate:
+                    "📦",
+
+                stalagmite:
+                    "▲",
+
+                crystalPillar:
+                    "♦",
+
+                crystalShard:
+                    "✦",
+
+                darkCaveEntrance:
+                    "◼",
+
+                darkMist:
+                    "≈",
+
+                shadowEye:
+                    "◉",
+
+                shadowWhisper:
+                    "〰",
+
+                fairyLamp:
+                    "✧",
+
+                flowerPatch:
+                    "❀",
+
+                fairySpark:
+                    "✦",
+
+                celestialPillar:
+                    "▥",
+
+                cloud:
+                    "☁",
+
+                skyRune:
+                    "✧",
+
+                trialAltar:
+                    "◇",
+
+                lavaPool:
+                    "●",
+
+                hellSmoke:
+                    "♨",
+
+                emberVent:
+                    "✦",
+
+                finalRune:
+                    "⌁",
+
+                cottonPatch:
+                    "☁",
+
+                leafPile:
+                    "🍃",
+
+                cobweb:
+                    "🕸️",
+
+                bones:
+                    "🦴",
+
+                darkPebble:
+                    "·",
+
+                dashAltar:
+                    "◇",
+
+                monarchRune:
+                    "⌬",
+
+                shadowTorch:
+                    "†",
+
+                flowerPot:
+                    "🌼",
+
+                barrel:
+                    "🛢️",
+
+                lanternPost:
+                    "🏮",
+
+                forgeSign:
+                    "⚒",
+
+                shopCrate:
+                    "📦",
+
+                marketCrate:
+                    "📦",
+
+                hayBale:
+                    "▤"
+            }[
+                type
+            ];
+
+
+            if (
+                type ===
+                "pathStone"
+            ) {
+
+                ctx.fillStyle =
+                    "rgba(185,170,135,.52)";
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    x,
+                    y,
+
+                    decoration.size ||
+                    20,
+
+                    (
+                        decoration.size ||
+                        20
+                    ) *
+                        0.45,
+
+                    decoration.angle ||
+                    0,
+
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            else if (
+                type ===
+                "darkCaveEntrance"
+            ) {
+
+                ctx.fillStyle =
+                    "#08080a";
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+                    x,
+                    y,
+                    80,
+                    65,
+                    0,
+                    Math.PI,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+
+
+                ctx.fillRect(
+                    x -
+                        80,
+                    y,
+                    160,
+                    70
+                );
+
+
+                ctx.strokeStyle =
+                    "rgba(90,70,80,.5)";
+
+
+                ctx.lineWidth =
+                    7;
+
+
+                ctx.stroke();
+            }
+
+
+            else if (
+                emoji
+            ) {
+
+                ctx.font =
+
+                    [
+                        "cloud"
+                    ].includes(
+                        type
+                    )
+
+                        ? "58px Arial"
+
+                        : [
+                            "crystalPillar",
+                            "celestialPillar"
+                        ].includes(
+                            type
+                        )
+
+                        ? "35px Arial"
+
+                        : "22px Arial";
+
+
+                ctx.globalAlpha =
+
+                    [
+                        "darkMist",
+                        "hellSmoke",
+                        "windMark"
+                    ].includes(
+                        type
+                    )
+
+                        ? 0.35
+
+                        : 0.8;
+
+
+                ctx.fillStyle =
+                    "#f0d38d";
+
+
+                ctx.fillText(
+                    emoji,
+                    x,
+                    y +
+                        bob
+                );
+            }
+
+
+            ctx.restore();
+        }
+    }
+
+
+    /* =====================================================
+       PRÉDIOS
+    ===================================================== */
+
+    function drawBuildings() {
+
+        state.world
+            .buildings
+            .forEach(
+                building => {
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.27)";
+
+
+                    ctx.fillRect(
+
+                        building.x +
+                            13,
+
+                        building.y +
+                            16,
+
+                        building.w,
+                        building.h
+                    );
+
+
+                    ctx.fillStyle =
+                        building.color;
+
+
+                    ctx.fillRect(
+                        building.x,
+                        building.y,
+                        building.w,
+                        building.h
+                    );
+
+
+                    ctx.strokeStyle =
+                        "rgba(30,25,20,.45)";
+
+
+                    ctx.lineWidth =
+                        4;
+
+
+                    ctx.strokeRect(
+
+                        building.x +
+                            3,
+
+                        building.y +
+                            3,
+
+                        building.w -
+                            6,
+
+                        building.h -
+                            6
+                    );
+
+
+                    ctx.fillStyle =
+                        building.roof;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        building.x -
+                            24,
+
+                        building.y
+                    );
+
+
+                    ctx.lineTo(
+
+                        building.x +
+                            building.w /
+                                2,
+
+                        building.y -
+                            95
+                    );
+
+
+                    ctx.lineTo(
+
+                        building.x +
+                            building.w +
+                            24,
+
+                        building.y
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    const doorX =
+                        building.x +
+                        building.w /
+                            2 -
+                        25;
+
+
+                    const doorY =
+                        building.y +
+                        building.h -
+                        70;
+
+
+                    ctx.fillStyle =
+                        "#452d25";
+
+
+                    ctx.fillRect(
+                        doorX,
+                        doorY,
+                        50,
+                        70
+                    );
+
+
+                    ctx.fillStyle =
+                        "#dbc77d";
+
+
+                    ctx.fillRect(
+
+                        building.x +
+                            35,
+
+                        building.y +
+                            60,
+
+                        50,
+                        42
+                    );
+
+
+                    ctx.fillRect(
+
+                        building.x +
+                            building.w -
+                            85,
+
+                        building.y +
+                            60,
+
+                        50,
+                        42
+                    );
+
+
+                    /*
+                        FORJA ACESA.
+                    */
+
+                    if (
+                        building.id ===
+                        "forge"
+                    ) {
+
+                        const flame =
+                            9 +
+                            Math.sin(
+                                state.time *
+                                    7
+                            ) *
+                                3;
+
+
+                        ctx.fillStyle =
+                            "#ff7c3e";
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            building.x +
+                                building.w -
+                                80,
+
+                            building.y -
+                                38,
+
+                            flame,
+
+                            0,
+                            Math.PI *
+                                2
+                        );
+
+
+                        ctx.fill();
+                    }
+
+
+                    ctx.font =
+                        "bold 12px Georgia";
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.fillStyle =
+                        "#f1e0ba";
+
+
+                    ctx.fillText(
+
+                        building.name,
+
+                        building.x +
+                            building.w /
+                                2,
+
+                        building.y +
+                            building.h +
+                            27
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       INTERIORES
+    ===================================================== */
+
+    function drawHouseInterior() {
+
+        const building =
+            state.currentHouse;
+
+
+        const room =
+            getHouseRoom();
+
+
+        const theme =
+            getHouseTheme();
+
+
+        ctx.fillStyle =
+            "#141210";
+
+
+        ctx.fillRect(
+            0,
+            0,
+            state.world.width,
+            state.world.height
+        );
+
+
+        ctx.fillStyle =
+            theme.wall;
+
+
+        ctx.fillRect(
+
+            room.x -
+                24,
+
+            room.y -
+                24,
+
+            room.w +
+                48,
+
+            room.h +
+                48
+        );
+
+
+        ctx.fillStyle =
+            theme.floor;
+
+
+        ctx.fillRect(
+            room.x,
+            room.y,
+            room.w,
+            room.h
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(45,28,20,.20)";
+
+
+        ctx.lineWidth =
+            1;
+
+
+        for (
+            let y =
+                room.y +
+                28;
+            y <
+                room.y +
+                room.h;
+            y +=
+                28
+        ) {
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                room.x,
+                y
+            );
+
+
+            ctx.lineTo(
+                room.x +
+                    room.w,
+                y
+            );
+
+
+            ctx.stroke();
+        }
+
+
+        ctx.strokeStyle =
+            theme.trim;
+
+
+        ctx.lineWidth =
+            6;
+
+
+        ctx.strokeRect(
+            room.x,
+            room.y,
+            room.w,
+            room.h
+        );
+
+
+        for (
+            const furniture of
+            getHouseFurniture()
+        ) {
+
+            drawFurniture(
+                furniture,
+                theme
+            );
+        }
+
+
+        /* ============================
+           PORTA
+        ============================ */
+
+        ctx.fillStyle =
+            "#3b241c";
+
+
+        ctx.fillRect(
+
+            room.x +
+                room.w /
+                    2 -
+                34,
+
+            room.y +
+                room.h -
+                16,
+
+            68,
+            22
+        );
+
+
+        ctx.fillStyle =
+            "#ead9b5";
+
+
+        ctx.font =
+            "bold 19px Georgia";
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillText(
+
+            building
+                ?.name ||
+            "INTERIOR",
+
+            room.x +
+                room.w /
+                    2,
+
+            room.y -
+                42
+        );
+
+
+        const sleepTarget =
+            getSleepTarget();
+
+
+        if (
+            sleepTarget &&
+            distance(
+                state.player,
+                sleepTarget
+            ) <
+            100
+        ) {
+
+            ctx.font =
+                "bold 13px Arial";
+
+
+            ctx.fillStyle =
+                "#ffe0a2";
+
+
+            ctx.fillText(
+                "[E] DORMIR",
+                sleepTarget.x,
+                sleepTarget.y -
+                    95
+            );
+        }
+
+
+        ctx.font =
+            "11px Arial";
+
+
+        ctx.fillStyle =
+            "#d9c9a8";
+
+
+        ctx.fillText(
+
+            "[Z] SAIR PERTO DA PORTA",
+
+            room.x +
+                room.w /
+                    2,
+
+            room.y +
+                room.h +
+                35
+        );
+
+
+        drawInteriorNPCs();
+    }
+
+
+    /* =====================================================
+       MÓVEIS COM COLISÃO
+    ===================================================== */
+
+    function drawFurniture(
+        furniture,
+        theme
+    ) {
+
+        const f =
+            furniture;
+
+
+        ctx.save();
+
+
+        if (
+            f.name ===
+            "bed"
+        ) {
+
+            ctx.fillStyle =
+                "#4b3026";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+
+
+            ctx.fillStyle =
+                "#d9c8a4";
+
+
+            ctx.fillRect(
+
+                f.x +
+                    10,
+
+                f.y +
+                    10,
+
+                f.w -
+                    20,
+
+                f.h -
+                    20
+            );
+
+
+            ctx.fillStyle =
+                "#8b4f4c";
+
+
+            ctx.fillRect(
+
+                f.x +
+                    18,
+
+                f.y +
+                    f.h *
+                        0.55,
+
+                f.w -
+                    36,
+
+                f.h *
+                    0.32
+            );
+        }
+
+
+        else if (
+            f.name ===
+            "furnace"
+        ) {
+
+            ctx.fillStyle =
+                "#29292c";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+
+
+            const flame =
+                32 +
+                Math.sin(
+                    state.time *
+                        8
+                ) *
+                    5;
+
+
+            ctx.fillStyle =
+                "#f36b36";
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                f.x +
+                    f.w /
+                        2,
+
+                f.y +
+                    f.h *
+                        0.62,
+
+                flame,
+
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            ctx.fill();
+
+
+            ctx.fillStyle =
+                "#ffd060";
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                f.x +
+                    f.w /
+                        2,
+
+                f.y +
+                    f.h *
+                        0.62,
+
+                flame *
+                    0.48,
+
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            ctx.fill();
+        }
+
+
+        else if (
+            f.name ===
+            "anvil"
+        ) {
+
+            ctx.fillStyle =
+                "#25292c";
+
+
+            ctx.fillRect(
+
+                f.x,
+
+                f.y +
+                    25,
+
+                f.w,
+
+                f.h *
+                    0.38
+            );
+
+
+            ctx.fillRect(
+
+                f.x +
+                    f.w *
+                        0.42,
+
+                f.y +
+                    f.h *
+                        0.55,
+
+                f.w *
+                    0.18,
+
+                f.h *
+                    0.42
+            );
+        }
+
+
+        else if (
+            [
+                "bookshelf",
+                "shopShelf"
+            ].includes(
+                f.name
+            )
+        ) {
+
+            ctx.fillStyle =
+                "#4a3023";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+
+
+            ctx.strokeStyle =
+                theme.accent;
+
+
+            ctx.lineWidth =
+                4;
+
+
+            for (
+                let i = 1;
+                i <
+                5;
+                i++
+            ) {
+
+                const yy =
+                    f.y +
+                    f.h *
+                        i /
+                        5;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    f.x +
+                        6,
+                    yy
+                );
+
+
+                ctx.lineTo(
+                    f.x +
+                        f.w -
+                        6,
+                    yy
+                );
+
+
+                ctx.stroke();
+            }
+        }
+
+
+        else if (
+            [
+                "table",
+                "desk",
+                "counter",
+                "workbench"
+            ].includes(
+                f.name
+            )
+        ) {
+
+            ctx.fillStyle =
+
+                f.name ===
+                "counter"
+
+                    ? "#5f3d29"
+
+                    : "#5a3c29";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(239,201,125,.28)";
+
+
+            ctx.strokeRect(
+
+                f.x +
+                    3,
+
+                f.y +
+                    3,
+
+                f.w -
+                    6,
+
+                f.h -
+                    6
+            );
+        }
+
+
+        else if (
+            [
+                "crate",
+                "oreCrate",
+                "chest"
+            ].includes(
+                f.name
+            )
+        ) {
+
+            ctx.fillStyle =
+
+                f.name ===
+                "oreCrate"
+
+                    ? "#55504c"
+
+                    : "#6c472b";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+
+
+            ctx.strokeStyle =
+                "#b0834d";
+
+
+            ctx.lineWidth =
+                5;
+
+
+            ctx.strokeRect(
+
+                f.x +
+                    4,
+
+                f.y +
+                    4,
+
+                f.w -
+                    8,
+
+                f.h -
+                    8
+            );
+        }
+
+
+        else if (
+            [
+                "logStack",
+                "boardStack"
+            ].includes(
+                f.name
+            )
+        ) {
+
+            ctx.fillStyle =
+                "#845731";
+
+
+            for (
+                let i = 0;
+                i <
+                5;
+                i++
+            ) {
+
+                ctx.fillRect(
+
+                    f.x +
+                        8,
+
+                    f.y +
+                        10 +
+                        i *
+                        (
+                            (
+                                f.h -
+                                20
+                            ) /
+                            5
+                        ),
+
+                    f.w -
+                        16,
+
+                    Math.max(
+
+                        10,
+
+                        (
+                            f.h -
+                            35
+                        ) /
+                        6
+                    )
+                );
+            }
+        }
+
+
+        else {
+
+            ctx.fillStyle =
+                "#514238";
+
+
+            ctx.fillRect(
+                f.x,
+                f.y,
+                f.w,
+                f.h
+            );
+        }
+
+
+        ctx.restore();
+    }
+
+
+    function drawInteriorNPCs() {
+
+        getInteriorNPCs()
+            .forEach(
+                drawNPCBody
+            );
+    }
+
+
+    /* =====================================================
+       ÁRVORES
+    ===================================================== */
+
+    function drawTrees() {
+
+        state.world
+            .trees
+            .forEach(
+                tree => {
+
+                    if (
+                        !tree.alive
+                    ) {
+
+                        return;
+                    }
+
+
+                    const sway =
+                        Math.sin(
+                            state.time *
+                                1.7 +
+                            tree.x *
+                                0.01
+                        ) *
+                        2;
+
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.22)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.ellipse(
+                        tree.x,
+                        tree.y +
+                            28,
+                        34,
+                        11,
+                        0,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.fillStyle =
+                        "#684a30";
+
+
+                    ctx.fillRect(
+                        tree.x -
+                            9,
+                        tree.y,
+                        18,
+                        42
+                    );
+
+
+                    ctx.fillStyle =
+
+                        state.area ===
+                        "grove"
+
+                            ? "#2f633d"
+
+                            : "#305c36";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+                        tree.x +
+                            sway,
+                        tree.y -
+                            14,
+                        34,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.fillStyle =
+
+                        state.area ===
+                        "grove"
+
+                            ? "#4b874e"
+
+                            : "#447a45";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+                        tree.x -
+                            14 +
+                            sway,
+                        tree.y -
+                            27,
+                        24,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.arc(
+                        tree.x +
+                            14 +
+                            sway,
+                        tree.y -
+                            27,
+                        25,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    if (
+                        distance(
+                            tree,
+                            state.player
+                        ) <
+                        85
+                    ) {
+
+                        ctx.strokeStyle =
+                            "#d8bc73";
+
+
+                        ctx.lineWidth =
+                            2;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+                            tree.x,
+                            tree.y -
+                                10,
+                            40,
+                            0,
+                            Math.PI *
+                                2
+                        );
+
+
+                        ctx.stroke();
+                    }
+                }
+            );
+    }
+
+
+    /* =====================================================
+       RECURSOS
+    ===================================================== */
+
+    function drawResources() {
+
+        const icons = {
+
+            folha:
+                "🍃",
+
+            algodao:
+                "☁️",
+
+            carvao:
+                "⬛",
+
+            ferro:
+                "⛓️",
+
+            ouro:
+                "🪙",
+
+            diamante:
+                "💎",
+
+            rubi:
+                "♦️",
+
+            cristal:
+                "🔷"
+        };
+
+
+        state.world
+            .resources
+            .forEach(
+                resource => {
+
+                    if (
+                        !resource.alive
+                    ) {
+
+                        return;
+                    }
+
+
+                    const bob =
+                        Math.sin(
+                            state.time *
+                                2.6 +
+                            resource.x *
+                                0.02
+                        ) *
+                        3;
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.font =
+
+                        resource.type ===
+                            "diamante" ||
+                        resource.type ===
+                            "rubi"
+
+                            ? "25px Arial"
+
+                            : "21px Arial";
+
+
+                    ctx.fillText(
+
+                        icons[
+                            resource.type
+                        ] ||
+                        "✦",
+
+                        resource.x,
+
+                        resource.y +
+                            7 +
+                            bob
+                    );
+
+
+                    if (
+                        [
+                            "diamante",
+                            "rubi"
+                        ].includes(
+                            resource.type
+                        )
+                    ) {
+
+                        ctx.strokeStyle =
+
+                            resource.type ===
+                            "diamante"
+
+                                ? "rgba(130,229,255,.35)"
+
+                                : "rgba(255,80,110,.35)";
+
+
+                        ctx.lineWidth =
+                            2;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            resource.x,
+                            resource.y,
+
+                            20 +
+                                Math.sin(
+                                    state.time *
+                                        4
+                                ) *
+                                    3,
+
+                            0,
+
+                            Math.PI *
+                                2
+                        );
+
+
+                        ctx.stroke();
+                    }
+                }
+            );
+    }
+
+
+    /* =====================================================
+       ALIMENTOS
+    ===================================================== */
+
+    function drawFoods() {
+
+        state.world
+            .foods
+            .forEach(
+                food => {
+
+                    if (
+                        !food.alive
+                    ) {
+
+                        return;
+                    }
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.font =
+                        "21px Arial";
+
+
+                    ctx.fillText(
+
+                        food.type ===
+                        "carrot"
+
+                            ? "🥕"
+
+                            : "🍎",
+
+                        food.x,
+
+                        food.y +
+                            Math.sin(
+                                state.time *
+                                    2 +
+                                food.x
+                            ) *
+                                2
+                    );
+                }
+            );
+    }
+
+
+    /* =====================================================
+       SEGREDOS
+    ===================================================== */
+
+    function drawSecrets() {
+
+        state.world
+            .secrets
+            .forEach(
+                secret => {
+
+                    if (
+                        secret.found
+                    ) {
+
+                        return;
+                    }
+
+
+                    const alpha =
+                        0.25 +
+                        (
+                            Math.sin(
+                                state.time *
+                                    2.4 +
+                                secret.x
+                            ) +
+                            1
+                        ) *
+                            0.12;
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+                        alpha;
+
+
+                    ctx.fillStyle =
+                        "#e9c978";
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.font =
+                        "18px Georgia";
+
+
+                    ctx.fillText(
+                        secret.icon ||
+                            "✦",
+                        secret.x,
+                        secret.y
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       FONTE ANIMADA
+    ===================================================== */
+
+    function drawFountain(
+        obstacle
+    ) {
+
+        const cx =
+            obstacle.x +
+            obstacle.w /
+                2;
+
+
+        const cy =
+            obstacle.y +
+            obstacle.h /
+                2;
+
+
+        ctx.fillStyle =
+            "#8a887e";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            cx,
+            cy,
+            obstacle.w /
+                2,
+            obstacle.h /
+                2,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#5f9daf";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            cx,
+            cy,
+            obstacle.w /
+                2 -
+                20,
+            obstacle.h /
+                2 -
+                20,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        /*
+            PILAR CENTRAL.
+        */
+
+        ctx.fillStyle =
+            "#929084";
+
+
+        ctx.fillRect(
+            cx -
+                18,
+            cy -
+                65,
+            36,
+            95
+        );
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            cx,
+            cy -
+                70,
+            30,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        /*
+            JATO D'ÁGUA.
+        */
+
+        const stream =
+            34 +
+            Math.sin(
+                state.time *
+                    6
+            ) *
+                5;
+
+
+        ctx.strokeStyle =
+            "rgba(160,225,245,.85)";
+
+
+        ctx.lineWidth =
+            4;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            cx +
+                22,
+            cy -
+                65
+        );
+
+
+        ctx.quadraticCurveTo(
+            cx +
+                60,
+            cy -
+                55,
+            cx +
+                54,
+            cy -
+                20 +
+                stream *
+                    0.08
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "rgba(188,235,247,.55)";
+
+
+        for (
+            let i = 0;
+            i <
+            7;
+            i++
+        ) {
+
+            const angle =
+                state.time *
+                    1.8 +
+                i *
+                    0.9;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                cx +
+                    Math.cos(
+                        angle
+                    ) *
+                        62,
+
+                cy +
+                    Math.sin(
+                        angle
+                    ) *
+                        35,
+
+                3,
+
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            ctx.fill();
+        }
+    }
+
+
+    /* =====================================================
+       OBSTÁCULOS
+    ===================================================== */
+
+    function drawObstacles() {
+
+        const colors = {
+
+            wall:
+                "#424a46",
+
+            rock:
+                "#737771",
+
+            snowrock:
+                "#bec5c7",
+
+            iceRock:
+                "#d3e0e5",
+
+            oreRock:
+                "#6d6d68",
+
+            ironrock:
+                "#666c6f",
+
+            rubyrock:
+                "#73384b",
+
+            rubyPillar:
+                "#8b3e55",
+
+            darkrock:
+                "#34364e",
+
+            basalt:
+                "#443437",
+
+            obsidian:
+                "#25212a",
+
+            mazeWall:
+                "#28242d",
+
+            arenaWall:
+                "#342b3a"
+        };
+
+
+        state.world
+            .obstacles
+            .forEach(
+                obstacle => {
+
+                    if (
+                        obstacle.type ===
+                            "building" ||
+                        obstacle.type ===
+                            "tree"
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        obstacle.type ===
+                        "fountain"
+                    ) {
+
+                        drawFountain(
+                            obstacle
+                        );
+
+
+                        return;
+                    }
+
+
+                    if (
+                        [
+                            "wall",
+                            "mazeWall",
+                            "arenaWall"
+                        ].includes(
+                            obstacle.type
+                        )
+                    ) {
+
+                        ctx.fillStyle =
+                            colors[
+                                obstacle.type
+                            ];
+
+
+                        ctx.fillRect(
+                            obstacle.x,
+                            obstacle.y,
+                            obstacle.w,
+                            obstacle.h
+                        );
+
+
+                        if (
+                            obstacle.type !==
+                            "wall"
+                        ) {
+
+                            ctx.strokeStyle =
+                                "rgba(130,92,150,.18)";
+
+
+                            ctx.lineWidth =
+                                2;
+
+
+                            ctx.strokeRect(
+
+                                obstacle.x +
+                                    2,
+
+                                obstacle.y +
+                                    2,
+
+                                obstacle.w -
+                                    4,
+
+                                obstacle.h -
+                                    4
+                            );
+                        }
+
+
+                        return;
+                    }
+
+
+                    ctx.fillStyle =
+                        colors[
+                            obstacle.type
+                        ] ||
+                        "#737771";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.ellipse(
+
+                        obstacle.x +
+                            obstacle.w /
+                                2,
+
+                        obstacle.y +
+                            obstacle.h /
+                                2,
+
+                        obstacle.w /
+                            2,
+
+                        obstacle.h /
+                            2,
+
+                        -0.12,
+
+                        0,
+
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       PORTÕES DA VILA
+    ===================================================== */
+
+    function drawGates() {
+
+        state.world
+            .gates
+            .forEach(
+                gate => {
+
+                    const open =
+                        Boolean(
+                            state.player
+                                ?.gateUnlocks
+                                ?.[gate.side]
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+
+                        open
+
+                            ? "rgba(78,121,92,.28)"
+
+                            : "rgba(38,34,32,.72)";
+
+
+                    ctx.fillRect(
+                        gate.x,
+                        gate.y,
+                        gate.w,
+                        gate.h
+                    );
+
+
+                    ctx.strokeStyle =
+
+                        open
+
+                            ? "#9fc19e"
+
+                            : "#b59868";
+
+
+                    ctx.lineWidth =
+                        5;
+
+
+                    ctx.strokeRect(
+                        gate.x,
+                        gate.y,
+                        gate.w,
+                        gate.h
+                    );
+
+
+                    ctx.strokeStyle =
+
+                        open
+
+                            ? "rgba(255,255,255,.12)"
+
+                            : "rgba(225,196,132,.48)";
+
+
+                    ctx.lineWidth =
+                        5;
+
+
+                    if (
+                        gate.side ===
+                            "north" ||
+                        gate.side ===
+                            "south"
+                    ) {
+
+                        for (
+                            let x =
+                                gate.x +
+                                18;
+                            x <
+                                gate.x +
+                                gate.w;
+                            x +=
+                                26
+                        ) {
+
+                            ctx.beginPath();
+
+
+                            ctx.moveTo(
+                                x,
+                                gate.y +
+                                    5
+                            );
+
+
+                            ctx.lineTo(
+                                x,
+                                gate.y +
+                                    gate.h -
+                                    5
+                            );
+
+
+                            ctx.stroke();
+                        }
+                    }
+
+
+                    else {
+
+                        for (
+                            let y =
+                                gate.y +
+                                18;
+                            y <
+                                gate.y +
+                                gate.h;
+                            y +=
+                                26
+                        ) {
+
+                            ctx.beginPath();
+
+
+                            ctx.moveTo(
+                                gate.x +
+                                    5,
+                                y
+                            );
+
+
+                            ctx.lineTo(
+                                gate.x +
+                                    gate.w -
+                                    5,
+                                y
+                            );
+
+
+                            ctx.stroke();
+                        }
+                    }
+
+
+                    ctx.font =
+                        "bold 12px Georgia";
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.fillStyle =
+
+                        open
+
+                            ? "#d8efce"
+
+                            : "#ead4a2";
+
+
+                    ctx.fillText(
+
+                        open
+
+                            ? "PASSAGEM ABERTA"
+
+                            : gate.title,
+
+                        gate.x +
+                            gate.w /
+                                2,
+
+                        gate.y -
+                            12
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       ALTARES / DESAFIOS
+    ===================================================== */
+
+    function drawTrials() {
+
+        state.world
+            .trials
+            .forEach(
+                trial => {
+
+                    const pulse =
+                        1 +
+                        Math.sin(
+                            state.time *
+                                3
+                        ) *
+                            0.08;
+
+
+                    ctx.save();
+
+
+                    ctx.translate(
+                        trial.x,
+                        trial.y
+                    );
+
+
+                    ctx.scale(
+                        pulse,
+                        pulse
+                    );
+
+
+                    ctx.fillStyle =
+
+                        trial.dashAltar
+
+                            ? "rgba(130,74,163,.28)"
+
+                            : "rgba(221,190,105,.22)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+                        0,
+                        0,
+                        trial.radius ||
+                            38,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.strokeStyle =
+
+                        trial.dashAltar
+
+                            ? "#b884d2"
+
+                            : "#e6c97b";
+
+
+                    ctx.lineWidth =
+                        3;
+
+
+                    ctx.stroke();
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.textBaseline =
+                        "middle";
+
+
+                    ctx.font =
+                        "28px Georgia";
+
+
+                    ctx.fillStyle =
+                        "#f1d79b";
+
+
+                    ctx.fillText(
+                        trial.dashAltar
+                            ? "◇"
+                            : "✦",
+                        0,
+                        0
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       ÁREAS DE ATAQUE
+    ===================================================== */
+
+    function drawHazards() {
+
+        state.world
+            .hazards
+            .forEach(
+                hazard => {
+
+                    const progress =
+                        clamp(
+
+                            1 -
+                            hazard.delay /
+                            Math.max(
+                                0.01,
+                                hazard.maxDelay ||
+                                    1
+                            ),
+
+                            0,
+                            1
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+
+                        hazard.triggered
+
+                            ? "rgba(255,90,60,.08)"
+
+                            : hazard.color ||
+                              "rgba(220,52,45,.22)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+                        hazard.x,
+                        hazard.y,
+                        hazard.radius,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.strokeStyle =
+                        hazard.color ||
+                        "#df5148";
+
+
+                    ctx.lineWidth =
+                        2 +
+                        progress *
+                            3;
+
+
+                    ctx.globalAlpha =
+                        0.55 +
+                        progress *
+                            0.4;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        hazard.x,
+                        hazard.y,
+
+                        hazard.radius *
+                            (
+                                0.35 +
+                                progress *
+                                    0.65
+                            ),
+
+                        0,
+
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.stroke();
+
+
+                    if (
+                        !hazard.triggered
+                    ) {
+
+                        ctx.beginPath();
+
+
+                        ctx.moveTo(
+                            hazard.x -
+                                9,
+                            hazard.y
+                        );
+
+
+                        ctx.lineTo(
+                            hazard.x +
+                                9,
+                            hazard.y
+                        );
+
+
+                        ctx.moveTo(
+                            hazard.x,
+                            hazard.y -
+                                9
+                        );
+
+
+                        ctx.lineTo(
+                            hazard.x,
+                            hazard.y +
+                                9
+                        );
+
+
+                        ctx.stroke();
+                    }
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       NPC
+    ===================================================== */
+
+    function drawNPCBody(
+        npc
+    ) {
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.23)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            npc.x,
+            npc.y +
+                19,
+            18,
+            7,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            npc.color ||
+            "#c9ae82";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            npc.x,
+            npc.y,
+            17,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#28272b";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            npc.x,
+            npc.y -
+                8,
+            9,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.font =
+            "bold 12px Arial";
+
+
+        ctx.fillStyle =
+            "#f0dfb8";
+
+
+        ctx.fillText(
+            npc.name,
+            npc.x,
+            npc.y -
+                30
+        );
+
+
+        ctx.font =
+            "10px Arial";
+
+
+        ctx.fillStyle =
+            "#cac3b0";
+
+
+        ctx.fillText(
+            npc.role ||
+                "",
+            npc.x,
+            npc.y +
+                36
+        );
+    }
+
+
+    function drawNPCs() {
+
+        state.world
+            .npcs
+            .forEach(
+                drawNPCBody
+            );
+    }
+
+
+    /* =====================================================
+       INIMIGOS
+    ===================================================== */
+
+    function drawEnemies() {
+
+        state.world
+            .enemies
+            .forEach(
+                enemy => {
+
+                    if (
+                        enemy.dead
+                    ) {
+
+                        return;
+                    }
+
+
+                    ctx.save();
+
+
+                    if (
+                        enemy.telegraphing
+                    ) {
+
+                        ctx.strokeStyle =
+                            "rgba(255,85,72,.58)";
+
+
+                        ctx.lineWidth =
+                            2;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            enemy.x,
+                            enemy.y,
+
+                            enemy.radius +
+                                12 +
+                                Math.sin(
+                                    state.time *
+                                        10
+                                ) *
+                                    5,
+
+                            0,
+
+                            Math.PI *
+                                2
+                        );
+
+
+                        ctx.stroke();
+                    }
+
+
+                    /* SOMBRA */
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.3)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.ellipse(
+
+                        enemy.x,
+
+                        enemy.y +
+                            enemy.radius,
+
+                        enemy.radius *
+                            1.1,
+
+                        enemy.radius *
+                            0.42,
+
+                        0,
+                        0,
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.fill();
+
+
+                    const boss =
+                        [
+                            "progression",
+                            "final",
+                            "monarch"
+                        ].includes(
+                            enemy.type
+                        );
+
+
+                    ctx.fillStyle =
+
+                        enemy.hitFlash >
+                        0
+
+                            ? "#ffffff"
+
+                            : enemy.color;
+
+
+                    ctx.beginPath();
+
+
+                    if (
+                        boss
+                    ) {
+
+                        ctx.moveTo(
+                            enemy.x,
+                            enemy.y -
+                                enemy.radius
+                        );
+
+
+                        ctx.lineTo(
+                            enemy.x +
+                                enemy.radius,
+                            enemy.y
+                        );
+
+
+                        ctx.lineTo(
+                            enemy.x,
+                            enemy.y +
+                                enemy.radius
+                        );
+
+
+                        ctx.lineTo(
+                            enemy.x -
+                                enemy.radius,
+                            enemy.y
+                        );
+
+
+                        ctx.closePath();
+                    }
+
+
+                    else {
+
+                        ctx.arc(
+                            enemy.x,
+                            enemy.y,
+                            enemy.radius,
+                            0,
+                            Math.PI *
+                                2
+                        );
+                    }
+
+
+                    ctx.fill();
+
+
+                    ctx.strokeStyle =
+
+                        boss
+                            ? "#e0ae63"
+                            : "#d0bd78";
+
+
+                    ctx.lineWidth =
+
+                        boss
+                            ? 3
+                            : 1.5;
+
+
+                    ctx.stroke();
+
+
+                    /* ============================
+                       MONARCA DESNORTEADO
+                    ============================ */
+
+                    if (
+                        enemy.id ===
+                            "monarch" &&
+                        enemy.staggerTimer >
+                            0
+                    ) {
+
+                        const wobble =
+                            Math.sin(
+                                state.time *
+                                    16
+                            ) *
+                                5;
+
+
+                        ctx.translate(
+                            wobble,
+                            0
+                        );
+                    }
+
+
+                    ctx.font =
+
+                        boss
+                            ? "27px Arial"
+                            : "20px Arial";
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.textBaseline =
+                        "middle";
+
+
+                    ctx.fillText(
+                        enemy.icon ||
+                            "☠",
+                        enemy.x,
+                        enemy.y +
+                            1
+                    );
+
+
+                    if (
+                        enemy.id ===
+                            "monarch" &&
+                        enemy.staggerTimer >
+                            0
+                    ) {
+
+                        ctx.font =
+                            "18px Arial";
+
+
+                        for (
+                            let i = 0;
+                            i <
+                            3;
+                            i++
+                        ) {
+
+                            const angle =
+                                state.time *
+                                    4 +
+                                i *
+                                    Math.PI *
+                                    2 /
+                                    3;
+
+
+                            ctx.fillText(
+
+                                "💫",
+
+                                enemy.x +
+                                    Math.cos(
+                                        angle
+                                    ) *
+                                        42,
+
+                                enemy.y -
+                                    42 +
+                                    Math.sin(
+                                        angle
+                                    ) *
+                                        10
+                            );
+                        }
+                    }
+
+
+                    ctx.font =
+
+                        boss
+
+                            ? "bold 12px Arial"
+
+                            : "bold 10px Arial";
+
+
+                    ctx.fillStyle =
+
+                        boss
+
+                            ? "#ffcc8a"
+
+                            : "#ede2c2";
+
+
+                    ctx.fillText(
+
+                        enemy.name,
+
+                        enemy.x,
+
+                        enemy.y +
+                            enemy.radius +
+                            19
+                    );
+
+
+                    const barWidth =
+                        enemy.radius *
+                        2.6;
+
+
+                    ctx.fillStyle =
+                        "#211f1d";
+
+
+                    ctx.fillRect(
+
+                        enemy.x -
+                            barWidth /
+                                2,
+
+                        enemy.y -
+                            enemy.radius -
+                            14,
+
+                        barWidth,
+                        6
+                    );
+
+
+                    ctx.fillStyle =
+
+                        enemy.id ===
+                        "monarch"
+
+                            ? "#8f4fb2"
+
+                            : "#b84e48";
+
+
+                    ctx.fillRect(
+
+                        enemy.x -
+                            barWidth /
+                                2,
+
+                        enemy.y -
+                            enemy.radius -
+                            14,
+
+                        barWidth *
+                            clamp(
+                                enemy.hp /
+                                    enemy.maxHp,
+                                0,
+                                1
+                            ),
+
+                        6
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       PORTAIS
+    ===================================================== */
+
+    function drawPortals() {
+
+        state.world
+            .portals
+            .forEach(
+                portal => {
+
+                    if (
+                        typeof portal
+                            .visible ===
+                            "function" &&
+                        !portal.visible()
+                    ) {
+
+                        return;
+                    }
+
+
+                    const unlocked =
+
+                        typeof portal
+                            .requirement ===
+                            "function"
+
+                            ? portal.requirement()
+
+                            : true;
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+
+                        unlocked
+
+                            ? "rgba(76,150,198,.20)"
+
+                            : "rgba(80,80,80,.15)";
+
+
+                    ctx.fillRect(
+                        portal.x,
+                        portal.y,
+                        portal.w,
+                        portal.h
+                    );
+
+
+                    ctx.strokeStyle =
+
+                        unlocked
+
+                            ? "#8fbcd0"
+
+                            : "#686963";
+
+
+                    ctx.lineWidth =
+                        2;
+
+
+                    ctx.strokeRect(
+                        portal.x,
+                        portal.y,
+                        portal.w,
+                        portal.h
+                    );
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.font =
+                        "bold 12px Georgia";
+
+
+                    ctx.fillStyle =
+
+                        unlocked
+
+                            ? "#e3d19f"
+
+                            : "#94948b";
+
+
+                    ctx.fillText(
+
+                        unlocked
+
+                            ? (
+                                portal.returnPortal
+
+                                    ? "VOLTAR"
+
+                                    : "CONTINUAR"
+                            )
+
+                            : "BLOQUEADO",
+
+                        portal.x +
+                            portal.w /
+                                2,
+
+                        portal.y -
+                            10
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       DROPS
+    ===================================================== */
+
+    function drawDrops() {
+
+        state.world
+            .drops
+            .forEach(
+                drop => {
+
+                    if (
+                        drop.collected
+                    ) {
+
+                        return;
+                    }
+
+
+                    const item =
+                        ITEMS[
+                            drop.type
+                        ];
+
+
+                    if (
+                        !item
+                    ) {
+
+                        return;
+                    }
+
+
+                    const bob =
+                        Math.sin(
+                            state.time *
+                                3 +
+                            drop.bob
+                        ) *
+                        5;
+
+
+                    ctx.save();
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.font =
+                        "24px Arial";
+
+
+                    ctx.fillText(
+                        item.icon,
+                        drop.x,
+                        drop.y +
+                            bob
+                    );
+
+
+                    ctx.strokeStyle =
+                        "rgba(250,214,128,.35)";
+
+
+                    ctx.lineWidth =
+                        2;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        drop.x,
+
+                        drop.y +
+                            bob -
+                            5,
+
+                        22 +
+                            Math.sin(
+                                state.time *
+                                    4
+                            ) *
+                                2,
+
+                        0,
+
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.stroke();
+
+
+                    if (
+                        distance(
+                            drop,
+                            state.player
+                        ) <
+                        95
+                    ) {
+
+                        ctx.font =
+                            "bold 10px Arial";
+
+
+                        ctx.fillStyle =
+                            "#ffe0a1";
+
+
+                        ctx.fillText(
+                            "[E] PEGAR",
+                            drop.x,
+                            drop.y +
+                                34
+                        );
+                    }
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       EFEITOS
+    ===================================================== */
+
+    function drawEffects() {
+
+        for (
+            const effect of
+            state.world.effects
+        ) {
+
+            const lifeRatio =
+
+                effect.maxLife
+
+                    ? clamp(
+                        effect.life /
+                            effect.maxLife,
+                        0,
+                        1
+                    )
+
+                    : 1;
+
+
+            ctx.save();
+
+
+            ctx.globalAlpha =
+                Math.max(
+                    0.08,
+                    lifeRatio
+                );
+
+
+            /* ============================
+               NÚMERO DE DANO
+            ============================ */
+
+            if (
+                effect.type ===
+                "damageNumber"
+            ) {
+
+                ctx.textAlign =
+                    "center";
+
+
+                ctx.font =
+                    "bold 18px Arial";
+
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.fillText(
+
+                    effect.text ||
+                        "",
+
+                    effect.x,
+
+                    effect.y -
+                        (
+                            1 -
+                            lifeRatio
+                        ) *
+                            28
+                );
+            }
+
+
+            /* ============================
+               ONDAS
+            ============================ */
+
+            else if (
+                [
+                    "skillRing",
+                    "roarWave",
+                    "bossPhase",
+                    "hazardImpact",
+                    "playerHitBurst",
+                    "monarchCast",
+                    "monarchRecover",
+                    "dashUnlock",
+                    "secretReveal",
+                    "levelUp"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                const radius =
+                    (
+                        effect.radius ||
+                        70
+                    ) *
+                    (
+                        1.25 -
+                        lifeRatio *
+                            0.25
+                    );
+
+
+                ctx.strokeStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.lineWidth =
+                    2 +
+                    lifeRatio *
+                        4;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    effect.x ??
+                        state.player.x,
+
+                    effect.y ??
+                        state.player.y,
+
+                    radius,
+
+                    0,
+
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.stroke();
+            }
+
+
+            /* ============================
+               AVISO DE DASH
+            ============================ */
+
+            else if (
+                effect.type ===
+                "dashWarning"
+            ) {
+
+                ctx.strokeStyle =
+                    effect.color ||
+                    "#ff4c45";
+
+
+                ctx.lineWidth =
+                    5;
+
+
+                ctx.setLineDash(
+                    [
+                        14,
+                        12
+                    ]
+                );
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    effect.x,
+                    effect.y
+                );
+
+
+                ctx.lineTo(
+                    effect.tx,
+                    effect.ty
+                );
+
+
+                ctx.stroke();
+
+
+                ctx.setLineDash(
+                    []
+                );
+            }
+
+
+            /* ============================
+               PROJÉTEIS DE SKILL
+            ============================ */
+
+            else if (
+                [
+                    "memoryOrb",
+                    "fairyArrow"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                const t =
+                    1 -
+                    lifeRatio;
+
+
+                const x =
+                    effect.x +
+                    (
+                        effect.tx -
+                        effect.x
+                    ) *
+                        t;
+
+
+                const y =
+                    effect.y +
+                    (
+                        effect.ty -
+                        effect.y
+                    ) *
+                        t;
+
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowColor =
+                    effect.glow ||
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowBlur =
+                    18;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    x,
+                    y,
+
+                    effect.type ===
+                    "memoryOrb"
+
+                        ? 13
+
+                        : 7,
+
+                    0,
+
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            else if (
+                [
+                    "rockProjectile",
+                    "crystalProjectile",
+                    "webProjectile"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                const t =
+                    1 -
+                    lifeRatio;
+
+
+                const x =
+                    effect.x +
+                    (
+                        effect.tx -
+                        effect.x
+                    ) *
+                        t;
+
+
+                const y =
+                    effect.y +
+                    (
+                        effect.ty -
+                        effect.y
+                    ) *
+                        t;
+
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#aaaaaa";
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    x,
+                    y,
+                    8,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            else if (
+                [
+                    "playerProjectile",
+                    "fairyShot"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowColor =
+                    effect.glow ||
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowBlur =
+                    16;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    effect.x,
+                    effect.y,
+                    effect.radius ||
+                        8,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            /* ============================
+               ATAQUES CORPO A CORPO
+            ============================ */
+
+            else if (
+                [
+                    "bladeArc",
+                    "smashArc",
+                    "clawArc"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                ctx.strokeStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.lineWidth =
+                    effect.heavy
+                        ? 9
+                        : 6;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    effect.x,
+                    effect.y,
+
+                    effect.radius ||
+                        70,
+
+                    (
+                        effect.angle ||
+                        0
+                    ) -
+                        0.8,
+
+                    (
+                        effect.angle ||
+                        0
+                    ) +
+                        0.8
+                );
+
+
+                ctx.stroke();
+            }
+
+
+            /* ============================
+               RACHADURAS
+            ============================ */
+
+            else if (
+                effect.type ===
+                "groundCrack"
+            ) {
+
+                ctx.strokeStyle =
+                    effect.color ||
+                    "#8b7049";
+
+
+                ctx.lineWidth =
+                    4;
+
+
+                for (
+                    let i = 0;
+                    i <
+                    8;
+                    i++
+                ) {
+
+                    const angle =
+                        i *
+                        Math.PI /
+                        4;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+                        effect.x,
+                        effect.y
+                    );
+
+
+                    ctx.lineTo(
+
+                        effect.x +
+                            Math.cos(
+                                angle
+                            ) *
+                            (
+                                effect.radius ||
+                                130
+                            ),
+
+                        effect.y +
+                            Math.sin(
+                                angle
+                            ) *
+                            (
+                                effect.radius ||
+                                130
+                            )
+                    );
+
+
+                    ctx.stroke();
+                }
+            }
+
+
+            /* ============================
+               AURAS
+            ============================ */
+
+            else if (
+                [
+                    "shieldAura",
+                    "transformAura",
+                    "healingAura"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                const player =
+                    state.player;
+
+
+                if (
+                    player
+                ) {
+
+                    ctx.strokeStyle =
+                        effect.color ||
+                        "#ffffff";
+
+
+                    ctx.lineWidth =
+                        4;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        player.x,
+                        player.y,
+
+                        34 +
+                            Math.sin(
+                                state.time *
+                                    5
+                            ) *
+                                4,
+
+                        0,
+
+                        Math.PI *
+                            2
+                    );
+
+
+                    ctx.stroke();
+                }
+            }
+
+
+            else if (
+                [
+                    "memoryStrike",
+                    "fairyStar"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowColor =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.shadowBlur =
+                    15;
+
+
+                ctx.font =
+                    "24px Arial";
+
+
+                ctx.textAlign =
+                    "center";
+
+
+                ctx.fillText(
+                    "✦",
+                    effect.x,
+                    effect.y
+                );
+            }
+
+
+            /* ============================
+               EXPLOSÃO DO MONARCA
+            ============================ */
+
+            else if (
+                effect.type ===
+                "monarchExplosion"
+            ) {
+
+                const radius =
+                    (
+                        effect.radius ||
+                        240
+                    ) *
+                    (
+                        1.15 -
+                        lifeRatio *
+                            0.15
+                    );
+
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#7d44aa";
+
+
+                ctx.globalAlpha =
+                    (
+                        1 -
+                        lifeRatio
+                    ) *
+                        0.25 +
+                    lifeRatio *
+                        0.08;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    effect.x,
+                    effect.y,
+                    radius,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+
+
+                ctx.strokeStyle =
+                    "#b47dd4";
+
+
+                ctx.lineWidth =
+                    8;
+
+
+                ctx.globalAlpha =
+                    lifeRatio;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    effect.x,
+                    effect.y,
+
+                    radius *
+                        (
+                            1 -
+                            lifeRatio *
+                                0.75
+                        ),
+
+                    0,
+
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.stroke();
+            }
+
+
+            /* ============================
+               CLONE NASCENDO
+            ============================ */
+
+            else if (
+                effect.type ===
+                "shadowSpawn"
+            ) {
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#684783";
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    effect.x,
+                    effect.y,
+
+                    (
+                        effect.radius ||
+                        50
+                    ) *
+                    (
+                        1.2 -
+                        lifeRatio *
+                            0.2
+                    ),
+
+                    16 *
+                        lifeRatio +
+                        5,
+
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            /* ============================
+               RASTRO
+            ============================ */
+
+            else if (
+                [
+                    "dashAfterimage",
+                    "chargeTrail"
+                ].includes(
+                    effect.type
+                )
+            ) {
+
+                ctx.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.globalAlpha =
+                    lifeRatio *
+                    0.25;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    effect.x,
+                    effect.y,
+
+                    effect.radius ||
+                        18,
+
+                    0,
+
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.fill();
+            }
+
+
+            else if (
+                effect.type ===
+                    "woodBurst" ||
+                effect.type ===
+                    "forgeBurst" ||
+                effect.type ===
+                    "enemyDeath"
+            ) {
+
+                ctx.strokeStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                ctx.lineWidth =
+                    4;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    effect.x,
+                    effect.y,
+
+                    (
+                        effect.radius ||
+                        45
+                    ) *
+                    (
+                        1.3 -
+                        lifeRatio *
+                            0.3
+                    ),
+
+                    0,
+
+                    Math.PI *
+                        2
+                );
+
+
+                ctx.stroke();
+            }
+
+
+            ctx.restore();
+        }
+    }
+
+
+    /* =====================================================
+       PLAYER
+    ===================================================== */
+
+    function drawPlayer() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+        ) {
+
+            return;
+        }
+
+
+        if (
+            player.invincible >
+                0 &&
+            Math.floor(
+                player.invincible *
+                    16
+            ) %
+                2 ===
+                0
+        ) {
+
+            return;
+        }
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.28)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            player.x,
+            player.y +
+                20,
+            21,
+            8,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        const armor =
+            ITEMS[
+                player.equipment
+                    ?.armor
+            ];
+
+
+        const armorTier =
+            armor?.tier ||
+            0;
+
+
+        const armorColors = {
+
+            1:
+                "#5f8e4f",
+
+            2:
+                "#d8d1bf",
+
+            3:
+                "#8a5c35",
+
+            4:
+                "#76523e",
+
+            5:
+                "#8c949a",
+
+            6:
+                "#d7b64a",
+
+            7:
+                "#78c8dd",
+
+            8:
+                "#b94b5c"
+        };
+
+
+        ctx.fillStyle =
+            armorColors[
+                armorTier
+            ] ||
+            player.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            player.x,
+            player.y,
+
+            player.radius +
+                (
+                    armorTier
+                        ? 2
+                        : 0
+                ),
+
+            0,
+
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            armorTier
+        ) {
+
+            ctx.strokeStyle =
+                "rgba(255,255,255,.45)";
+
+
+            ctx.lineWidth =
+                2;
+
+
+            ctx.stroke();
+        }
+
+
+        ctx.fillStyle =
+            "#e5c3a2";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            player.x,
+            player.y -
+                12,
+            10,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#2d241f";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            player.x,
+            player.y -
+                16,
+            10,
+            Math.PI,
+            Math.PI *
+                2
+        );
+
+
+        ctx.fill();
+
+
+        /*
+            AURA SUAVE QUANDO DASH ESTÁ PRONTO.
+        */
+
+        if (
+            player.abilities
+                ?.dash &&
+            player.dashCooldown <=
+                0
+        ) {
+
+            ctx.strokeStyle =
+                "rgba(210,180,255,.28)";
+
+
+            ctx.lineWidth =
+                2;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                player.x,
+                player.y,
+
+                player.radius +
+                    8 +
+                    Math.sin(
+                        state.time *
+                            3
+                    ) *
+                        2,
+
+                0,
+
+                Math.PI *
+                    2
+            );
+
+
+            ctx.stroke();
+        }
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.font =
+            "bold 13px Arial";
+
+
+        ctx.fillStyle =
+            "#fff0c8";
+
+
+        ctx.fillText(
+            player.name,
+            player.x,
+            player.y -
+                40
+        );
+
+
+        ctx.restore();
+    }
+
+
+    /* =====================================================
+       TEXTOS NO MUNDO
+    ===================================================== */
+
+    function drawWorldLabels() {
+
+        ctx.save();
+
+
+        ctx.textAlign =
+            "center";
+
+
+        if (
+            state.area ===
+            "village"
+        ) {
+
+            ctx.font =
+                "bold 22px Georgia";
+
+
+            ctx.fillStyle =
+                "rgba(255,229,172,.78)";
+
+
+            ctx.fillText(
+                "PRAÇA DA VILA",
+                1600,
+                840
+            );
+
+
+            ctx.font =
+                "14px Georgia";
+
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.58)";
+
+
+            ctx.fillText(
+                "Quatro caminhos cercam a Vila do Crepúsculo.",
+                1600,
+                868
+            );
+
+
+            ctx.font =
+                "bold 13px Arial";
+
+
+            ctx.fillStyle =
+                "rgba(240,220,177,.6)";
+
+
+            ctx.fillText(
+                "NORTE",
+                1600,
+                210
+            );
+
+
+            ctx.fillText(
+                "LESTE",
+                2990,
+                1075
+            );
+
+
+            ctx.fillText(
+                "OESTE",
+                220,
+                1075
+            );
+
+
+            ctx.fillText(
+                "SUL",
+                1600,
+                1980
+            );
+        }
+
+
+        if (
+            state.area ===
+            "monarchMaze"
+        ) {
+
+            ctx.font =
+                "bold 16px Georgia";
+
+
+            ctx.fillStyle =
+                "rgba(193,151,214,.62)";
+
+
+            ctx.fillText(
+                "O SILÊNCIO OBSERVA.",
+                2050,
+                400
+            );
+        }
+
+
+        ctx.restore();
+    }
+
+
+    /* =====================================================
+       PARTÍCULAS
+    ===================================================== */
+
+    function drawParticles() {
+
+        state.world
+            .particles
+            .forEach(
+                particle => {
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+                        clamp(
+
+                            particle.life /
+                            Math.max(
+                                0.01,
+                                particle.maxLife ||
+                                    0.8
+                            ),
+
+                            0,
+                            1
+                        );
+
+
+                    ctx.fillStyle =
+                        particle.color;
+
+
+                    ctx.fillRect(
+                        particle.x,
+                        particle.y,
+                        particle.size ||
+                            4,
+                        particle.size ||
+                            4
+                    );
+
+
+                    ctx.restore();
+                }
+            );
+    }
+
+
+    /* =====================================================
+       LANTERNA — RAYCAST CONTRA PAREDES
+    ===================================================== */
+
+    function rayRectDistance(
+        originX,
+        originY,
+        directionX,
+        directionY,
+        rect,
+        maxDistance
+    ) {
+
+        let minimum =
+            maxDistance;
+
+
+        const epsilon =
+            1e-9;
+
+
+        if (
+            Math.abs(
+                directionX
+            ) >
+            epsilon
+        ) {
+
+            for (
+                const x of
+                [
+                    rect.x,
+                    rect.x +
+                        rect.w
+                ]
+            ) {
+
+                const t =
+                    (
+                        x -
+                        originX
+                    ) /
+                    directionX;
+
+
+                if (
+                    t >
+                        0 &&
+                    t <
+                        minimum
+                ) {
+
+                    const y =
+                        originY +
+                        directionY *
+                            t;
+
+
+                    if (
+                        y >=
+                            rect.y -
+                                0.1 &&
+                        y <=
+                            rect.y +
+                                rect.h +
+                                0.1
+                    ) {
+
+                        minimum =
+                            t;
+                    }
+                }
+            }
+        }
+
+
+        if (
+            Math.abs(
+                directionY
+            ) >
+            epsilon
+        ) {
+
+            for (
+                const y of
+                [
+                    rect.y,
+                    rect.y +
+                        rect.h
+                ]
+            ) {
+
+                const t =
+                    (
+                        y -
+                        originY
+                    ) /
+                    directionY;
+
+
+                if (
+                    t >
+                        0 &&
+                    t <
+                        minimum
+                ) {
+
+                    const x =
+                        originX +
+                        directionX *
+                            t;
+
+
+                    if (
+                        x >=
+                            rect.x -
+                                0.1 &&
+                        x <=
+                            rect.x +
+                                rect.w +
+                                0.1
+                    ) {
+
+                        minimum =
+                            t;
+                    }
+                }
+            }
+        }
+
+
+        return minimum;
+    }
+
+
+    function computeLightPolygon(
+        x,
+        y,
+        radius
+    ) {
+
+        const blockers =
+            state.world
+                .obstacles
+                .filter(
+                    obstacle =>
+
+                        obstacle.blocksLight &&
+
+                        obstacle.x <
+                            x +
+                                radius &&
+
+                        obstacle.x +
+                            obstacle.w >
+                            x -
+                                radius &&
+
+                        obstacle.y <
+                            y +
+                                radius &&
+
+                        obstacle.y +
+                            obstacle.h >
+                            y -
+                                radius
+                );
+
+
+        const angles =
+            [];
+
+
+        /*
+            RAIOS BASE.
+        */
+
+        const baseCount =
+            96;
+
+
+        for (
+            let i = 0;
+            i <
+            baseCount;
+            i++
+        ) {
+
+            angles.push(
+                i /
+                    baseCount *
+                    Math.PI *
+                    2
+            );
+        }
+
+
+        /*
+            RAIOS EXATOS NOS CANTOS DAS PAREDES.
+
+            ISSO EVITA A LUZ "VAZAR" FACILMENTE
+            PELOS CANTOS DO LABIRINTO.
+        */
+
+        blockers
+            .forEach(
+                rect => {
+
+                    [
+                        [
+                            rect.x,
+                            rect.y
+                        ],
+
+                        [
+                            rect.x +
+                                rect.w,
+                            rect.y
+                        ],
+
+                        [
+                            rect.x,
+                            rect.y +
+                                rect.h
+                        ],
+
+                        [
+                            rect.x +
+                                rect.w,
+                            rect.y +
+                                rect.h
+                        ]
+                    ]
+                        .forEach(
+                            (
+                                [
+                                    cornerX,
+                                    cornerY
+                                ]
+                            ) => {
+
+                                const angle =
+                                    Math.atan2(
+
+                                        cornerY -
+                                            y,
+
+                                        cornerX -
+                                            x
+                                    );
+
+
+                                angles.push(
+                                    angle -
+                                        0.0008,
+
+                                    angle,
+
+                                    angle +
+                                        0.0008
+                                );
+                            }
+                        );
+                }
+            );
+
+
+        angles.sort(
+            (
+                a,
+                b
+            ) =>
+                a -
+                b
+        );
+
+
+        return angles
+            .map(
+                angle => {
+
+                    const directionX =
+                        Math.cos(
+                            angle
+                        );
+
+
+                    const directionY =
+                        Math.sin(
+                            angle
+                        );
+
+
+                    let distanceAmount =
+                        radius;
+
+
+                    for (
+                        const rect of
+                        blockers
+                    ) {
+
+                        distanceAmount =
+                            Math.min(
+
+                                distanceAmount,
+
+                                rayRectDistance(
+
+                                    x,
+                                    y,
+
+                                    directionX,
+                                    directionY,
+
+                                    rect,
+
+                                    distanceAmount
+                                )
+                            );
+                    }
+
+
+                    distanceAmount =
+                        Math.max(
+                            0,
+                            distanceAmount -
+                                2
+                        );
+
+
+                    return {
+
+                        x:
+                            x +
+                            directionX *
+                                distanceAmount,
+
+                        y:
+                            y +
+                            directionY *
+                                distanceAmount,
+
+                        angle
+                    };
+                }
+            );
+    }
+
+
+    /* =====================================================
+       ESCURIDÃO DO LABIRINTO
+    ===================================================== */
+
+    function drawDarknessOverlay() {
+
+        if (
+            !REGIONS[
+                state.area
+            ]?.dark ||
+            state.houseMode ||
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const width =
+            Math.max(
+                1,
+                Math.floor(
+                    window.innerWidth
+                )
+            );
+
+
+        const height =
+            Math.max(
+                1,
+                Math.floor(
+                    window.innerHeight
+                )
+            );
+
+
+        if (
+            darknessBufferRuntime
+                .width !==
+                width ||
+            darknessBufferRuntime
+                .height !==
+                height
+        ) {
+
+            darknessBufferRuntime.width =
+                width;
+
+
+            darknessBufferRuntime.height =
+                height;
+        }
+
+
+        const darkCtx =
+            darknessBufferCtxRuntime;
+
+
+        darkCtx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        const hasLantern =
+            hasItem(
+                "lanterna"
+            );
+
+
+        /*
+            SEM LANTERNA:
+            PRATICAMENTE TUDO PRETO.
+
+            NÃO EXISTE BRILHO DO ALTAR
+            ENTREGANDO O CAMINHO.
+        */
+
+        darkCtx.fillStyle =
+
+            hasLantern
+
+                ? "rgba(0,0,0,.965)"
+
+                : "rgba(0,0,0,.997)";
+
+
+        darkCtx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        if (
+            hasLantern
+        ) {
+
+            /*
+                APROXIMADAMENTE 2–3 VEZES
+                O TAMANHO VISUAL DO PLAYER.
+
+                Foi ampliado o suficiente para
+                navegação continuar divertida.
+            */
+
+            const radius =
+                230;
+
+
+            const polygon =
+                computeLightPolygon(
+
+                    state.player.x,
+                    state.player.y,
+
+                    radius
+                );
+
+
+            const playerScreenX =
+                state.player.x -
+                state.camera.x;
+
+
+            const playerScreenY =
+                state.player.y -
+                state.camera.y;
+
+
+            darkCtx.save();
+
+
+            darkCtx.globalCompositeOperation =
+                "destination-out";
+
+
+            darkCtx.beginPath();
+
+
+            polygon
+                .forEach(
+                    (
+                        point,
+                        index
+                    ) => {
+
+                        const screenX =
+                            point.x -
+                            state.camera.x;
+
+
+                        const screenY =
+                            point.y -
+                            state.camera.y;
+
+
+                        if (
+                            index ===
+                            0
+                        ) {
+
+                            darkCtx.moveTo(
+                                screenX,
+                                screenY
+                            );
+                        }
+
+
+                        else {
+
+                            darkCtx.lineTo(
+                                screenX,
+                                screenY
+                            );
+                        }
+                    }
+                );
+
+
+            darkCtx.closePath();
+
+
+            darkCtx.clip();
+
+
+            const gradient =
+                darkCtx
+                    .createRadialGradient(
+
+                        playerScreenX,
+                        playerScreenY,
+
+                        24,
+
+                        playerScreenX,
+                        playerScreenY,
+
+                        radius
+                    );
+
+
+            /*
+                CENTRO FORTE.
+                BORDA COM FADE.
+            */
+
+            gradient.addColorStop(
+                0,
+                "rgba(0,0,0,1)"
+            );
+
+
+            gradient.addColorStop(
+                0.52,
+                "rgba(0,0,0,.94)"
+            );
+
+
+            gradient.addColorStop(
+                0.80,
+                "rgba(0,0,0,.58)"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "rgba(0,0,0,0)"
+            );
+
+
+            darkCtx.fillStyle =
+                gradient;
+
+
+            darkCtx.fillRect(
+
+                playerScreenX -
+                    radius,
+
+                playerScreenY -
+                    radius,
+
+                radius *
+                    2,
+
+                radius *
+                    2
+            );
+
+
+            darkCtx.restore();
+        }
+
+
+        ctx.drawImage(
+
+            darknessBufferRuntime,
+
+            0,
+            0,
+            width,
+            height
+        );
+    }
+
+
+    /* =====================================================
+       TELA VERMELHA + MANCHAS DE SANGUE
+    ===================================================== */
+
+    function drawDamageScreenOverlay() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const flash =
+            clamp(
+                state.damageFlash ||
+                0,
+                0,
+                0.55
+            );
+
+
+        /*
+            VINHETA VERMELHA.
+
+            O CENTRO CONTINUA VISÍVEL.
+        */
+
+        if (
+            flash >
+            0
+        ) {
+
+            const gradient =
+                ctx.createRadialGradient(
+
+                    window.innerWidth /
+                        2,
+
+                    window.innerHeight /
+                        2,
+
+                    Math.min(
+                        window.innerWidth,
+                        window.innerHeight
+                    ) *
+                        0.18,
+
+                    window.innerWidth /
+                        2,
+
+                    window.innerHeight /
+                        2,
+
+                    Math.max(
+                        window.innerWidth,
+                        window.innerHeight
+                    ) *
+                        0.70
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(130,0,0,0)"
+            );
+
+
+            gradient.addColorStop(
+                0.62,
+                `rgba(
+                    150,
+                    0,
+                    0,
+                    ${flash * 0.22}
+                )`
+            );
+
+
+            gradient.addColorStop(
+                1,
+                `rgba(
+                    225,
+                    18,
+                    25,
+                    ${flash}
+                )`
+            );
+
+
+            ctx.fillStyle =
+                gradient;
+
+
+            ctx.fillRect(
+                0,
+                0,
+                window.innerWidth,
+                window.innerHeight
+            );
+        }
+
+
+        /*
+            MANCHAS DE SANGUE NAS BORDAS.
+        */
+
+        for (
+            const mark of
+            state.bloodMarks
+        ) {
+
+            const alpha =
+                mark.alpha *
+                clamp(
+
+                    mark.life /
+                    Math.max(
+                        0.01,
+                        mark.maxLife ||
+                            2.5
+                    ),
+
+                    0,
+                    1
+                );
+
+
+            const x =
+                mark.x *
+                window.innerWidth;
+
+
+            const y =
+                mark.y *
+                window.innerHeight;
+
+
+            ctx.save();
+
+
+            ctx.translate(
+                x,
+                y
+            );
+
+
+            ctx.rotate(
+                mark.rotation
+            );
+
+
+            ctx.scale(
+                mark.stretch,
+                1
+            );
+
+
+            ctx.fillStyle =
+                `rgba(
+                    105,
+                    7,
+                    12,
+                    ${alpha}
+                )`;
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+                0,
+                0,
+                mark.radius,
+                mark.radius *
+                    0.45,
+                0,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            ctx.fill();
+
+
+            ctx.fillStyle =
+                `rgba(
+                    160,
+                    12,
+                    18,
+                    ${alpha * 0.55}
+                )`;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                mark.radius *
+                    0.45,
+                -mark.radius *
+                    0.12,
+                mark.radius *
+                    0.27,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            ctx.fill();
+
+
+            ctx.restore();
+        }
+    }
+
+
+    /* =====================================================
+       MINIMAPA
+    ===================================================== */
+
+    function drawMinimap() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const width =
+            miniCanvas.width;
+
+
+        const height =
+            miniCanvas.height;
+
+
+        miniCtx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        /*
+            LABIRINTO NÃO MOSTRA O CAMINHO.
+
+            SEM LANTERNA NEM A POSIÇÃO DO PLAYER
+            É MOSTRADA.
+        */
+
+        if (
+            state.area ===
+            "monarchMaze"
+        ) {
+
+            miniCtx.fillStyle =
+                "#07070a";
+
+
+            miniCtx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            miniCtx.fillStyle =
+                "#8a7a92";
+
+
+            miniCtx.font =
+                "bold 12px Arial";
+
+
+            miniCtx.textAlign =
+                "center";
+
+
+            if (
+                !hasItem(
+                    "lanterna"
+                )
+            ) {
+
+                miniCtx.fillText(
+                    "ESCURIDÃO TOTAL",
+                    width /
+                        2,
+                    height /
+                        2
+                );
+            }
+
+
+            else {
+
+                miniCtx.fillText(
+                    "LABIRINTO — ???",
+                    width /
+                        2,
+                    22
+                );
+
+
+                const playerX =
+                    state.player.x /
+                    state.world.width *
+                    width;
+
+
+                const playerY =
+                    state.player.y /
+                    state.world.height *
+                    height;
+
+
+                miniCtx.fillStyle =
+                    "#ffe18b";
+
+
+                miniCtx.beginPath();
+
+
+                miniCtx.arc(
+                    playerX,
+                    playerY,
+                    4,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                miniCtx.fill();
+            }
+
+
+            return;
+        }
+
+
+        const backgrounds = {
+
+            village:
+                "#526848",
+
+            forest:
+                "#36583a",
+
+            grove:
+                "#2f5036",
+
+            mountains:
+                "#8b9294",
+
+            iron:
+                "#25292c",
+
+            ruby:
+                "#432328",
+
+            shadow:
+                "#15192a",
+
+            fairy:
+                "#514064",
+
+            sky:
+                "#89a9c0",
+
+            hell:
+                "#3f1d1d",
+
+            final:
+                "#151418"
+        };
+
+
+        miniCtx.fillStyle =
+            backgrounds[
+                state.area
+            ] ||
+            "#333333";
+
+
+        miniCtx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        const scaleX =
+            width /
+            state.world.width;
+
+
+        const scaleY =
+            height /
+            state.world.height;
+
+
+        /* CAMINHOS */
+
+        miniCtx.lineCap =
+            "round";
+
+
+        miniCtx.lineJoin =
+            "round";
+
+
+        for (
+            const path of
+            state.world.paths
+        ) {
+
+            if (
+                !path.points
+                    ?.length
+            ) {
+
+                continue;
+            }
+
+
+            miniCtx.beginPath();
+
+
+            miniCtx.moveTo(
+                path.points[0].x *
+                    scaleX,
+                path.points[0].y *
+                    scaleY
+            );
+
+
+            for (
+                let i = 1;
+                i <
+                path.points.length;
+                i++
+            ) {
+
+                miniCtx.lineTo(
+                    path.points[i].x *
+                        scaleX,
+                    path.points[i].y *
+                        scaleY
+                );
+            }
+
+
+            miniCtx.strokeStyle =
+                "rgba(230,211,163,.52)";
+
+
+            miniCtx.lineWidth =
+                Math.max(
+                    2,
+                    path.width *
+                        scaleX
+                );
+
+
+            miniCtx.stroke();
+        }
+
+
+        /* CASAS */
+
+        miniCtx.fillStyle =
+            "rgba(232,215,170,.55)";
+
+
+        state.world
+            .buildings
+            .forEach(
+                building => {
+
+                    miniCtx.fillRect(
+
+                        building.x *
+                            scaleX,
+
+                        building.y *
+                            scaleY,
+
+                        Math.max(
+                            3,
+                            building.w *
+                                scaleX
+                        ),
+
+                        Math.max(
+                            3,
+                            building.h *
+                                scaleY
+                        )
+                    );
+                }
+            );
+
+
+        /* PORTÕES */
+
+        miniCtx.fillStyle =
+            "#c39a64";
+
+
+        state.world
+            .gates
+            .forEach(
+                gate => {
+
+                    miniCtx.fillRect(
+
+                        gate.x *
+                            scaleX,
+
+                        gate.y *
+                            scaleY,
+
+                        Math.max(
+                            3,
+                            gate.w *
+                                scaleX
+                        ),
+
+                        Math.max(
+                            3,
+                            gate.h *
+                                scaleY
+                        )
+                    );
+                }
+            );
+
+
+        /* PORTAIS */
+
+        miniCtx.fillStyle =
+            "#9ed4ed";
+
+
+        state.world
+            .portals
+            .forEach(
+                portal => {
+
+                    miniCtx.fillRect(
+
+                        portal.x *
+                            scaleX,
+
+                        portal.y *
+                            scaleY,
+
+                        Math.max(
+                            2,
+                            portal.w *
+                                scaleX
+                        ),
+
+                        Math.max(
+                            2,
+                            portal.h *
+                                scaleY
+                        )
+                    );
+                }
+            );
+
+
+        /* PLAYER */
+
+        miniCtx.fillStyle =
+            "#ffe18b";
+
+
+        miniCtx.beginPath();
+
+
+        miniCtx.arc(
+            state.player.x *
+                scaleX,
+            state.player.y *
+                scaleY,
+            4,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        miniCtx.fill();
+    }
+
+
+    /* =====================================================
+       MAPA GRANDE
+    ===================================================== */
+
+    function drawLargeMap() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        const width =
+            mapCanvas.width;
+
+
+        const height =
+            mapCanvas.height;
+
+
+        mapCtx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        mapCtx.fillStyle =
+            "#17191a";
+
+
+        mapCtx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        const margin =
+            36;
+
+
+        const scaleX =
+            (
+                width -
+                margin *
+                    2
+            ) /
+            state.world.width;
+
+
+        const scaleY =
+            (
+                height -
+                margin *
+                    2
+            ) /
+            state.world.height;
+
+
+        const scale =
+            Math.min(
+                scaleX,
+                scaleY
+            );
+
+
+        const offsetX =
+            (
+                width -
+                state.world.width *
+                    scale
+            ) /
+            2;
+
+
+        const offsetY =
+            (
+                height -
+                state.world.height *
+                    scale
+            ) /
+            2;
+
+
+        mapCtx.fillStyle =
+            "rgba(188,168,123,.08)";
+
+
+        mapCtx.fillRect(
+
+            offsetX,
+            offsetY,
+
+            state.world.width *
+                scale,
+
+            state.world.height *
+                scale
+        );
+
+
+        /*
+            LABIRINTO:
+            NUNCA ENTREGA O CAMINHO.
+        */
+
+        if (
+            state.area ===
+            "monarchMaze"
+        ) {
+
+            mapCtx.fillStyle =
+                "#08080b";
+
+
+            mapCtx.fillRect(
+
+                offsetX,
+                offsetY,
+
+                state.world.width *
+                    scale,
+
+                state.world.height *
+                    scale
+            );
+
+
+            mapCtx.fillStyle =
+                "#a18eac";
+
+
+            mapCtx.textAlign =
+                "center";
+
+
+            mapCtx.font =
+                "bold 24px Georgia";
+
+
+            mapCtx.fillText(
+                "O LABIRINTO NÃO SE DEIXA MEMORIZAR.",
+                width /
+                    2,
+                height /
+                    2 -
+                    15
+            );
+
+
+            mapCtx.font =
+                "14px Arial";
+
+
+            mapCtx.fillStyle =
+                "#7f7483";
+
+
+            mapCtx.fillText(
+                "Apenas sua posição atual permanece clara.",
+                width /
+                    2,
+                height /
+                    2 +
+                    18
+            );
+        }
+
+
+        else {
+
+            mapCtx.lineCap =
+                "round";
+
+
+            mapCtx.lineJoin =
+                "round";
+
+
+            for (
+                const path of
+                state.world.paths
+            ) {
+
+                if (
+                    !path.points
+                        ?.length
+                ) {
+
+                    continue;
+                }
+
+
+                mapCtx.beginPath();
+
+
+                mapCtx.moveTo(
+
+                    offsetX +
+                        path.points[0].x *
+                            scale,
+
+                    offsetY +
+                        path.points[0].y *
+                            scale
+                );
+
+
+                for (
+                    let i = 1;
+                    i <
+                    path.points.length;
+                    i++
+                ) {
+
+                    mapCtx.lineTo(
+
+                        offsetX +
+                            path.points[i].x *
+                                scale,
+
+                        offsetY +
+                            path.points[i].y *
+                                scale
+                    );
+                }
+
+
+                mapCtx.strokeStyle =
+                    "rgba(210,186,130,.60)";
+
+
+                mapCtx.lineWidth =
+                    Math.max(
+                        3,
+                        path.width *
+                            scale
+                    );
+
+
+                mapCtx.stroke();
+            }
+
+
+            mapCtx.fillStyle =
+                "#a68862";
+
+
+            state.world
+                .buildings
+                .forEach(
+                    building => {
+
+                        mapCtx.fillRect(
+
+                            offsetX +
+                                building.x *
+                                    scale,
+
+                            offsetY +
+                                building.y *
+                                    scale,
+
+                            Math.max(
+                                5,
+                                building.w *
+                                    scale
+                            ),
+
+                            Math.max(
+                                5,
+                                building.h *
+                                    scale
+                            )
+                        );
+                    }
+                );
+
+
+            mapCtx.fillStyle =
+                "#8ebed2";
+
+
+            state.world
+                .portals
+                .forEach(
+                    portal => {
+
+                        mapCtx.fillRect(
+
+                            offsetX +
+                                portal.x *
+                                    scale,
+
+                            offsetY +
+                                portal.y *
+                                    scale,
+
+                            Math.max(
+                                4,
+                                portal.w *
+                                    scale
+                            ),
+
+                            Math.max(
+                                4,
+                                portal.h *
+                                    scale
+                            )
+                        );
+                    }
+                );
+
+
+            mapCtx.fillStyle =
+                "#bf9d68";
+
+
+            state.world
+                .gates
+                .forEach(
+                    gate => {
+
+                        mapCtx.fillRect(
+
+                            offsetX +
+                                gate.x *
+                                    scale,
+
+                            offsetY +
+                                gate.y *
+                                    scale,
+
+                            Math.max(
+                                5,
+                                gate.w *
+                                    scale
+                            ),
+
+                            Math.max(
+                                5,
+                                gate.h *
+                                    scale
+                            )
+                        );
+                    }
+                );
+        }
+
+
+        /*
+            SEM LANTERNA NO LABIRINTO:
+            NÃO ENTREGA A POSIÇÃO.
+        */
+
+        if (
+            state.area !==
+                "monarchMaze" ||
+            hasItem(
+                "lanterna"
+            )
+        ) {
+
+            mapCtx.fillStyle =
+                "#ffe27d";
+
+
+            mapCtx.beginPath();
+
+
+            mapCtx.arc(
+
+                offsetX +
+                    state.player.x *
+                        scale,
+
+                offsetY +
+                    state.player.y *
+                        scale,
+
+                7,
+
+                0,
+
+                Math.PI *
+                    2
+            );
+
+
+            mapCtx.fill();
+        }
+
+
+        mapCtx.fillStyle =
+            "#ead6ad";
+
+
+        mapCtx.font =
+            "bold 18px Georgia";
+
+
+        mapCtx.textAlign =
+            "left";
+
+
+        mapCtx.fillText(
+            REGIONS[
+                state.area
+            ].name,
+            22,
+            28
+        );
+    }
+
+
+    /* =====================================================
+       SAVE
+    ===================================================== */
+
+    function saveGame(
+        showMessage =
+            true
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+        }
+
+
+        try {
+
+            const save = {
+
+                version:
+                    GAME_VERSION,
+
+                area:
+                    state.area,
+
+                player:
+                    state.player,
+
+                houseMode:
+                    state.houseMode,
+
+                currentHouseId:
+                    state.currentHouse
+                        ?.id ||
+                    null,
+
+                houseReturn:
+                    state.houseReturn,
+
+                savedAt:
+                    new Date()
+                        .toISOString()
+            };
+
+
+            /*
+                NOVA VERSÃO POSSUI CHAVE PRÓPRIA.
+                NÃO DESTRÓI SAVE ANTIGO ENQUANTO
+                NÃO FOR CONVERTIDO.
+            */
+
+            localStorage.setItem(
+
+                CURRENT_SAVE_KEY,
+
+                JSON.stringify(
+                    save
+                )
+            );
+
+
+            if (
+                showMessage
+            ) {
+
+                showToast(
+                    "Jogo salvo com sucesso."
+                );
+            }
+
+
+            updateContinueButton();
+        }
+
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "Erro ao salvar:",
+                error
+            );
+
+
+            if (
+                showMessage
+            ) {
+
+                showToast(
+                    "Não foi possível salvar o jogo."
+                );
+            }
+        }
+    }
+
+
+    /* =====================================================
+       LOCALIZAR SAVE
+    ===================================================== */
+
+    function getSaveRaw() {
+
+        const keys = [
+
+            CURRENT_SAVE_KEY,
+
+            SAVE_KEY,
+
+            "veyra_save_v16_playtest",
+
+            "veyra_save_v15_playtest",
+
+            "veyra_save_v14_stable"
+        ];
+
+
+        for (
+            const key of
+            [
+                ...new Set(
+                    keys
+                )
+            ]
+        ) {
+
+            try {
+
+                const raw =
+                    localStorage
+                        .getItem(
+                            key
+                        );
+
+
+                if (
+                    raw
+                ) {
+
+                    return {
+                        raw,
+                        key
+                    };
+                }
+            }
+
+
+            catch {
+
+                /* armazenamento indisponível */
+            }
+        }
+
+
+        return null;
+    }
+
+
+    /* =====================================================
+       LOAD
+    ===================================================== */
+
+    function loadGame() {
+
+        try {
+
+            const found =
+                getSaveRaw();
+
+
+            if (
+                !found
+            ) {
+
+                return false;
+            }
+
+
+            const save =
+                JSON.parse(
+                    found.raw
+                );
+
+
+            if (
+                !save
+                    ?.player
+            ) {
+
+                return false;
+            }
+
+
+            const character =
+                CHARACTERS
+                    .find(
+                        item =>
+                            item.id ===
+                            save.player
+                                .characterId
+                    );
+
+
+            if (
+                !character
+            ) {
+
+                return false;
+            }
+
+
+            state.player =
+                save.player;
+
+
+            state.area =
+
+                REGIONS[
+                    save.area
+                ]
+
+                    ? save.area
+
+                    : "village";
+
+
+            repairLoadedPlayer(
+                character
+            );
+
+
+            state.houseMode =
+                false;
+
+
+            state.currentHouse =
+                null;
+
+
+            state.houseReturn =
+                null;
+
+
+            state.dialogue =
+                null;
+
+
+            state.travel =
+                null;
+
+
+            state.battle =
+                null;
+
+
+            state.holdAction =
+                null;
+
+
+            state.bossBarTarget =
+                null;
+
+
+            state.damageFlash =
+                0;
+
+
+            state.bloodMarks =
+                [];
+
+
+            state.finalChoiceShown =
+                Boolean(
+                    state.player
+                        .finalChoice
+                );
+
+
+            buildWorld();
+
+
+            /*
+                RESTAURAR CASA.
+            */
+
+            if (
+                save.houseMode &&
+                state.area ===
+                    "village" &&
+                save.currentHouseId
+            ) {
+
+                const savedHouse =
+                    state.world
+                        .buildings
+                        .find(
+                            building =>
+                                building.id ===
+                                save.currentHouseId
+                        );
+
+
+                if (
+                    savedHouse
+                ) {
+
+                    state.houseMode =
+                        true;
+
+
+                    state.currentHouse =
+                        savedHouse;
+
+
+                    state.houseReturn =
+
+                        save.houseReturn ||
+
+                        {
+                            x:
+                                savedHouse.x +
+                                savedHouse.w /
+                                    2,
+
+                            y:
+                                savedHouse.y +
+                                savedHouse.h +
+                                58
+                        };
+
+
+                    placePlayerInsideHouse();
+                }
+            }
+
+
+            /*
+                GARANTE QUE PLAYER NÃO CARREGUE
+                PRESO DENTRO DE PAREDE.
+            */
+
+            if (
+                !state.houseMode
+            ) {
+
+                state.player.x =
+                    clamp(
+
+                        Number(
+                            state.player.x
+                        ) ||
+                        480,
+
+                        90,
+
+                        state.world.width -
+                            90
+                    );
+
+
+                state.player.y =
+                    clamp(
+
+                        Number(
+                            state.player.y
+                        ) ||
+                        610,
+
+                        90,
+
+                        state.world.height -
+                            90
+                    );
+
+
+                let safety =
+                    0;
+
+
+                while (
+                    !canPlayerMoveTo(
+
+                        state.player.x,
+                        state.player.y,
+
+                        state.player.radius
+                    ) &&
+                    safety++ <
+                        60
+                ) {
+
+                    state.player.x =
+                        clamp(
+
+                            state.player.x +
+                                22,
+
+                            90,
+
+                            state.world.width -
+                                90
+                        );
+
+
+                    state.player.y =
+                        clamp(
+
+                            state.player.y +
+                                17,
+
+                            90,
+
+                            state.world.height -
+                                90
+                        );
+                }
+            }
+
+
+            closeAllPanels();
+
+
+            updateHUD();
+
+
+            showScreen(
+                "game"
+            );
+
+
+            state.running =
+                true;
+
+
+            state.paused =
+                false;
+
+
+            state.lastTime =
+                performance.now();
+
+
+            updateCamera();
+
+
+            requestAnimationFrame(
+                gameLoop
+            );
+
+
+            showToast(
+
+                found.key ===
+                CURRENT_SAVE_KEY
+
+                    ? "Jogo carregado."
+
+                    : "Save antigo convertido para a nova versão."
+            );
+
+
+            return true;
+        }
+
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "Save inválido:",
+                error
+            );
+
+
+            return false;
+        }
+    }
+
+
+    /* =====================================================
+       REPARAR SAVE ANTIGO
+    ===================================================== */
+
+    function repairLoadedPlayer(
+        character
+    ) {
+
+        const player =
+            state.player;
+
+
+        /* ============================
+           BASE
+        ============================ */
+
+        player.baseMaxHp =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.baseMaxHp
+                ) ||
+                character.hp
+            );
+
+
+        player.baseMaxMagic =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.baseMaxMagic
+                ) ||
+                character.magic
+            );
+
+
+        player.baseMaxEnergy =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.baseMaxEnergy
+                ) ||
+                character.energy
+            );
+
+
+        player.baseDamage =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.baseDamage
+                ) ||
+                character.damage
+            );
+
+
+        player.baseDefense =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.baseDefense
+                ) ||
+                character.defense
+            );
+
+
+        player.baseSpeed =
+            Math.max(
+
+                60,
+
+                Number(
+                    player.baseSpeed
+                ) ||
+                character.speed
+            );
+
+
+        player.speed =
+            player.baseSpeed;
+
+
+        player.defense =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.defense
+                ) ||
+                player.baseDefense
+            );
+
+
+        /* ============================
+           NÍVEL
+        ============================ */
+
+        player.level =
+            clamp(
+
+                Math.floor(
+                    Number(
+                        player.level
+                    ) ||
+                    1
+                ),
+
+                1,
+
+                MAX_LEVEL
+            );
+
+
+        player.xp =
+            Math.max(
+
+                0,
+
+                Math.floor(
+                    Number(
+                        player.xp
+                    ) ||
+                    0
+                )
+            );
+
+
+        player.xpToNext =
+            Math.max(
+
+                1,
+
+                Math.floor(
+                    Number(
+                        player.xpToNext
+                    ) ||
+                    100
+                )
+            );
+
+
+        /* ============================
+           STATUS
+        ============================ */
+
+        const hadStats =
+
+            player.stats &&
+            typeof player.stats ===
+                "object";
+
+
+        player.stats =
+            player.stats ||
+            {};
+
+
+        for (
+            const key of
+            Object.keys(
+                STAT_CONFIG
+            )
+        ) {
+
+            player.stats[
+                key
+            ] =
+                clamp(
+
+                    Math.floor(
+                        Number(
+                            player.stats[
+                                key
+                            ]
+                        ) ||
+                        0
+                    ),
+
+                    0,
+
+                    STAT_POINT_CAP
+                );
+        }
+
+
+        player.statPoints =
+            Math.max(
+
+                0,
+
+                Math.floor(
+                    Number(
+                        player.statPoints
+                    ) ||
+                    0
+                )
+            );
+
+
+        /*
+            SAVE ANTIGO NÃO TINHA STATUS:
+            ENTREGA OS PONTOS QUE O PLAYER
+            TERIA RECEBIDO PELO NÍVEL.
+        */
+
+        if (
+            !hadStats &&
+            player.level >
+            1
+        ) {
+
+            player.statPoints +=
+                (
+                    player.level -
+                    1
+                ) *
+                POINTS_PER_LEVEL;
+        }
+
+
+        /* ============================
+           INVENTÁRIO
+        ============================ */
+
+        player.inventory =
+            player.inventory ||
+            {};
+
+
+        Object
+            .keys(
+                ITEMS
+            )
+            .forEach(
+                id => {
+
+                    const value =
+                        Number(
+                            player.inventory[
+                                id
+                            ]
+                        );
+
+
+                    player.inventory[
+                        id
+                    ] =
+
+                        Number.isFinite(
+                            value
+                        ) &&
+                        value >=
+                            0
+
+                            ? Math.floor(
+                                value
+                            )
+
+                            : 0;
+                }
+            );
+
+
+        /* ============================
+           EQUIPAMENTO
+        ============================ */
+
+        player.equipment =
+            player.equipment ||
+            {
+
+                weapon:
+                    null,
+
+                armor:
+                    null,
+
+                tool:
+                    "machado"
+            };
+
+
+        if (
+            !ITEMS[
+                player.equipment
+                    .weapon
+            ]
+        ) {
+
+            player.equipment
+                .weapon =
+                null;
+        }
+
+
+        if (
+            !ITEMS[
+                player.equipment
+                    .armor
+            ]
+        ) {
+
+            player.equipment
+                .armor =
+                null;
+        }
+
+
+        if (
+            !ITEMS[
+                player.equipment
+                    .tool
+            ]
+        ) {
+
+            player.equipment
+                .tool =
+
+                hasItem(
+                    "machado"
+                )
+
+                    ? "machado"
+
+                    : null;
+        }
+
+
+        /* ============================
+           MISSÕES
+        ============================ */
+
+        player.quest =
+            player.quest ||
+            {};
+
+
+        player.quest.wood =
+            player.quest.wood ||
+            {
+
+                state:
+                    "none",
+
+                need:
+                    10,
+
+                rewardXP:
+                    100,
+
+                rewardMoney:
+                    80
+            };
+
+
+        player.quest.coal =
+            player.quest.coal ||
+            {
+
+                state:
+                    "none",
+
+                need:
+                    8,
+
+                rewardXP:
+                    130,
+
+                rewardMoney:
+                    110
+            };
+
+
+        /* ============================
+           HABILIDADES
+        ============================ */
+
+        player.abilities =
+            player.abilities ||
+            {};
+
+
+        player.abilities.dash =
+            Boolean(
+
+                player.abilities
+                    .dash ||
+
+                player
+                    .dashPurchased ||
+
+                player
+                    .monarch
+                    ?.dashClaimed
+            );
+
+
+        player.abilities.route2 =
+            Boolean(
+                player.abilities
+                    .route2
+            );
+
+
+        player.abilities.route3 =
+            Boolean(
+                player.abilities
+                    .route3
+            );
+
+
+        player.dashCooldown =
+            0;
+
+
+        /* ============================
+           PORTÕES
+        ============================ */
+
+        player.gateDialogueIndex =
+            player.gateDialogueIndex ||
+            {
+
+                north:
+                    0,
+
+                west:
+                    0,
+
+                south:
+                    0
+            };
+
+
+        for (
+            const side of
+            [
+                "north",
+                "west",
+                "south"
+            ]
+        ) {
+
+            player
+                .gateDialogueIndex[
+                    side
+                ] =
+                Math.max(
+
+                    0,
+
+                    Math.floor(
+                        Number(
+                            player
+                                .gateDialogueIndex[
+                                    side
+                                ]
+                        ) ||
+                        0
+                    )
+                ) %
+                3;
+        }
+
+
+        player.gateUnlocks =
+            player.gateUnlocks ||
+            {
+
+                north:
+                    false,
+
+                west:
+                    false,
+
+                south:
+                    false
+            };
+
+
+        player
+            .gateUnlocks
+            .north =
+            Boolean(
+                player
+                    .gateUnlocks
+                    .north
+            );
+
+
+        player
+            .gateUnlocks
+            .west =
+            Boolean(
+                player
+                    .gateUnlocks
+                    .west
+            );
+
+
+        player
+            .gateUnlocks
+            .south =
+            Boolean(
+                player
+                    .gateUnlocks
+                    .south
+            );
+
+
+        /* ============================
+           MONARCA ANTIGO/NOVO
+        ============================ */
+
+        if (
+            player.monarch &&
+            typeof player.monarch ===
+                "object"
+        ) {
+
+            player.monarchAwakened =
+                Boolean(
+
+                    player
+                        .monarchAwakened ||
+
+                    player
+                        .monarch
+                        .ritualStarted
+                );
+
+
+            player.monarchDefeated =
+                Boolean(
+
+                    player
+                        .monarchDefeated ||
+
+                    player
+                        .monarch
+                        .defeated
+                );
+
+
+            player.dashPurchased =
+                Boolean(
+
+                    player
+                        .dashPurchased ||
+
+                    player
+                        .monarch
+                        .dashClaimed
+                );
+        }
+
+
+        else {
+
+            player.monarchAwakened =
+                Boolean(
+                    player
+                        .monarchAwakened
+                );
+
+
+            player.monarchDefeated =
+                Boolean(
+                    player
+                        .monarchDefeated
+                );
+
+
+            player.dashPurchased =
+                Boolean(
+
+                    player
+                        .dashPurchased ||
+
+                    player
+                        .abilities
+                        .dash
+                );
+        }
+
+
+        /* ============================
+           PROGRESSÃO
+        ============================ */
+
+        player.defeatedBosses =
+
+            Array.isArray(
+                player.defeatedBosses
+            )
+
+                ? [
+                    ...new Set(
+                        player.defeatedBosses
+                    )
+                ]
+
+                : [];
+
+
+        player.discoveredBosses =
+
+            Array.isArray(
+                player.discoveredBosses
+            )
+
+                ? [
+                    ...new Set(
+                        player.discoveredBosses
+                    )
+                ]
+
+                : [];
+
+
+        player.unlockedAreas =
+
+            Array.isArray(
+                player.unlockedAreas
+            )
+
+                ? [
+                    ...new Set(
+                        player.unlockedAreas
+                    )
+                ]
+
+                : [
+                    "village"
+                ];
+
+
+        if (
+            !player
+                .unlockedAreas
+                .includes(
+                    "village"
+                )
+        ) {
+
+            player
+                .unlockedAreas
+                .unshift(
+                    "village"
+                );
+        }
+
+
+        player.hellTypesDefeated =
+            player.hellTypesDefeated ||
+            {};
+
+
+        player.secretsFound =
+
+            Array.isArray(
+                player.secretsFound
+            )
+
+                ? [
+                    ...new Set(
+                        player.secretsFound
+                    )
+                ]
+
+                : [];
+
+
+        /* ============================
+           SEEDS
+        ============================ */
+
+        player.worldSeeds =
+            player.worldSeeds ||
+            {};
+
+
+        Object
+            .keys(
+                REGIONS
+            )
+            .forEach(
+                (
+                    area,
+                    index
+                ) => {
+
+                    if (
+                        !Number.isFinite(
+                            Number(
+                                player
+                                    .worldSeeds[
+                                        area
+                                    ]
+                            )
+                        )
+                    ) {
+
+                        player
+                            .worldSeeds[
+                                area
+                            ] =
+                            hashString(
+
+                                `${
+                                    player.name ||
+                                    "Viajante"
+                                }:${area}:${index}:${Math.random()}`
+                            );
+                    }
+
+
+                    else {
+
+                        player
+                            .worldSeeds[
+                                area
+                            ] =
+                            Number(
+                                player
+                                    .worldSeeds[
+                                        area
+                                    ]
+                            ) >>>
+                            0;
+                    }
+                }
+            );
+
+
+        /* ============================
+           HORDAS
+        ============================ */
+
+        player.skyTrial =
+            player.skyTrial ||
+            {
+
+                started:
+                    false,
+
+                wave:
+                    0,
+
+                activeWave:
+                    0,
+
+                complete:
+                    false
+            };
+
+
+        player
+            .skyTrial
+            .started =
+            Boolean(
+                player
+                    .skyTrial
+                    .started
+            );
+
+
+        player
+            .skyTrial
+            .wave =
+            clamp(
+
+                Math.floor(
+                    Number(
+                        player
+                            .skyTrial
+                            .wave
+                    ) ||
+                    0
+                ),
+
+                0,
+
+                5
+            );
+
+
+        player
+            .skyTrial
+            .complete =
+            Boolean(
+
+                player
+                    .skyTrial
+                    .complete ||
+
+                player
+                    .skyTrial
+                    .wave >=
+                    5
+            );
+
+
+        player
+            .skyTrial
+            .activeWave =
+            0;
+
+
+        player.flutePlayed =
+            Boolean(
+                player.flutePlayed
+            );
+
+
+        /* ============================
+           CHECKPOINT
+        ============================ */
+
+        player.checkpoint =
+            player.checkpoint ||
+            {
+
+                area:
+                    "village",
+
+                x:
+                    480,
+
+                y:
+                    610
+            };
+
+
+        if (
+            !REGIONS[
+                player
+                    .checkpoint
+                    .area
+            ]
+        ) {
+
+            player.checkpoint = {
+
+                area:
+                    "village",
+
+                x:
+                    480,
+
+                y:
+                    610
+            };
+        }
+
+
+        /* ============================
+           COOLDOWNS
+        ============================ */
+
+        player.skillCooldowns =
+            player.skillCooldowns ||
+            {
+
+                q:
+                    0,
+
+                r:
+                    0,
+
+                f:
+                    0
+            };
+
+
+        for (
+            const slot of
+            [
+                "q",
+                "r",
+                "f"
+            ]
+        ) {
+
+            player
+                .skillCooldowns[
+                    slot
+                ] =
+                0;
+        }
+
+
+        /* ============================
+           TEMPORÁRIOS
+        ============================ */
+
+        player.radius =
+            18;
+
+
+        player.invincible =
+            0;
+
+
+        player.attackCooldown =
+            0;
+
+
+        player.dead =
+            false;
+
+
+        player.adaptiveBuff =
+            false;
+
+
+        player.playerDash =
+            null;
+
+
+        player.stunTimer =
+            0;
+
+
+        player.shieldTimer =
+            0;
+
+
+        player.damageReduction =
+            0;
+
+
+        player.money =
+            Math.max(
+
+                0,
+
+                Math.floor(
+                    Number(
+                        player.money
+                    ) ||
+                    0
+                )
+            );
+
+
+        player.memory =
+            clamp(
+                Number(
+                    player.memory
+                ) ||
+                0,
+                0,
+                100
+            );
+
+
+        /* ============================
+           BARRAS
+        ============================ */
+
+        const oldHp =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.hp
+                ) ||
+                player.baseMaxHp
+            );
+
+
+        const oldMagic =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.magic
+                ) ||
+                player.baseMaxMagic
+            );
+
+
+        const oldEnergy =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.energy
+                ) ||
+                player.baseMaxEnergy
+            );
+
+
+        const oldHunger =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.hunger
+                ) ||
+                100
+            );
+
+
+        const oldFatigue =
+            Math.max(
+
+                0,
+
+                Number(
+                    player.fatigue
+                ) ||
+                100
+            );
+
+
+        player.maxHp =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.maxHp
+                ) ||
+                player.baseMaxHp
+            );
+
+
+        player.maxMagic =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.maxMagic
+                ) ||
+                player.baseMaxMagic
+            );
+
+
+        player.maxEnergy =
+            Math.max(
+
+                1,
+
+                Number(
+                    player.maxEnergy
+                ) ||
+                player.baseMaxEnergy
+            );
+
+
+        player.maxHunger =
+            Math.max(
+
+                100,
+
+                Number(
+                    player.maxHunger
+                ) ||
+                100
+            );
+
+
+        player.maxFatigue =
+            Math.max(
+
+                100,
+
+                Number(
+                    player.maxFatigue
+                ) ||
+                100
+            );
+
+
+        player.hp =
+            oldHp;
+
+
+        player.magic =
+            oldMagic;
+
+
+        player.energy =
+            oldEnergy;
+
+
+        player.hunger =
+            oldHunger;
+
+
+        player.fatigue =
+            oldFatigue;
+
+
+        applyStatBonuses(
+            false
+        );
+
+
+        player.hp =
+            clamp(
+                oldHp,
+                1,
+                player.maxHp
+            );
+
+
+        player.magic =
+            clamp(
+                oldMagic,
+                0,
+                player.maxMagic
+            );
+
+
+        player.energy =
+            clamp(
+                oldEnergy,
+                0,
+                player.maxEnergy
+            );
+
+
+        player.hunger =
+            clamp(
+                oldHunger,
+                0,
+                player.maxHunger
+            );
+
+
+        player.fatigue =
+            clamp(
+                oldFatigue,
+                0,
+                player.maxFatigue
+            );
+    }
+
+
+    /* =====================================================
+       EXISTE SAVE?
+    ===================================================== */
+
+    function hasSave() {
+
+        return Boolean(
+            getSaveRaw()
+        );
+    }
+
+
+    function updateContinueButton() {
+
+        const button =
+            $(
+                "continueBtn"
+            );
+
+
+        const hint =
+            $(
+                "continueHint"
+            );
+
+
+        if (
+            !button ||
+            !hint
+        ) {
+
+            return;
+        }
+
+
+        const exists =
+            hasSave();
+
+
+        button.disabled =
+            !exists;
+
+
+        hint.textContent =
+
+            exists
+
+                ? "Uma memória salva foi encontrada."
+
+                : "Nenhum jogo salvo encontrado.";
+    }
+
+
+    /* =====================================================
+       MENU
+    ===================================================== */
+
+    function returnToMenu() {
+
+        if (
+            state.player &&
+            state.running
+        ) {
+
+            saveGame(
+                false
+            );
+        }
+
+
+        state.running =
+            false;
+
+
+        state.paused =
+            false;
+
+
+        state.keys.clear();
+
+
+        state.pointer.down =
+            false;
+
+
+        cancelHoldInteraction();
+
+
+        closeDialogue();
+
+
+        closeAllPanels();
+
+
+        if (
+            $(
+                "battlePanel"
+            )
+        ) {
+
+            $(
+                "battlePanel"
+            ).classList.add(
+                "hidden"
+            );
+        }
+
+
+        if (
+            $(
+                "travelPanel"
+            )
+        ) {
+
+            $(
+                "travelPanel"
+            ).classList.add(
+                "hidden"
+            );
+        }
+
+
+        if (
+            $(
+                "deathPanel"
+            )
+        ) {
+
+            $(
+                "deathPanel"
+            ).classList.add(
+                "hidden"
+            );
+        }
+
+
+        if (
+            $(
+                "bossBarRuntime"
+            )
+        ) {
+
+            $(
+                "bossBarRuntime"
+            ).classList.add(
+                "hidden"
+            );
+        }
+
+
+        showScreen(
+            "menu"
+        );
+
+
+        updateContinueButton();
+    }
+
+
+    /* =====================================================
+       ESC
+    ===================================================== */
+
+    function closeFirstOpenOverlay() {
+
+        if (
+            state.dialogue
+        ) {
+
+            closeDialogue();
+
+            return true;
+        }
+
+
+        if (
+            state.travel
+        ) {
+
+            cancelTravel();
+
+            return true;
+        }
+
+
+        if (
+            state.battle
+        ) {
+
+            declineBattle();
+
+            return true;
+        }
+
+
+        for (
+            const id of
+            [
+                "gateRequirementPanelDynamic",
+                "statusPanelDynamic",
+                "forgePanelDynamic"
+            ]
+        ) {
+
+            if (
+                dynamicPanelOpen(
+                    id
+                )
+            ) {
+
+                closeDynamicPanel(
+                    id
+                );
+
+
+                return true;
+            }
+        }
+
+
+        for (
+            const id of
+            [
+                "inventoryPanel",
+                "mapPanel",
+                "bookPanel",
+                "shopPanel",
+                "questPanel"
+            ]
+        ) {
+
+            const panel =
+                $(
+                    id
+                );
+
+
+            if (
+                panel &&
+                !panel.classList.contains(
+                    "hidden"
+                )
+            ) {
+
+                panel.classList.add(
+                    "hidden"
+                );
+
+
+                return true;
+            }
+        }
+
+
+        return false;
+    }
+
+
+    /* =====================================================
+       TECLADO
+    ===================================================== */
+
+    function handleKeyDown(
+        event
+    ) {
+
+        const key =
+            event.key
+                .toLowerCase();
+
+
+        const gameActive =
+            screens.game
+                .classList
+                .contains(
+                    "active"
+                );
+
+
+        const movementKeys = [
+
+            "w",
+            "a",
+            "s",
+            "d",
+
+            "arrowup",
+            "arrowdown",
+            "arrowleft",
+            "arrowright"
+        ];
+
+
+        /* ============================
+           MOVIMENTO
+        ============================ */
+
+        if (
+            movementKeys.includes(
+                key
+            )
+        ) {
+
+            if (
+                gameActive
+            ) {
+
+                event.preventDefault();
+
+
+                state.keys.add(
+                    key
+                );
+            }
+
+
+            return;
+        }
+
+
+        /*
+            E PRECISA SER MANTIDO NO SET,
+            POIS O SISTEMA DE COLETA VERIFICA
+            SE ELE CONTINUA PRESSIONADO.
+        */
+
+        if (
+            key ===
+                "e" &&
+            gameActive
+        ) {
+
+            state.keys.add(
+                "e"
+            );
+        }
+
+
+        /*
+            EVITA REPETIÇÃO AUTOMÁTICA
+            DE AÇÕES.
+        */
+
+        if (
+            event.repeat
+        ) {
+
+            return;
+        }
+
+
+        /* ============================
+           DIÁLOGO
+        ============================ */
+
+        if (
+            event.key ===
+                "Enter" &&
+            state.dialogue
+        ) {
+
+            event.preventDefault();
+
+
+            advanceDialogue();
+
+
+            return;
+        }
+
+
+        if (
+            !gameActive
+        ) {
+
+            return;
+        }
+
+
+        /* ============================
+           E
+        ============================ */
+
+        if (
+            key ===
+            "e"
+        ) {
+
+            event.preventDefault();
+
+
+            playerAction();
+
+
+            return;
+        }
+
+
+        /* ============================
+           Z
+        ============================ */
+
+        if (
+            key ===
+            "z"
+        ) {
+
+            event.preventDefault();
+
+
+            handleZ();
+
+
+            return;
+        }
+
+
+        /* ============================
+           Q / R / F
+        ============================ */
+
+        if (
+            key ===
+                "q" ||
+            key ===
+                "r" ||
+            key ===
+                "f"
+        ) {
+
+            event.preventDefault();
+
+
+            useSkill(
+                key
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           DASH
+        ============================ */
+
+        if (
+            key ===
+            " "
+        ) {
+
+            event.preventDefault();
+
+
+            useDashAbility();
+
+
+            return;
+        }
+
+
+        /* ============================
+           STATUS
+        ============================ */
+
+        if (
+            key ===
+            "p"
+        ) {
+
+            event.preventDefault();
+
+
+            openStatusPanel();
+
+
+            return;
+        }
+
+
+        /* ============================
+           INVENTÁRIO
+        ============================ */
+
+        if (
+            key ===
+            "i"
+        ) {
+
+            event.preventDefault();
+
+
+            togglePanel(
+                "inventoryPanel",
+                updateInventory
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           MAPA
+        ============================ */
+
+        if (
+            key ===
+            "m"
+        ) {
+
+            event.preventDefault();
+
+
+            togglePanel(
+                "mapPanel",
+                drawLargeMap
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           LIVRO
+        ============================ */
+
+        if (
+            key ===
+            "l"
+        ) {
+
+            event.preventDefault();
+
+
+            togglePanel(
+                "bookPanel",
+                renderBook
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           POÇÃO
+        ============================ */
+
+        if (
+            key ===
+                "1" &&
+            state.player
+        ) {
+
+            event.preventDefault();
+
+
+            useItem(
+                "pocao"
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           ELIXIR
+        ============================ */
+
+        if (
+            key ===
+                "2" &&
+            state.player
+        ) {
+
+            event.preventDefault();
+
+
+            useItem(
+                "elixir"
+            );
+
+
+            return;
+        }
+
+
+        /* ============================
+           ESC
+        ============================ */
+
+        if (
+            key ===
+            "escape"
+        ) {
+
+            event.preventDefault();
+
+
+            if (
+                closeFirstOpenOverlay()
+            ) {
+
+                return;
+            }
+
+
+            returnToMenu();
+        }
+    }
+
+
+    function handleKeyUp(
+        event
+    ) {
+
+        const key =
+            event.key
+                .toLowerCase();
+
+
+        state.keys.delete(
+            key
+        );
+
+
+        if (
+            key ===
+                "e" &&
+            state.holdAction
+        ) {
+
+            cancelHoldInteraction();
+        }
+    }
+
+
+    /* =====================================================
+       MOUSE
+    ===================================================== */
+
+    function updatePointerFromEvent(
+        event
+    ) {
+
+        const rect =
+            canvas
+                .getBoundingClientRect();
+
+
+        state.pointer.x =
+            event.clientX -
+            rect.left;
+
+
+        state.pointer.y =
+            event.clientY -
+            rect.top;
+
+
+        state.pointer.worldX =
+            state.pointer.x +
+            state.camera.x;
+
+
+        state.pointer.worldY =
+            state.pointer.y +
+            state.camera.y;
+    }
+
+
+    /* =====================================================
+       BIND DE BOTÕES
+    ===================================================== */
+
+    function bindClick(
+        id,
+        handler
+    ) {
+
+        const element =
+            $(
+                id
+            );
+
+
+        if (
+            !element
+        ) {
+
+            throw new Error(
+                `Botão obrigatório não encontrado: #${id}`
+            );
+        }
+
+
+        element.addEventListener(
+            "click",
+            handler
+        );
+    }
+
+
+    function bindEvents() {
+
+        /* ============================
+           MENU
+        ============================ */
+
+        bindClick(
+            "newGameBtn",
+            startNewGame
+        );
+
+
+        bindClick(
+            "continueBtn",
+            () => {
+
+                if (
+                    !loadGame()
+                ) {
+
+                    updateContinueButton();
+                }
+            }
+        );
+
+
+        bindClick(
+            "howToBtn",
+            () =>
+                showScreen(
+                    "how"
+                )
+        );
+
+
+        bindClick(
+            "creditsBtn",
+            () =>
+                showScreen(
+                    "credits"
+                )
+        );
+
+
+        bindClick(
+            "closeHowBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "closeCreditsBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "backMenuBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "startGameBtn",
+            startGame
+        );
+
+
+        /* ============================
+           HUD
+        ============================ */
+
+        bindClick(
+            "saveBtn",
+            () =>
+                saveGame(
+                    true
+                )
+        );
+
+
+        bindClick(
+            "menuBtn",
+            returnToMenu
+        );
+
+
+        bindClick(
+            "inventoryBtn",
+            () =>
+                togglePanel(
+                    "inventoryPanel",
+                    updateInventory
+                )
+        );
+
+
+        bindClick(
+            "mapBtn",
+            () =>
+                togglePanel(
+                    "mapPanel",
+                    drawLargeMap
+                )
+        );
+
+
+        bindClick(
+            "bookBtn",
+            () =>
+                togglePanel(
+                    "bookPanel",
+                    renderBook
+                )
+        );
+
+
+        /* ============================
+           VIAGEM
+        ============================ */
+
+        bindClick(
+            "travelYes",
+            confirmTravel
+        );
+
+
+        bindClick(
+            "travelNo",
+            cancelTravel
+        );
+
+
+        /* ============================
+           BATALHA
+        ============================ */
+
+        bindClick(
+            "battleAccept",
+            acceptBattle
+        );
+
+
+        bindClick(
+            "battleDecline",
+            declineBattle
+        );
+
+
+        /* ============================
+           MORTE
+        ============================ */
+
+        bindClick(
+            "respawnBtn",
+            respawnPlayer
+        );
+
+
+        /* ============================
+           QUEST
+        ============================ */
+
+        bindClick(
+            "questActionBtn",
+            executeQuestAction
+        );
+
+
+        /* ============================
+           STATUS
+        ============================ */
+
+        const statusButton =
+            $(
+                "statusBtnRuntime"
+            );
+
+
+        if (
+            statusButton
+        ) {
+
+            statusButton
+                .addEventListener(
+                    "click",
+                    openStatusPanel
+                );
+        }
+
+
+        /* ============================
+           ENTER NO NOME
+        ============================ */
+
+        $(
+            "playerName"
+        ).addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
+
+                    startGame();
+                }
+            }
+        );
+
+
+        /* ============================
+           X DOS PAINÉIS
+        ============================ */
+
+        document
+            .querySelectorAll(
+                "[data-close]"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const target =
+                                button.dataset
+                                    .close;
+
+
+                            if (
+                                $(
+                                    target
+                                )
+                            ) {
+
+                                $(
+                                    target
+                                ).classList.add(
+                                    "hidden"
+                                );
+                            }
+                        }
+                    );
+                }
+            );
+
+
+        /* ============================
+           ABAS INVENTÁRIO
+        ============================ */
+
+        document
+            .querySelectorAll(
+                "#inventoryTabs .tab"
+            )
+            .forEach(
+                tab => {
+
+                    tab.addEventListener(
+                        "click",
+                        () => {
+
+                            document
+                                .querySelectorAll(
+                                    "#inventoryTabs .tab"
+                                )
+                                .forEach(
+                                    item =>
+                                        item.classList.remove(
+                                            "active"
+                                        )
+                                );
+
+
+                            tab.classList.add(
+                                "active"
+                            );
+
+
+                            state.inventoryCategory =
+                                tab.dataset
+                                    .cat;
+
+
+                            updateInventory();
+                        }
+                    );
+                }
+            );
+
+
+        /* ============================
+           ABAS LOJA
+        ============================ */
+
+        document
+            .querySelectorAll(
+                "#shopTabs .tab"
+            )
+            .forEach(
+                tab => {
+
+                    tab.addEventListener(
+                        "click",
+                        () => {
+
+                            document
+                                .querySelectorAll(
+                                    "#shopTabs .tab"
+                                )
+                                .forEach(
+                                    item =>
+                                        item.classList.remove(
+                                            "active"
+                                        )
+                                );
+
+
+                            tab.classList.add(
+                                "active"
+                            );
+
+
+                            state.shopMode =
+                                tab.dataset
+                                    .shop;
+
+
+                            renderShop();
+                        }
+                    );
+                }
+            );
+
+
+        /* ============================
+           BOTÕES Q/R/F/DASH
+        ============================ */
+
+        document
+            .querySelectorAll(
+                "#skillHudRuntime [data-runtime-skill]"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const slot =
+                                button.dataset
+                                    .runtimeSkill;
+
+
+                            if (
+                                slot ===
+                                "dash"
+                            ) {
+
+                                useDashAbility();
+                            }
+
+
+                            else {
+
+                                useSkill(
+                                    slot
+                                );
+                            }
+                        }
+                    );
+                }
+            );
+
+
+        /* ============================
+           MOUSE MOVE
+        ============================ */
+
+        canvas.addEventListener(
+            "pointermove",
+            event =>
+                updatePointerFromEvent(
+                    event
+                )
+        );
+
+
+        /* ============================
+           MOUSE ESQUERDO
+
+           IMPORTANTE:
+           UM POINTERDOWN = UM ATAQUE.
+
+           SEGURAR O BOTÃO NÃO GERA
+           NOVOS ATAQUES.
+        ============================ */
+
+        canvas.addEventListener(
+            "pointerdown",
+            event => {
+
+                if (
+                    event.button !==
+                    0
+                ) {
+
+                    return;
+                }
+
+
+                updatePointerFromEvent(
+                    event
+                );
+
+
+                state.pointer.down =
+                    true;
+
+
+                performAttack({
+
+                    x:
+                        state.pointer
+                            .worldX,
+
+                    y:
+                        state.pointer
+                            .worldY
+                });
+            }
+        );
+
+
+        canvas.addEventListener(
+            "pointerup",
+            () => {
+
+                state.pointer.down =
+                    false;
+            }
+        );
+
+
+        canvas.addEventListener(
+            "pointerleave",
+            () => {
+
+                state.pointer.down =
+                    false;
+            }
+        );
+
+
+        canvas.addEventListener(
+            "contextmenu",
+            event =>
+                event.preventDefault()
+        );
+
+
+        /* ============================
+           TECLADO
+        ============================ */
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+
+        window.addEventListener(
+            "keyup",
+            handleKeyUp
+        );
+
+
+        window.addEventListener(
+            "blur",
+            () => {
+
+                state.keys.clear();
+
+
+                state.pointer.down =
+                    false;
+
+
+                if (
+                    state.holdAction
+                ) {
+
+                    cancelHoldInteraction();
+                }
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            resizeCanvas
+        );
+    }
+
+
+    /* =====================================================
+       INICIALIZAÇÃO
+    ===================================================== */
+
+    function initialize() {
+
+        /*
+            PRIMEIRO CRIA AS INTERFACES QUE NÃO
+            EXISTEM NO HTML.
+
+            ISSO TAMBÉM CRIA #uiFade ANTES DE
+            QUALQUER CLIQUE NO MENU.
+        */
+
+        ensureRuntimeUI();
+
+
+        /*
+            ATUALIZA A TELA "COMO JOGAR"
+            SEM ALTERAR O HTML FÍSICO.
+        */
+
+        patchHowToRuntimeText();
+
+
+        createCharacterCards();
+
+
+        resizeCanvas();
+
+
+        /*
+            SÓ DEPOIS DE TODOS OS ELEMENTOS
+            EXISTIREM, OS EVENTOS DOS BOTÕES
+            SÃO REGISTRADOS.
+        */
+
+        bindEvents();
+
+
+        updateContinueButton();
+    }
+
+
+    initialize();
+
+})();
