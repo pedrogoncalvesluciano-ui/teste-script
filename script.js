@@ -28607,3 +28607,16469 @@
        - validação final;
        - ÚNICO })();
        ========================================================= */
+     /* =========================================================
+       VEYRA: A QUIETUDE — V25
+       SCRIPT.JS — PARTE 4/4
+
+       INTERAÇÕES / DIÁLOGOS / CASAS / LOJAS
+       QUESTS / PORTÕES / ALTAR / MONARCA
+       PROVA CELESTE / FLAUTA
+       SAVE / LOAD
+       HUD / INVENTÁRIO / STATUS
+       RENDER / MINIMAPA / LANTERNA
+       MENU / BOTÕES / INPUT / LOOP / INIT
+
+       ÚLTIMA PARTE.
+       ESTA PARTE FECHA O IIFE.
+       ========================================================= */
+
+
+    /* =========================================================
+       RUNTIME DE RENDER
+       ========================================================= */
+
+    const renderRuntime = {
+
+        width:
+            1280,
+
+        height:
+            720,
+
+        dpr:
+            1,
+
+        fps:
+            0,
+
+        fpsTime:
+            0,
+
+        fpsFrames:
+            0,
+
+        lastHudUpdate:
+            0,
+
+        lastMiniMapUpdate:
+            0,
+
+        lastSaveAt:
+            0,
+
+        darknessCanvas:
+            null,
+
+        darknessCtx:
+            null
+
+    };
+
+
+    /* =========================================================
+       BUSCA DOM MAIS DEFENSIVA
+       ========================================================= */
+
+    function getElementAny(
+        ids
+    ) {
+
+        for (
+            const id of
+            ids
+        ) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (element) {
+
+                return element;
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function refreshDOMReferences() {
+
+        screens.menu =
+            getElementAny([
+                "menuScreen",
+                "mainMenu",
+                "menu"
+            ]);
+
+
+        screens.how =
+            getElementAny([
+                "howScreen",
+                "howToScreen"
+            ]);
+
+
+        screens.credits =
+            getElementAny([
+                "creditsScreen"
+            ]);
+
+
+        screens.character =
+            getElementAny([
+                "characterScreen",
+                "characterSelectScreen"
+            ]);
+
+
+        screens.game =
+            getElementAny([
+                "gameScreen"
+            ]);
+
+    }
+
+
+    function getLiveCanvas() {
+
+        return getElementAny([
+            "gameCanvas"
+        ]);
+
+    }
+
+
+    function getLiveContext() {
+
+        return getLiveCanvas()
+            ?.getContext(
+                "2d"
+            ) ||
+            null;
+
+    }
+
+
+    function getLiveMiniCanvas() {
+
+        return getElementAny([
+            "miniCanvas",
+            "minimapCanvas"
+        ]);
+
+    }
+
+
+    function getLiveMapCanvas() {
+
+        return getElementAny([
+            "worldMapCanvas"
+        ]);
+
+    }
+
+
+    function escapeHTML(
+        value
+    ) {
+
+        return String(
+            value ??
+            ""
+        )
+            .replaceAll(
+                "&",
+                "&amp;"
+            )
+            .replaceAll(
+                "<",
+                "&lt;"
+            )
+            .replaceAll(
+                ">",
+                "&gt;"
+            )
+            .replaceAll(
+                '"',
+                "&quot;"
+            )
+            .replaceAll(
+                "'",
+                "&#039;"
+            );
+
+    }
+
+
+    /* =========================================================
+       PAUSA POR INTERFACE
+
+       Vários painéis podem coexistir logicamente sem
+       um fechar a pausa do outro por engano.
+       ========================================================= */
+
+    const uiPauseReasons =
+        new Set();
+
+
+    function pauseForUI(
+        reason
+    ) {
+
+        if (reason) {
+
+            uiPauseReasons.add(
+                reason
+            );
+
+        }
+
+
+        state.paused =
+            true;
+
+
+        state.pauseReason =
+            reason ||
+            state.pauseReason;
+
+    }
+
+
+    function resumeFromUI(
+        reason
+    ) {
+
+        if (reason) {
+
+            uiPauseReasons.delete(
+                reason
+            );
+
+        }
+
+
+        state.paused =
+            uiPauseReasons.size >
+            0;
+
+
+        if (
+            !state.paused
+        ) {
+
+            state.pauseReason =
+                null;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       UI RUNTIME DE SEGURANÇA
+
+       Se um painel não existir no HTML,
+       o JS cria apenas o necessário.
+
+       Assim um ID faltando não derruba
+       o JavaScript inteiro.
+       ========================================================= */
+
+    function ensureRuntimeElement(
+        id,
+        className,
+        html = ""
+    ) {
+
+        let element =
+            document.getElementById(
+                id
+            );
+
+
+        if (element) {
+
+            return element;
+
+        }
+
+
+        element =
+            document.createElement(
+                "div"
+            );
+
+
+        element.id =
+            id;
+
+
+        element.className =
+            className;
+
+
+        element.innerHTML =
+            html;
+
+
+        document.body.appendChild(
+            element
+        );
+
+
+        return element;
+
+    }
+
+
+    function ensureRuntimeUI() {
+
+        ensureRuntimeElement(
+            "gameToast",
+            "game-toast hidden",
+            ""
+        );
+
+
+        if (
+            !getElementAny([
+                "dialoguePanel",
+                "dialogueBox"
+            ])
+        ) {
+
+            ensureRuntimeElement(
+                "dialoguePanel",
+                "dialogue-panel hidden",
+                `
+                    <div class="dialogue-frame">
+                        <div class="dialogue-header">
+                            <strong id="dialogueName"></strong>
+                            <span id="dialogueRole"></span>
+                        </div>
+
+                        <p id="dialogueText"></p>
+
+                        <small id="dialogueContinue">
+                            E — CONTINUAR
+                        </small>
+                    </div>
+                `
+            );
+
+        }
+
+
+        if (
+            !getElementAny([
+                "battleConfirmPanel",
+                "battlePanel"
+            ])
+        ) {
+
+            ensureRuntimeElement(
+                "battleConfirmPanel",
+                "game-modal hidden",
+                `
+                    <div class="modal-card battle-card">
+                        <span class="modal-eyebrow">
+                            DESAFIO
+                        </span>
+
+                        <h2 id="battleBossName">
+                            INIMIGO
+                        </h2>
+
+                        <p id="battleBossDescription">
+                            Enfrentar este inimigo?
+                        </p>
+
+                        <div class="modal-actions">
+                            <button
+                                id="battleAcceptBtn"
+                                type="button"
+                            >
+                                LUTAR
+                            </button>
+
+                            <button
+                                id="battleDeclineBtn"
+                                type="button"
+                            >
+                                RECUAR
+                            </button>
+                        </div>
+                    </div>
+                `
+            );
+
+        }
+
+
+        if (
+            !getElementAny([
+                "travelPanel",
+                "travelConfirmPanel"
+            ])
+        ) {
+
+            ensureRuntimeElement(
+                "travelPanel",
+                "game-modal hidden",
+                `
+                    <div class="modal-card">
+                        <span class="modal-eyebrow">
+                            VIAJAR
+                        </span>
+
+                        <h2 id="travelTitle">
+                            Seguir viagem?
+                        </h2>
+
+                        <p id="travelText"></p>
+
+                        <div class="modal-actions">
+                            <button
+                                id="travelConfirmBtn"
+                                type="button"
+                            >
+                                VIAJAR
+                            </button>
+
+                            <button
+                                id="travelCancelBtn"
+                                type="button"
+                            >
+                                CANCELAR
+                            </button>
+                        </div>
+                    </div>
+                `
+            );
+
+        }
+
+
+        ensureRuntimeElement(
+            "questPanel",
+            "game-modal hidden",
+            `
+                <div class="modal-card quest-card">
+                    <span class="modal-eyebrow">
+                        PEDIDO
+                    </span>
+
+                    <h2 id="questTitle"></h2>
+
+                    <p id="questText"></p>
+
+                    <div id="questProgress"></div>
+
+                    <div class="modal-actions">
+                        <button
+                            id="questActionBtn"
+                            type="button"
+                        >
+                            CONTINUAR
+                        </button>
+
+                        <button
+                            id="questCloseBtn"
+                            type="button"
+                        >
+                            FECHAR
+                        </button>
+                    </div>
+                </div>
+            `
+        );
+
+
+        ensureRuntimeElement(
+            "shopPanel",
+            "game-modal hidden",
+            `
+                <div class="modal-card shop-card">
+                    <div class="modal-header">
+                        <div>
+                            <span class="modal-eyebrow">
+                                COMÉRCIO
+                            </span>
+                            <h2 id="shopTitle">
+                                LOJA
+                            </h2>
+                        </div>
+
+                        <button
+                            id="shopCloseBtn"
+                            type="button"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    <div class="shop-tabs">
+                        <button
+                            id="shopBuyTab"
+                            type="button"
+                        >
+                            COMPRAR
+                        </button>
+
+                        <button
+                            id="shopSellTab"
+                            type="button"
+                        >
+                            VENDER
+                        </button>
+                    </div>
+
+                    <div
+                        id="shopMoney"
+                        class="shop-money"
+                    ></div>
+
+                    <div
+                        id="shopList"
+                        class="shop-list"
+                    ></div>
+                </div>
+            `
+        );
+
+
+        ensureRuntimeElement(
+            "inventoryPanel",
+            "game-modal hidden",
+            `
+                <div class="modal-card inventory-card">
+                    <div class="modal-header">
+                        <div>
+                            <span class="modal-eyebrow">
+                                MOCHILA
+                            </span>
+
+                            <h2>
+                                INVENTÁRIO
+                            </h2>
+                        </div>
+
+                        <button
+                            id="inventoryCloseBtn"
+                            type="button"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    <div id="inventoryWeight"></div>
+                    <div id="inventoryList"></div>
+                </div>
+            `
+        );
+
+
+        ensureRuntimeElement(
+            "statusPanel",
+            "game-modal hidden",
+            `
+                <div class="modal-card status-card">
+                    <div class="modal-header">
+                        <div>
+                            <span class="modal-eyebrow">
+                                PERSONAGEM
+                            </span>
+
+                            <h2>
+                                STATUS
+                            </h2>
+                        </div>
+
+                        <button
+                            id="statusCloseBtn"
+                            type="button"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    <div id="statusPoints"></div>
+                    <div id="statusList"></div>
+                </div>
+            `
+        );
+
+
+        ensureRuntimeElement(
+            "interactionHint",
+            "interaction-hint hidden",
+            ""
+        );
+
+
+        ensureRuntimeElement(
+            "sceneTransition",
+            "scene-transition hidden",
+            `
+                <div class="transition-content">
+                    <span>VEYRA</span>
+                    <strong id="transitionText"></strong>
+                </div>
+            `
+        );
+
+
+        ensureRuntimeElement(
+            "deathPanel",
+            "game-modal hidden",
+            `
+                <div class="modal-card death-card">
+                    <span class="modal-eyebrow">
+                        A QUIETUDE TE ALCANÇOU
+                    </span>
+
+                    <h2>
+                        VOCÊ CAIU
+                    </h2>
+
+                    <p>
+                        Você retornará para sua casa na Vila do Crepúsculo.
+                    </p>
+
+                    <button
+                        id="respawnBtn"
+                        type="button"
+                    >
+                        RETORNAR
+                    </button>
+                </div>
+            `
+        );
+
+    }
+
+
+    /* =========================================================
+       TOAST
+       ========================================================= */
+
+    function showToast(
+        message,
+        duration =
+            2200
+    ) {
+
+        const toast =
+            getElementAny([
+                "gameToast",
+                "saveMessage"
+            ]);
+
+
+        if (!toast) {
+
+            return;
+
+        }
+
+
+        toast.textContent =
+            String(
+                message
+            );
+
+
+        toast.classList.remove(
+            "hidden"
+        );
+
+
+        toast.classList.add(
+            "show"
+        );
+
+
+        if (
+            state.toastTimer
+        ) {
+
+            clearTimeout(
+                state.toastTimer
+            );
+
+        }
+
+
+        state.toastTimer =
+            window.setTimeout(
+                () => {
+
+                    toast.classList.remove(
+                        "show"
+                    );
+
+
+                    toast.classList.add(
+                        "hidden"
+                    );
+
+                },
+                duration
+            );
+
+    }
+
+
+    /* =========================================================
+       TRANSIÇÕES
+       ========================================================= */
+
+    function startSceneTransition(
+        label,
+        callback
+    ) {
+
+        if (
+            state.transition
+        ) {
+
+            state.transitionQueue.push({
+                label,
+                callback
+            });
+
+            return false;
+
+        }
+
+
+        state.transition = {
+
+            label:
+                label ||
+                "",
+
+            phase:
+                "out",
+
+            timer:
+                0,
+
+            duration:
+                0.32,
+
+            callback:
+                typeof callback ===
+                "function"
+                    ? callback
+                    : null,
+
+            callbackDone:
+                false
+
+        };
+
+
+        pauseForUI(
+            "transition"
+        );
+
+
+        const overlay =
+            $("sceneTransition");
+
+
+        if (overlay) {
+
+            overlay.classList.remove(
+                "hidden"
+            );
+
+
+            const text =
+                $("transitionText");
+
+
+            if (text) {
+
+                text.textContent =
+                    label ||
+                    "";
+
+            }
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function finishSceneTransition() {
+
+        state.transition =
+            null;
+
+
+        resumeFromUI(
+            "transition"
+        );
+
+
+        $("sceneTransition")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            state.transitionQueue.length >
+            0
+        ) {
+
+            const next =
+                state.transitionQueue.shift();
+
+
+            startSceneTransition(
+                next.label,
+                next.callback
+            );
+
+        }
+
+    }
+
+
+    function updateSceneTransition(
+        dt
+    ) {
+
+        const transition =
+            state.transition;
+
+
+        if (!transition) {
+
+            return;
+
+        }
+
+
+        transition.timer +=
+            dt;
+
+
+        const overlay =
+            $("sceneTransition");
+
+
+        if (
+            transition.phase ===
+            "out"
+        ) {
+
+            const alpha =
+                clamp(
+                    transition.timer /
+                    transition.duration,
+                    0,
+                    1
+                );
+
+
+            if (overlay) {
+
+                overlay.style.opacity =
+                    String(
+                        alpha
+                    );
+
+            }
+
+
+            if (
+                alpha >=
+                1
+            ) {
+
+                if (
+                    !transition.callbackDone
+                ) {
+
+                    transition.callbackDone =
+                        true;
+
+
+                    try {
+
+                        transition.callback
+                            ?.();
+
+                    }
+
+                    catch (
+                        error
+                    ) {
+
+                        console.error(
+                            "VEYRA: erro durante transição.",
+                            error
+                        );
+
+                    }
+
+                }
+
+
+                transition.phase =
+                    "in";
+
+
+                transition.timer =
+                    0;
+
+            }
+
+
+            return;
+
+        }
+
+
+        const alpha =
+            1 -
+            clamp(
+                transition.timer /
+                transition.duration,
+                0,
+                1
+            );
+
+
+        if (overlay) {
+
+            overlay.style.opacity =
+                String(
+                    alpha
+                );
+
+        }
+
+
+        if (
+            alpha <=
+            0
+        ) {
+
+            finishSceneTransition();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DIÁLOGO
+       ========================================================= */
+
+    function normalizeDialogueSpeaker(
+        speaker
+    ) {
+
+        if (
+            typeof speaker ===
+            "string"
+        ) {
+
+            return {
+
+                id:
+                    "npc",
+
+                name:
+                    speaker,
+
+                role:
+                    "",
+
+                color:
+                    "#d6c39a"
+
+            };
+
+        }
+
+
+        return {
+
+            id:
+                speaker?.id ||
+                "npc",
+
+            name:
+                speaker?.name ||
+                "???",
+
+            role:
+                speaker?.role ||
+                "",
+
+            color:
+                speaker?.color ||
+                "#d6c39a"
+
+        };
+
+    }
+
+
+    function normalizeDialogueLines(
+        lines
+    ) {
+
+        if (
+            !Array.isArray(
+                lines
+            )
+        ) {
+
+            return [];
+
+        }
+
+
+        return lines
+            .map(
+                line =>
+                    String(
+                        line ??
+                        ""
+                    )
+            )
+            .filter(
+                Boolean
+            );
+
+    }
+
+
+    function openDialogue(
+        speaker,
+        lines,
+        options = {}
+    ) {
+
+        const normalized =
+            normalizeDialogueLines(
+                lines
+            );
+
+
+        if (
+            normalized.length ===
+            0
+        ) {
+
+            options.onComplete
+                ?.();
+
+            return false;
+
+        }
+
+
+        closeShop(
+            true
+        );
+
+
+        closeQuestPanel(
+            true
+        );
+
+
+        state.dialogue = {
+
+            speaker:
+                normalizeDialogueSpeaker(
+                    speaker
+                ),
+
+            lines:
+                normalized,
+
+            index:
+                0,
+
+            fullText:
+                normalized[0],
+
+            visibleText:
+                "",
+
+            charIndex:
+                0,
+
+            charTimer:
+                0,
+
+            typing:
+                true,
+
+            fade:
+                0,
+
+            closing:
+                false,
+
+            closeTimer:
+                0,
+
+            onComplete:
+                typeof options.onComplete ===
+                "function"
+                    ? options.onComplete
+                    : null
+
+        };
+
+
+        pauseForUI(
+            "dialogue"
+        );
+
+
+        syncDialogueDOM();
+
+
+        return true;
+
+    }
+
+
+    function revealCurrentDialogueLine() {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return false;
+
+        }
+
+
+        dialogue.visibleText =
+            dialogue.fullText;
+
+
+        dialogue.charIndex =
+            dialogue.fullText.length;
+
+
+        dialogue.typing =
+            false;
+
+
+        syncDialogueDOM();
+
+
+        return true;
+
+    }
+
+
+    function advanceDialogue() {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return false;
+
+        }
+
+
+        if (
+            dialogue.typing
+        ) {
+
+            return revealCurrentDialogueLine();
+
+        }
+
+
+        dialogue.index++;
+
+
+        if (
+            dialogue.index >=
+            dialogue.lines.length
+        ) {
+
+            closeDialogue();
+
+            return true;
+
+        }
+
+
+        dialogue.fullText =
+            dialogue.lines[
+                dialogue.index
+            ];
+
+
+        dialogue.visibleText =
+            "";
+
+
+        dialogue.charIndex =
+            0;
+
+
+        dialogue.charTimer =
+            0;
+
+
+        dialogue.typing =
+            true;
+
+
+        syncDialogueDOM();
+
+
+        return true;
+
+    }
+
+
+    function closeDialogue(
+        immediate =
+            false
+    ) {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return;
+
+        }
+
+
+        if (immediate) {
+
+            finalizeDialogueClose();
+
+            return;
+
+        }
+
+
+        dialogue.closing =
+            true;
+
+
+        dialogue.closeTimer =
+            GAME_CONFIG
+                .dialogueFadeSeconds;
+
+    }
+
+
+    function finalizeDialogueClose() {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return;
+
+        }
+
+
+        const callback =
+            dialogue.onComplete;
+
+
+        state.dialogue =
+            null;
+
+
+        resumeFromUI(
+            "dialogue"
+        );
+
+
+        syncDialogueDOM();
+
+
+        if (
+            typeof callback ===
+            "function"
+        ) {
+
+            window.setTimeout(
+                callback,
+                30
+            );
+
+        }
+
+    }
+
+
+    function updateDialogue(
+        dt
+    ) {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return;
+
+        }
+
+
+        if (
+            dialogue.closing
+        ) {
+
+            dialogue.closeTimer -=
+                dt;
+
+
+            dialogue.fade =
+                clamp(
+                    dialogue.closeTimer /
+                    GAME_CONFIG
+                        .dialogueFadeSeconds,
+                    0,
+                    1
+                );
+
+
+            syncDialogueDOM();
+
+
+            if (
+                dialogue.closeTimer <=
+                0
+            ) {
+
+                finalizeDialogueClose();
+
+            }
+
+
+            return;
+
+        }
+
+
+        dialogue.fade =
+            Math.min(
+                1,
+                dialogue.fade +
+                dt /
+                GAME_CONFIG
+                    .dialogueFadeSeconds
+            );
+
+
+        if (
+            !dialogue.typing
+        ) {
+
+            syncDialogueDOM();
+
+            return;
+
+        }
+
+
+        dialogue.charTimer +=
+
+            dt *
+
+            GAME_CONFIG
+                .dialogueCharactersPerSecond;
+
+
+        const chars =
+            Math.floor(
+                dialogue.charTimer
+            );
+
+
+        if (
+            chars <=
+            0
+        ) {
+
+            syncDialogueDOM();
+
+            return;
+
+        }
+
+
+        dialogue.charTimer -=
+            chars;
+
+
+        dialogue.charIndex =
+            Math.min(
+                dialogue.fullText.length,
+                dialogue.charIndex +
+                chars
+            );
+
+
+        dialogue.visibleText =
+            dialogue.fullText.slice(
+                0,
+                dialogue.charIndex
+            );
+
+
+        if (
+            dialogue.charIndex >=
+            dialogue.fullText.length
+        ) {
+
+            dialogue.typing =
+                false;
+
+        }
+
+
+        syncDialogueDOM();
+
+    }
+
+
+    function syncDialogueDOM() {
+
+        const panel =
+            getElementAny([
+                "dialoguePanel",
+                "dialogueBox"
+            ]);
+
+
+        if (!panel) {
+
+            return;
+
+        }
+
+
+        if (
+            !state.dialogue
+        ) {
+
+            panel.classList.add(
+                "hidden"
+            );
+
+
+            panel.style.opacity =
+                "0";
+
+
+            return;
+
+        }
+
+
+        panel.classList.remove(
+            "hidden"
+        );
+
+
+        panel.style.opacity =
+            String(
+                state.dialogue.fade
+            );
+
+
+        const name =
+            getElementAny([
+                "dialogueName",
+                "dialogueSpeaker"
+            ]);
+
+
+        const role =
+            $("dialogueRole");
+
+
+        const text =
+            $("dialogueText");
+
+
+        const continueText =
+            $("dialogueContinue");
+
+
+        if (name) {
+
+            name.textContent =
+                state.dialogue
+                    .speaker
+                    .name;
+
+
+            name.style.color =
+                state.dialogue
+                    .speaker
+                    .color;
+
+        }
+
+
+        if (role) {
+
+            role.textContent =
+                state.dialogue
+                    .speaker
+                    .role;
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                state.dialogue
+                    .visibleText;
+
+        }
+
+
+        if (continueText) {
+
+            continueText.textContent =
+
+                state.dialogue.typing
+
+                    ? "E — COMPLETAR"
+
+                    : state.dialogue.index <
+                      state.dialogue.lines.length -
+                      1
+
+                        ? "E — CONTINUAR"
+
+                        : "E — FECHAR";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       NPC
+       ========================================================= */
+
+    function getActiveNPCs() {
+
+        if (
+            state.houseMode
+        ) {
+
+            return getHouseInteriorNPCs(
+                state.currentHouse
+            );
+
+        }
+
+
+        return (
+            state.world
+                ?.npcs ||
+            []
+        );
+
+    }
+
+
+    function findNearestNPC(
+        maxDistance =
+            GAME_CONFIG
+                .interactDistance
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const npc of
+            getActiveNPCs()
+        ) {
+
+            if (!npc) {
+
+                continue;
+
+            }
+
+
+            const d =
+                distance(
+                    player.x,
+                    player.y,
+                    npc.x,
+                    npc.y
+                );
+
+
+            if (
+                d <=
+                    maxDistance &&
+                d <
+                    bestDistance
+            ) {
+
+                best =
+                    npc;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    function getNPCDialogueLines(
+        npc
+    ) {
+
+        if (!npc) {
+
+            return [];
+
+        }
+
+
+        if (
+            npc.id ===
+            "miguel"
+        ) {
+
+            return deepClone(
+
+                state.player
+                    ?.abilities
+                    ?.dash
+
+                    ? npc.afterDashLines ||
+                      NPC_LIBRARY
+                          .miguel
+                          .afterDashLines
+
+                    : npc.beforeDashLines ||
+                      NPC_LIBRARY
+                          .miguel
+                          .beforeDashLines
+
+            );
+
+        }
+
+
+        return deepClone(
+            npc.lines ||
+            []
+        );
+
+    }
+
+
+    function interactWithNPC(
+        npc
+    ) {
+
+        if (!npc) {
+
+            return false;
+
+        }
+
+
+        const afterDialogue =
+            () => {
+
+                if (
+                    npc.merchant ||
+                    npc.id ===
+                        "doran"
+                ) {
+
+                    openShop(
+                        "doran"
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    npc.blacksmith ||
+                    npc.id ===
+                        "borin"
+                ) {
+
+                    const quest =
+                        state.player
+                            ?.quest
+                            ?.coal;
+
+
+                    if (
+                        quest &&
+                        (
+                            quest.state !==
+                                "complete" ||
+                            !quest.rewarded
+                        )
+                    ) {
+
+                        openQuestPanel(
+                            npc
+                        );
+
+                    }
+
+                    else {
+
+                        openShop(
+                            "borin"
+                        );
+
+                    }
+
+
+                    return;
+
+                }
+
+
+                if (
+                    npc.questId ||
+                    npc.id ===
+                        "bran"
+                ) {
+
+                    openQuestPanel(
+                        npc
+                    );
+
+                }
+
+            };
+
+
+        return openDialogue(
+
+            npc,
+
+            getNPCDialogueLines(
+                npc
+            ),
+
+            {
+                onComplete:
+                    afterDialogue
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       QUESTS
+       ========================================================= */
+
+    const QUEST_CONFIG =
+        Object.freeze({
+
+            wood:
+                Object.freeze({
+
+                    title:
+                        "MADEIRA PARA A VILA",
+
+                    npc:
+                        "BRAN",
+
+                    item:
+                        "madeira",
+
+                    amount:
+                        10,
+
+                    reward:
+                        85,
+
+                    xp:
+                        55
+
+                }),
+
+
+            coal:
+                Object.freeze({
+
+                    title:
+                        "CARVÃO PARA A FORJA",
+
+                    npc:
+                        "BORIN",
+
+                    item:
+                        "carvao",
+
+                    amount:
+                        8,
+
+                    reward:
+                        125,
+
+                    xp:
+                        75
+
+                })
+
+        });
+
+
+    function getQuestIdFromNPC(
+        npc
+    ) {
+
+        if (
+            npc?.id ===
+            "bran"
+        ) {
+
+            return "wood";
+
+        }
+
+
+        if (
+            npc?.id ===
+            "borin"
+        ) {
+
+            return "coal";
+
+        }
+
+
+        return npc
+            ?.questId ||
+            null;
+
+    }
+
+
+    function openQuestPanel(
+        npc
+    ) {
+
+        const questId =
+            getQuestIdFromNPC(
+                npc
+            );
+
+
+        if (
+            !questId ||
+            !QUEST_CONFIG[
+                questId
+            ]
+        ) {
+
+            return false;
+
+        }
+
+
+        state.questNPC = {
+
+            npc,
+
+            questId
+
+        };
+
+
+        state.activePanel =
+            "quest";
+
+
+        pauseForUI(
+            "quest"
+        );
+
+
+        renderQuestPanel();
+
+
+        $("questPanel")
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        return true;
+
+    }
+
+
+    function closeQuestPanel(
+        silent =
+            false
+    ) {
+
+        state.questNPC =
+            null;
+
+
+        if (
+            state.activePanel ===
+            "quest"
+        ) {
+
+            state.activePanel =
+                null;
+
+        }
+
+
+        $("questPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        resumeFromUI(
+            "quest"
+        );
+
+
+        if (
+            !silent
+        ) {
+
+            updateHUD();
+
+        }
+
+    }
+
+
+    function renderQuestPanel() {
+
+        const data =
+            state.questNPC;
+
+
+        if (
+            !data ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        const config =
+            QUEST_CONFIG[
+                data.questId
+            ];
+
+
+        const quest =
+            state.player
+                .quest[
+                    data.questId
+                ];
+
+
+        const current =
+            getItemCount(
+                config.item
+            );
+
+
+        const title =
+            $("questTitle");
+
+
+        const text =
+            $("questText");
+
+
+        const progress =
+            $("questProgress");
+
+
+        const action =
+            $("questActionBtn");
+
+
+        if (title) {
+
+            title.textContent =
+                config.title;
+
+        }
+
+
+        if (progress) {
+
+            progress.textContent =
+                `${ITEMS[config.item].name}: ${current} / ${config.amount}`;
+
+        }
+
+
+        if (
+            quest.state ===
+            "none"
+        ) {
+
+            if (text) {
+
+                text.textContent =
+                    `Traga ${config.amount} ${ITEMS[config.item].name}. Recompensa: ${config.reward} moedas.`;
+
+            }
+
+
+            if (action) {
+
+                action.textContent =
+                    "ACEITAR";
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            quest.state ===
+            "active"
+        ) {
+
+            if (text) {
+
+                text.textContent =
+
+                    current >=
+                    config.amount
+
+                        ? "Você possui tudo o que foi pedido."
+
+                        : "Ainda faltam materiais.";
+
+            }
+
+
+            if (action) {
+
+                action.textContent =
+
+                    current >=
+                    config.amount
+
+                        ? "ENTREGAR"
+
+                        : "FECHAR";
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                "Este pedido já foi concluído.";
+
+        }
+
+
+        if (action) {
+
+            action.textContent =
+                "FECHAR";
+
+        }
+
+    }
+
+
+    function questAction() {
+
+        const data =
+            state.questNPC;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            !data ||
+            !player
+        ) {
+
+            return false;
+
+        }
+
+
+        const config =
+            QUEST_CONFIG[
+                data.questId
+            ];
+
+
+        const quest =
+            player.quest[
+                data.questId
+            ];
+
+
+        if (
+            quest.state ===
+            "none"
+        ) {
+
+            quest.state =
+                "active";
+
+
+            showToast(
+                "Pedido aceito."
+            );
+
+
+            renderQuestPanel();
+
+
+            return true;
+
+        }
+
+
+        if (
+            quest.state ===
+            "active"
+        ) {
+
+            if (
+                getItemCount(
+                    config.item
+                ) <
+                config.amount
+            ) {
+
+                closeQuestPanel();
+
+                return false;
+
+            }
+
+
+            if (
+                !removeItem(
+                    config.item,
+                    config.amount
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            addMoney(
+                config.reward
+            );
+
+
+            gainXP(
+                config.xp
+            );
+
+
+            quest.state =
+                "complete";
+
+
+            quest.rewarded =
+                true;
+
+
+            showToast(
+                `Pedido concluído. +${config.reward} moedas.`
+            );
+
+
+            closeQuestPanel();
+
+
+            if (
+                data.questId ===
+                "coal"
+            ) {
+
+                openShop(
+                    "borin"
+                );
+
+            }
+
+
+            return true;
+
+        }
+
+
+        closeQuestPanel();
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       LOJAS
+       ========================================================= */
+
+    const SHOP_CONFIG =
+        Object.freeze({
+
+            doran:
+                Object.freeze({
+
+                    id:
+                        "doran",
+
+                    name:
+                        "LOJA DE DORAN",
+
+                    buyItems:
+                        Object.freeze([
+
+                            Object.freeze({
+                                id:
+                                    "pao",
+                                price:
+                                    12
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "carneAssada",
+                                price:
+                                    28
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "pocao",
+                                price:
+                                    45
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "elixir",
+                                price:
+                                    55
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "pocaoForca",
+                                price:
+                                    85
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "pocaoResistencia",
+                                price:
+                                    85
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "pocaoVelocidade",
+                                price:
+                                    95
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "espadaFerro",
+                                price:
+                                    180,
+                                uniquePurchase:
+                                    true
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "minimapa",
+                                price:
+                                    MINIMAP_PRICE,
+                                uniquePurchase:
+                                    true
+                            }),
+
+                            Object.freeze({
+                                id:
+                                    "lanterna",
+                                price:
+                                    LANTERN_PRICE,
+                                uniquePurchase:
+                                    true
+                            })
+
+                        ])
+
+                }),
+
+
+            borin:
+                Object.freeze({
+
+                    id:
+                        "borin",
+
+                    name:
+                        "FORJA DE BORIN",
+
+                    buyItems:
+                        Object.freeze([])
+
+                })
+
+        });
+
+
+    function getShopConfig(
+        vendorId
+    ) {
+
+        return (
+            SHOP_CONFIG[
+                vendorId
+            ] ||
+            null
+        );
+
+    }
+
+
+    function ensurePurchasedUniqueArray() {
+
+        if (!state.player) {
+
+            return;
+
+        }
+
+
+        if (
+            !Array.isArray(
+                state.player
+                    .purchasedUniqueItems
+            )
+        ) {
+
+            state.player.purchasedUniqueItems =
+                [];
+
+        }
+
+    }
+
+
+    function hasPurchasedUniqueItem(
+        id
+    ) {
+
+        ensurePurchasedUniqueArray();
+
+
+        return Boolean(
+
+            state.player
+                ?.purchasedUniqueItems
+                ?.includes(
+                    id
+                )
+
+        );
+
+    }
+
+
+    function markUniqueItemPurchased(
+        id
+    ) {
+
+        ensurePurchasedUniqueArray();
+
+
+        if (
+            !state.player
+                .purchasedUniqueItems
+                .includes(
+                    id
+                )
+        ) {
+
+            state.player
+                .purchasedUniqueItems
+                .push(
+                    id
+                );
+
+        }
+
+    }
+
+
+    function getArmorVendorForTier(
+        tier
+    ) {
+
+        return tier <=
+            4
+                ? "doran"
+                : "borin";
+
+    }
+
+
+    function getNextArmorShopEntry(
+        vendorId
+    ) {
+
+        const id =
+            getNextArmorUpgradeId();
+
+
+        if (!id) {
+
+            return null;
+
+        }
+
+
+        const armor =
+            ARMOR_DATA[id];
+
+
+        if (
+            !armor ||
+            getArmorVendorForTier(
+                armor.tier
+            ) !==
+                vendorId
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            armor.tier <=
+            4
+        ) {
+
+            return {
+
+                id,
+
+                kind:
+                    "armor",
+
+                price:
+                    armor.price,
+
+                armor,
+
+                previousArmor:
+                    armor.previousArmor
+
+            };
+
+        }
+
+
+        const recipe =
+            ARMOR_UPGRADES.find(
+                upgrade =>
+                    upgrade.id ===
+                    id
+            );
+
+
+        if (!recipe) {
+
+            return null;
+
+        }
+
+
+        return {
+
+            id,
+
+            kind:
+                "armorUpgrade",
+
+            price:
+                recipe.coins,
+
+            armor,
+
+            previousArmor:
+                recipe.previous,
+
+            materialId:
+                recipe.material,
+
+            materialAmount:
+                recipe.materialAmount
+
+        };
+
+    }
+
+
+    function canPurchaseArmorEntry(
+        entry
+    ) {
+
+        if (
+            !state.player ||
+            !entry ||
+            !isArmorNextUpgrade(
+                entry.id
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            entry.previousArmor &&
+            !playerOwnsArmor(
+                entry.previousArmor
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !hasEnoughMoney(
+                entry.price
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            entry.kind ===
+            "armorUpgrade" &&
+            getItemCount(
+                entry.materialId
+            ) <
+                entry.materialAmount
+        ) {
+
+            return false;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function purchaseArmorEntry(
+        entry
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !canPurchaseArmorEntry(
+                entry
+            )
+        ) {
+
+            showToast(
+                "Você ainda não possui os requisitos para esta armadura."
+            );
+
+            return false;
+
+        }
+
+
+        const previousEquipped =
+            player.equipment
+                .armor ===
+            entry.previousArmor;
+
+
+        /*
+            Primeiro confirma que dinheiro e
+            materiais existem.
+
+            Depois realiza as deduções.
+        */
+
+        if (
+            entry.kind ===
+            "armorUpgrade"
+        ) {
+
+            if (
+                !removeItem(
+                    entry.materialId,
+                    entry.materialAmount
+                )
+            ) {
+
+                return false;
+
+            }
+
+        }
+
+
+        if (
+            !spendMoney(
+                entry.price
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            entry.previousArmor
+        ) {
+
+            const oldCount =
+                getRealItemCount(
+                    entry.previousArmor
+                );
+
+
+            if (
+                oldCount >
+                0
+            ) {
+
+                player.inventory[
+                    entry.previousArmor
+                ] =
+                    oldCount -
+                    1;
+
+            }
+
+        }
+
+
+        /*
+            Coloca o novo item diretamente.
+
+            Como armadura é unique,
+            isso evita conflito com verificações
+            do item anterior consumido.
+        */
+
+        player.inventory[
+            entry.id
+        ] =
+            1;
+
+
+        player.armorHighestTierEver =
+            Math.max(
+                player.armorHighestTierEver,
+                getArmorTier(
+                    entry.id
+                )
+            );
+
+
+        markUniqueItemPurchased(
+            entry.id
+        );
+
+
+        /*
+            Upgrade substitui a armadura anterior.
+
+            Se a anterior estava equipada,
+            equipa automaticamente a nova.
+
+            Como só existe uma progressão linear,
+            a primeira armadura também é equipada.
+        */
+
+        if (
+            previousEquipped ||
+            !player.equipment.armor ||
+            getArmorTier(
+                entry.id
+            ) >
+            getArmorTier(
+                player.equipment.armor
+            )
+        ) {
+
+            player.equipment.armor =
+                entry.id;
+
+        }
+
+
+        /*
+            O recálculo preserva a proporção de HP.
+            Não cria cura infinita trocando armadura.
+        */
+
+        recalculatePlayerStats();
+
+
+        showToast(
+            `${ITEMS[entry.id].name} adquirida.`
+        );
+
+
+        refreshShopUI();
+
+
+        renderInventory();
+
+
+        updateHUD();
+
+
+        saveGame();
+
+
+        return true;
+
+    }
+
+
+    function getShopBuyEntries(
+        vendorId =
+            state.shopNPC
+    ) {
+
+        const shop =
+            getShopConfig(
+                vendorId
+            );
+
+
+        if (
+            !shop ||
+            !state.player
+        ) {
+
+            return [];
+
+        }
+
+
+        const entries =
+            [];
+
+
+        for (
+            const entry of
+            shop.buyItems
+        ) {
+
+            const item =
+                ITEMS[
+                    entry.id
+                ];
+
+
+            if (!item) {
+
+                continue;
+
+            }
+
+
+            if (
+                entry.id ===
+                    "lanterna" &&
+                state.player
+                    .lanternOwned
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                entry.id ===
+                    "minimapa" &&
+                state.player
+                    .minimapOwned
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                (
+                    entry.uniquePurchase ||
+                    item.unique
+                ) &&
+                (
+                    hasPurchasedUniqueItem(
+                        entry.id
+                    ) ||
+                    getRealItemCount(
+                        entry.id
+                    ) >
+                        0
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            entries.push({
+
+                ...entry,
+
+                kind:
+                    "item",
+
+                item
+
+            });
+
+        }
+
+
+        const armor =
+            getNextArmorShopEntry(
+                vendorId
+            );
+
+
+        if (armor) {
+
+            entries.push(
+                armor
+            );
+
+        }
+
+
+        return entries;
+
+    }
+
+
+    function purchaseShopItem(
+        id
+    ) {
+
+        const entry =
+            getShopBuyEntries()
+                .find(
+                    candidate =>
+                        candidate.id ===
+                        id
+                );
+
+
+        if (!entry) {
+
+            return false;
+
+        }
+
+
+        if (
+            entry.kind ===
+                "armor" ||
+            entry.kind ===
+                "armorUpgrade"
+        ) {
+
+            return purchaseArmorEntry(
+                entry
+            );
+
+        }
+
+
+        const item =
+            ITEMS[id];
+
+
+        if (!item) {
+
+            return false;
+
+        }
+
+
+        if (
+            !hasEnoughMoney(
+                entry.price
+            )
+        ) {
+
+            showToast(
+                "Moedas insuficientes."
+            );
+
+            return false;
+
+        }
+
+
+        if (
+            !canCarryItem(
+                id,
+                1
+            )
+        ) {
+
+            showToast(
+                "Sua mochila está cheia."
+            );
+
+            return false;
+
+        }
+
+
+        if (
+            !spendMoney(
+                entry.price
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !addItem(
+                id,
+                1,
+                {
+                    silent:
+                        true
+                }
+            )
+        ) {
+
+            /*
+                Rollback defensivo.
+            */
+
+            if (
+                !(
+                    state.dev
+                        ?.unlocked &&
+                    state.dev
+                        .infiniteMoney
+                )
+            ) {
+
+                addMoney(
+                    entry.price
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        if (
+            entry.uniquePurchase ||
+            item.unique
+        ) {
+
+            markUniqueItemPurchased(
+                id
+            );
+
+        }
+
+
+        if (
+            id ===
+            "lanterna"
+        ) {
+
+            state.player.lanternOwned =
+                true;
+
+        }
+
+
+        if (
+            id ===
+            "minimapa"
+        ) {
+
+            state.player.minimapOwned =
+                true;
+
+        }
+
+
+        showToast(
+            `${item.name} comprado.`
+        );
+
+
+        refreshShopUI();
+
+
+        renderInventory();
+
+
+        updateHUD();
+
+
+        saveGame();
+
+
+        return true;
+
+    }
+
+
+    function getSellableInventoryEntries() {
+
+        if (!state.player) {
+
+            return [];
+
+        }
+
+
+        const entries =
+            [];
+
+
+        for (
+            const [
+                id,
+                amount
+            ] of
+            Object.entries(
+                state.player.inventory
+            )
+        ) {
+
+            const item =
+                ITEMS[id];
+
+
+            if (
+                !item ||
+                amount <=
+                    0 ||
+                !item.sellable ||
+                item.unique ||
+                item.questItem ||
+                item.progression ||
+                isEquippedItem(
+                    id
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            entries.push({
+
+                id,
+
+                item,
+
+                amount,
+
+                sellPrice:
+                    Math.max(
+                        1,
+                        Math.floor(
+                            finiteNumber(
+                                item.value,
+                                1
+                            ) *
+                            0.55
+                        )
+                    )
+
+            });
+
+        }
+
+
+        return entries;
+
+    }
+
+
+    function sellShopItem(
+        id,
+        sellAll =
+            false
+    ) {
+
+        const entry =
+            getSellableInventoryEntries()
+                .find(
+                    item =>
+                        item.id ===
+                        id
+                );
+
+
+        if (!entry) {
+
+            return false;
+
+        }
+
+
+        const amount =
+            sellAll
+                ? entry.amount
+                : 1;
+
+
+        if (
+            amount <=
+            0
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+            Venda deve entregar moedas uma única vez.
+
+            Retira primeiro.
+            Só então credita o valor.
+        */
+
+        if (
+            !removeItem(
+                id,
+                amount
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        const payment =
+            entry.sellPrice *
+            amount;
+
+
+        addMoney(
+            payment
+        );
+
+
+        showToast(
+            `Vendido: ${amount}x ${entry.item.name} • +${payment} moedas.`
+        );
+
+
+        refreshShopUI();
+
+
+        renderInventory();
+
+
+        updateHUD();
+
+
+        return true;
+
+    }
+
+
+    function openShop(
+        vendorId
+    ) {
+
+        if (
+            !getShopConfig(
+                vendorId
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        state.shopNPC =
+            vendorId;
+
+
+        state.shopMode =
+            "buy";
+
+
+        state.activePanel =
+            "shop";
+
+
+        pauseForUI(
+            "shop"
+        );
+
+
+        $("shopPanel")
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        refreshShopUI();
+
+
+        return true;
+
+    }
+
+
+    function closeShop(
+        silent =
+            false
+    ) {
+
+        if (
+            !state.shopNPC &&
+            state.activePanel !==
+                "shop"
+        ) {
+
+            return;
+
+        }
+
+
+        state.shopNPC =
+            null;
+
+
+        state.shopMode =
+            "buy";
+
+
+        if (
+            state.activePanel ===
+            "shop"
+        ) {
+
+            state.activePanel =
+                null;
+
+        }
+
+
+        $("shopPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        resumeFromUI(
+            "shop"
+        );
+
+
+        if (!silent) {
+
+            updateHUD();
+
+        }
+
+    }
+
+
+    function setShopMode(
+        mode
+    ) {
+
+        if (
+            mode !==
+                "buy" &&
+            mode !==
+                "sell"
+        ) {
+
+            return false;
+
+        }
+
+
+        state.shopMode =
+            mode;
+
+
+        refreshShopUI();
+
+
+        return true;
+
+    }
+
+
+    function refreshShopUI() {
+
+        const panel =
+            $("shopPanel");
+
+
+        const list =
+            $("shopList");
+
+
+        if (
+            !panel ||
+            !list ||
+            !state.shopNPC
+        ) {
+
+            return;
+
+        }
+
+
+        panel.classList.remove(
+            "hidden"
+        );
+
+
+        const shop =
+            getShopConfig(
+                state.shopNPC
+            );
+
+
+        const title =
+            $("shopTitle");
+
+
+        const money =
+            $("shopMoney");
+
+
+        if (title) {
+
+            title.textContent =
+                shop.name;
+
+        }
+
+
+        if (money) {
+
+            money.textContent =
+                `🪙 ${getMoneyDisplay()}`;
+
+        }
+
+
+        $("shopBuyTab")
+            ?.classList
+            .toggle(
+                "active",
+                state.shopMode ===
+                    "buy"
+            );
+
+
+        $("shopSellTab")
+            ?.classList
+            .toggle(
+                "active",
+                state.shopMode ===
+                    "sell"
+            );
+
+
+        if (
+            state.shopMode ===
+            "buy"
+        ) {
+
+            const entries =
+                getShopBuyEntries();
+
+
+            if (
+                entries.length ===
+                0
+            ) {
+
+                list.innerHTML = `
+                    <p class="empty-message">
+                        Não há novas compras disponíveis agora.
+                    </p>
+                `;
+
+
+                return;
+
+            }
+
+
+            list.innerHTML =
+                entries
+                    .map(
+                        entry => {
+
+                            const item =
+                                ITEMS[
+                                    entry.id
+                                ];
+
+
+                            let requirement =
+                                "";
+
+
+                            if (
+                                entry.kind ===
+                                "armorUpgrade"
+                            ) {
+
+                                requirement = `
+                                    <small>
+                                        Requer:
+                                        ${entry.materialAmount}x
+                                        ${escapeHTML(ITEMS[entry.materialId].name)}
+                                        + ${entry.price} moedas
+                                    </small>
+                                `;
+
+                            }
+
+
+                            const disabled =
+
+                                entry.kind ===
+                                    "armor" ||
+                                entry.kind ===
+                                    "armorUpgrade"
+
+                                    ? !canPurchaseArmorEntry(
+                                        entry
+                                    )
+
+                                    : !hasEnoughMoney(
+                                        entry.price
+                                    );
+
+
+                            return `
+                                <div class="shop-row">
+                                    <div class="shop-item-info">
+                                        <span class="shop-item-icon">
+                                            ${item?.icon || "•"}
+                                        </span>
+
+                                        <div>
+                                            <strong>
+                                                ${escapeHTML(item?.name || entry.id)}
+                                            </strong>
+
+                                            <small>
+                                                🪙 ${entry.price}
+                                            </small>
+
+                                            ${requirement}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        data-shop-buy="${escapeHTML(entry.id)}"
+                                        ${disabled ? "disabled" : ""}
+                                    >
+                                        COMPRAR
+                                    </button>
+                                </div>
+                            `;
+
+                        }
+                    )
+                    .join(
+                        ""
+                    );
+
+
+            return;
+
+        }
+
+
+        const sellable =
+            getSellableInventoryEntries();
+
+
+        if (
+            sellable.length ===
+            0
+        ) {
+
+            list.innerHTML = `
+                <p class="empty-message">
+                    Você não possui itens vendáveis.
+                </p>
+            `;
+
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            sellable
+                .map(
+                    entry => `
+                        <div class="shop-row">
+                            <div class="shop-item-info">
+                                <span class="shop-item-icon">
+                                    ${entry.item.icon || "•"}
+                                </span>
+
+                                <div>
+                                    <strong>
+                                        ${escapeHTML(entry.item.name)}
+                                    </strong>
+
+                                    <small>
+                                        ${entry.amount} no inventário •
+                                        🪙 ${entry.sellPrice} cada
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="shop-sell-actions">
+                                <button
+                                    type="button"
+                                    data-shop-sell-one="${escapeHTML(entry.id)}"
+                                >
+                                    VENDER 1
+                                </button>
+
+                                <button
+                                    type="button"
+                                    data-shop-sell-all="${escapeHTML(entry.id)}"
+                                >
+                                    VENDER TUDO
+                                </button>
+                            </div>
+                        </div>
+                    `
+                )
+                .join(
+                    ""
+                );
+
+    }
+
+
+    /* =========================================================
+       CASAS
+       ========================================================= */
+
+    function isPlayerNearInteriorDoor() {
+
+        if (
+            !state.houseMode ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const door =
+            getInteriorDoor(
+                state.currentHouse
+            );
+
+
+        if (!door) {
+
+            return false;
+
+        }
+
+
+        return (
+
+            distance(
+                state.player.x,
+                state.player.y,
+                door.x +
+                    door.w /
+                    2,
+                door.y +
+                    door.h /
+                    2
+            ) <=
+            115
+
+        );
+
+    }
+
+
+    function enterHouseByDoor(
+        door
+    ) {
+
+        if (
+            !door ||
+            !state.world ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const building =
+            state.world
+                .buildings
+                .find(
+                    item =>
+                        item.id ===
+                        door.buildingId
+                );
+
+
+        if (
+            !building ||
+            !HOUSE_INTERIORS[
+                building.interiorId
+            ]
+        ) {
+
+            return false;
+
+        }
+
+
+        const returnPoint = {
+
+            area:
+                state.area,
+
+            x:
+                door.approachX,
+
+            y:
+                door.approachY +
+                45,
+
+            facing:
+                "down"
+
+        };
+
+
+        startSceneTransition(
+
+            building.name,
+
+            () => {
+
+                state.houseReturn =
+                    returnPoint;
+
+
+                state.houseMode =
+                    true;
+
+
+                state.currentHouse =
+                    building;
+
+
+                placePlayerInsideHouse(
+                    building
+                );
+
+
+                state.holdAction =
+                    null;
+
+
+                state.camera.x =
+                    0;
+
+
+                state.camera.y =
+                    0;
+
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function exitCurrentHouse() {
+
+        if (
+            !state.houseMode ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const returnPoint =
+            state.houseReturn;
+
+
+        startSceneTransition(
+
+            "VILA DO CREPÚSCULO",
+
+            () => {
+
+                state.houseMode =
+                    false;
+
+
+                state.currentHouse =
+                    null;
+
+
+                if (
+                    returnPoint &&
+                    state.area ===
+                        returnPoint.area
+                ) {
+
+                    state.player.x =
+                        returnPoint.x;
+
+
+                    state.player.y =
+                        returnPoint.y;
+
+
+                    state.player.facing =
+                        returnPoint.facing ||
+                        "down";
+
+                }
+
+
+                state.houseReturn =
+                    null;
+
+
+                repairPlayerPosition(
+                    state.player.x,
+                    state.player.y
+                );
+
+
+                state.camera.x =
+                    0;
+
+
+                state.camera.y =
+                    0;
+
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function useDoorKey() {
+
+        if (
+            !state.player ||
+            state.dialogue ||
+            state.battle ||
+            state.travel
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.houseMode
+        ) {
+
+            if (
+                !isPlayerNearInteriorDoor()
+            ) {
+
+                return false;
+
+            }
+
+
+            return exitCurrentHouse();
+
+        }
+
+
+        const door =
+            getNearbyExteriorDoor();
+
+
+        if (!door) {
+
+            return false;
+
+        }
+
+
+        door.targetAnimation =
+            1;
+
+
+        return enterHouseByDoor(
+            door
+        );
+
+    }
+
+
+    function getNearbyBed() {
+
+        if (
+            !state.houseMode ||
+            state.currentHouse
+                ?.id !==
+                "home" ||
+            !state.player
+        ) {
+
+            return null;
+
+        }
+
+
+        return (
+            getHouseFurniture(
+                state.currentHouse
+            )
+                .find(
+                    object =>
+                        object.type ===
+                            "bed" &&
+                        distance(
+                            state.player.x,
+                            state.player.y,
+                            object.x +
+                                object.w /
+                                2,
+                            object.y +
+                                object.h /
+                                2
+                        ) <=
+                            95
+                ) ||
+            null
+        );
+
+    }
+
+
+    /* =========================================================
+       PORTÃO NORTE
+       ========================================================= */
+
+    const NORTH_GATE_DIALOGUES =
+        Object.freeze([
+
+            Object.freeze([
+
+                "O caminho à sua frente parece errado. Seu instinto diz que atravessá-lo agora seria uma sentença de morte.",
+
+                "Você ainda não está preparado."
+
+            ]),
+
+
+            Object.freeze([
+
+                "Algo além deste portão parece rápido demais para ser enfrentado da forma como você está agora.",
+
+                "Talvez exista alguma forma de escapar do que espera adiante."
+
+            ]),
+
+
+            Object.freeze([
+
+                "Por um instante, você sente que deveria recuar.",
+
+                "Seu corpo ainda não está preparado para sobreviver a este caminho."
+
+            ])
+
+        ]);
+
+
+    const BLOCKED_ROUTE_DIALOGUES =
+        Object.freeze({
+
+            west:
+                Object.freeze([
+
+                    "O portão permanece imóvel.",
+
+                    "Alguma coisa além deste caminho ainda não respondeu à sua presença."
+
+                ]),
+
+            south:
+                Object.freeze([
+
+                    "A passagem ao sul parece incompleta.",
+
+                    "Talvez alguma lembrança ainda esteja faltando antes que este caminho possa existir por inteiro."
+
+                ])
+
+        });
+
+
+    function findNearestGate(
+        maxDistance =
+            140
+    ) {
+
+        if (
+            !state.player ||
+            state.houseMode ||
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const gate of
+            state.world.gates
+        ) {
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    gate.x +
+                        gate.w /
+                        2,
+
+                    gate.y +
+                        gate.h /
+                        2
+
+                );
+
+
+            if (
+                d <=
+                    maxDistance &&
+                d <
+                    bestDistance
+            ) {
+
+                best =
+                    gate;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    function getMaterialRequirementLine(
+        itemId,
+        required
+    ) {
+
+        const current =
+            getItemCount(
+                itemId
+            );
+
+
+        const missing =
+            Math.max(
+                0,
+                required -
+                current
+            );
+
+
+        return `${ITEMS[itemId]?.icon || "•"} ${ITEMS[itemId]?.name || itemId}: ${current} / ${required} — faltam ${missing}`;
+
+    }
+
+
+    function hasRequiredMaterials(
+        requirements
+    ) {
+
+        for (
+            const [
+                id,
+                amount
+            ] of
+            Object.entries(
+                requirements
+            )
+        ) {
+
+            if (
+                getItemCount(
+                    id
+                ) <
+                amount
+            ) {
+
+                return false;
+
+            }
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function consumeRequiredMaterials(
+        requirements
+    ) {
+
+        if (
+            !hasRequiredMaterials(
+                requirements
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        for (
+            const [
+                id,
+                amount
+            ] of
+            Object.entries(
+                requirements
+            )
+        ) {
+
+            if (
+                !removeItem(
+                    id,
+                    amount
+                )
+            ) {
+
+                return false;
+
+            }
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function interactNorthGate(
+        gate
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.gateUnlocks
+                .north
+        ) {
+
+            gate.opened =
+                true;
+
+
+            gate.locked =
+                false;
+
+
+            gate.targetAnimation =
+                1;
+
+
+            return openTravelConfirmation({
+
+                label:
+                    "CAVERNA SOMBRIA",
+
+                targetArea:
+                    "shadow",
+
+                targetX:
+                    245,
+
+                targetY:
+                    1080
+
+            });
+
+        }
+
+
+        /*
+            Antes do Dash:
+            NÃO mostra materiais.
+        */
+
+        if (
+            !player.abilities
+                .dash
+        ) {
+
+            const index =
+
+                player
+                    .gateDialogueIndex
+                    .north %
+
+                NORTH_GATE_DIALOGUES
+                    .length;
+
+
+            player.gateDialogueIndex.north =
+
+                (
+                    index +
+                    1
+                ) %
+
+                NORTH_GATE_DIALOGUES
+                    .length;
+
+
+            return openDialogue(
+
+                {
+                    name:
+                        "PORTÃO NORTE",
+
+                    role:
+                        "Uma passagem inquietante",
+
+                    color:
+                        "#9b8bb2"
+                },
+
+                NORTH_GATE_DIALOGUES[
+                    index
+                ]
+
+            );
+
+        }
+
+
+        if (
+            !hasRequiredMaterials(
+                NORTH_GATE_COST
+            )
+        ) {
+
+            return openDialogue(
+
+                {
+                    name:
+                        "PORTÃO NORTE",
+
+                    role:
+                        "Passagem selada",
+
+                    color:
+                        "#9b8bb2"
+                },
+
+                [
+
+                    "Você domina a técnica necessária, mas sua preparação ainda está incompleta.",
+
+                    getMaterialRequirementLine(
+                        "diamante",
+                        NORTH_GATE_COST
+                            .diamante
+                    ),
+
+                    getMaterialRequirementLine(
+                        "rubi",
+                        NORTH_GATE_COST
+                            .rubi
+                    )
+
+                ]
+
+            );
+
+        }
+
+
+        return openDialogue(
+
+            {
+                name:
+                    "PORTÃO NORTE",
+
+                role:
+                    "O selo reage à sua presença",
+
+                color:
+                    "#a892bf"
+            },
+
+            [
+
+                "O portão responde ao movimento que você aprendeu.",
+
+                "As pedras do selo começam a absorver sua oferenda.",
+
+                "A passagem para o norte foi aberta."
+
+            ],
+
+            {
+                onComplete:
+                    () =>
+                        unlockNorthGate(
+                            gate
+                        )
+            }
+
+        );
+
+    }
+
+
+    function unlockNorthGate(
+        gate
+    ) {
+
+        if (
+            !state.player ||
+            state.player
+                .gateUnlocks
+                .north
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !consumeRequiredMaterials(
+                NORTH_GATE_COST
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        state.player.gateUnlocks.north =
+            true;
+
+
+        gate.locked =
+            false;
+
+
+        gate.opened =
+            true;
+
+
+        gate.targetAnimation =
+            1;
+
+
+        if (
+            !state.player
+                .unlockedAreas
+                .includes(
+                    "shadow"
+                )
+        ) {
+
+            state.player
+                .unlockedAreas
+                .push(
+                    "shadow"
+                );
+
+        }
+
+
+        showToast(
+            "O Portão Norte foi aberto."
+        );
+
+
+        saveGame();
+
+
+        return true;
+
+    }
+
+
+    function interactWithGate(
+        gate
+    ) {
+
+        if (!gate) {
+
+            return false;
+
+        }
+
+
+        if (
+            gate.id ===
+            "north_gate"
+        ) {
+
+            return interactNorthGate(
+                gate
+            );
+
+        }
+
+
+        if (
+            gate.futureRoute
+        ) {
+
+            const route =
+                gate.id ===
+                "west_gate"
+                    ? "west"
+                    : "south";
+
+
+            return openDialogue(
+
+                {
+                    name:
+                        gate.name,
+
+                    role:
+                        "Passagem selada",
+
+                    color:
+                        "#807488"
+                },
+
+                BLOCKED_ROUTE_DIALOGUES[
+                    route
+                ]
+
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function updateGateAnimations(
+        dt
+    ) {
+
+        for (
+            const gate of
+            state.world
+                ?.gates ||
+            []
+        ) {
+
+            if (
+                gate.id ===
+                    "north_gate" &&
+                state.player
+                    ?.gateUnlocks
+                    ?.north
+            ) {
+
+                gate.locked =
+                    false;
+
+
+                gate.opened =
+                    true;
+
+
+                gate.targetAnimation =
+                    1;
+
+            }
+
+
+            gate.animation =
+                lerp(
+
+                    finiteNumber(
+                        gate.animation,
+                        0
+                    ),
+
+                    finiteNumber(
+                        gate.targetAnimation,
+                        gate.opened
+                            ? 1
+                            : 0
+                    ),
+
+                    clamp(
+                        dt *
+                        7,
+                        0,
+                        1
+                    )
+
+                );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ALTAR / MONARCA / DASH
+       ========================================================= */
+
+    function getNearbyAltar(
+        maxDistance =
+            130
+    ) {
+
+        if (
+            !state.player ||
+            !state.world
+                ?.altar
+        ) {
+
+            return null;
+
+        }
+
+
+        const altar =
+            state.world.altar;
+
+
+        if (
+            distance(
+                state.player.x,
+                state.player.y,
+                altar.x,
+                altar.y
+            ) <=
+            maxDistance
+        ) {
+
+            return altar;
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function spawnMonarchNow() {
+
+        if (
+            state.area !==
+                "monarchMaze" ||
+            !state.world ||
+            state.player
+                .monarchDefeated ||
+            hasDefeatedBoss(
+                "monarch"
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        const existing =
+            state.world
+                .enemies
+                .find(
+                    enemy =>
+                        enemy.id ===
+                        "monarch" &&
+                        !enemy.dead
+                );
+
+
+        if (existing) {
+
+            return true;
+
+        }
+
+
+        addBossToWorld(
+
+            state.world,
+
+            "monarch",
+
+            3180,
+
+            1145,
+
+            {
+                hp:
+                    1750,
+
+                damage:
+                    51,
+
+                defense:
+                    32,
+
+                speed:
+                    74,
+
+                radius:
+                    58,
+
+                xp:
+                    900,
+
+                money:
+                    500,
+
+                ability: {
+                    id:
+                        "monarchPattern",
+                    type:
+                        "monarch",
+                    cooldown:
+                        2.6
+                }
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function interactWithMonarchAltar() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            state.area !==
+                "monarchMaze"
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.abilities
+                .dash
+        ) {
+
+            return openDialogue(
+
+                {
+                    name:
+                        "ALTAR",
+
+                    role:
+                        "As inscrições permanecem silenciosas",
+
+                    color:
+                        "#a38bbd"
+                },
+
+                [
+                    "O poder adormecido já faz parte de você."
+                ]
+
+            );
+
+        }
+
+
+        /*
+            BOSS JÁ DERROTADO:
+            agora sim o custo é consumido.
+        */
+
+        if (
+            player.monarchDefeated ||
+            hasDefeatedBoss(
+                "monarch"
+            )
+        ) {
+
+            if (
+                !hasRequiredMaterials(
+                    DASH_RITUAL_COST
+                )
+            ) {
+
+                return openDialogue(
+
+                    {
+                        name:
+                            "ALTAR",
+
+                        role:
+                            "A oferenda ainda está incompleta",
+
+                        color:
+                            "#a38bbd"
+                    },
+
+                    [
+
+                        "O Monarca caiu, mas o altar ainda exige a oferenda completa.",
+
+                        getMaterialRequirementLine(
+                            "rubi",
+                            DASH_RITUAL_COST
+                                .rubi
+                        ),
+
+                        getMaterialRequirementLine(
+                            "diamante",
+                            DASH_RITUAL_COST
+                                .diamante
+                        )
+
+                    ]
+
+                );
+
+            }
+
+
+            return openDialogue(
+
+                {
+                    name:
+                        "ALTAR",
+
+                    role:
+                        "As inscrições despertam novamente",
+
+                    color:
+                        "#b49ad0"
+                },
+
+                [
+
+                    "O silêncio deixado pelo Monarca começa a se desfazer.",
+
+                    "A oferenda reconhece sua vitória.",
+
+                    "O movimento que antes parecia impossível agora existe dentro de você.",
+
+                    "DASH DESPERTADO"
+
+                ],
+
+                {
+                    onComplete:
+                        () => {
+
+                            if (
+                                !consumeRequiredMaterials(
+                                    DASH_RITUAL_COST
+                                )
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            player.abilities.dash =
+                                true;
+
+
+                            player.dashPurchased =
+                                true;
+
+
+                            showToast(
+                                "Dash desbloqueado. Use ESPAÇO."
+                            );
+
+
+                            saveGame();
+
+                        }
+                }
+
+            );
+
+        }
+
+
+        /*
+            ANTES DO MONARCA.
+
+            Materiais insuficientes.
+        */
+
+        if (
+            !hasRequiredMaterials(
+                DASH_RITUAL_COST
+            )
+        ) {
+
+            return openDialogue(
+
+                {
+                    name:
+                        "ALTAR",
+
+                    role:
+                        "Inscrições antigas",
+
+                    color:
+                        "#a38bbd"
+                },
+
+                [
+
+                    "As inscrições do altar despertam sob seus pés.",
+
+                    "Por um instante, uma força tenta alcançar você... mas o brilho desaparece.",
+
+                    "A oferenda é insuficiente para despertar o poder adormecido.",
+
+                    getMaterialRequirementLine(
+                        "rubi",
+                        DASH_RITUAL_COST
+                            .rubi
+                    ),
+
+                    getMaterialRequirementLine(
+                        "diamante",
+                        DASH_RITUAL_COST
+                            .diamante
+                    )
+
+                ]
+
+            );
+
+        }
+
+
+        /*
+            TEM OS MATERIAIS.
+
+            NÃO CONSOME AGORA.
+        */
+
+        if (
+            !player.monarchAwakened
+        ) {
+
+            return openDialogue(
+
+                {
+                    name:
+                        "ALTAR",
+
+                    role:
+                        "A memória abaixo da pedra responde",
+
+                    color:
+                        "#b197cc"
+                },
+
+                [
+
+                    "A OFERENDA FOI ACEITA...",
+
+                    "…MAS NÃO POR VOCÊ.",
+
+                    "O MONARCA DESPERTOU"
+
+                ],
+
+                {
+                    onComplete:
+                        () => {
+
+                            player.monarchAwakened =
+                                true;
+
+
+                            state.world.altar.active =
+                                true;
+
+
+                            spawnMonarchNow();
+
+
+                            state.screenShake =
+                                0.8;
+
+
+                            state.screenShakePower =
+                                9;
+
+
+                            showToast(
+                                "O Monarca despertou."
+                            );
+
+
+                            saveGame();
+
+                        }
+                }
+
+            );
+
+        }
+
+
+        const monarch =
+            state.world
+                .enemies
+                .find(
+                    enemy =>
+                        enemy.id ===
+                        "monarch" &&
+                        !enemy.dead
+                );
+
+
+        if (monarch) {
+
+            return openBattleConfirmation(
+                monarch
+            );
+
+        }
+
+
+        spawnMonarchNow();
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       BATALHA — CONFIRMAÇÃO
+       ========================================================= */
+
+    function findNearestProgressionBoss(
+        maxDistance =
+            150
+    ) {
+
+        if (
+            !state.player ||
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        let result =
+            null;
+
+
+        let best =
+            Infinity;
+
+
+        for (
+            const enemy of
+            state.world.enemies
+        ) {
+
+            if (
+                enemy.dead ||
+                enemy.type !==
+                    "progression" ||
+                enemy.accepted
+            ) {
+
+                continue;
+
+            }
+
+
+            const d =
+                distance(
+                    state.player.x,
+                    state.player.y,
+                    enemy.x,
+                    enemy.y
+                );
+
+
+            if (
+                d <=
+                    maxDistance &&
+                d <
+                    best
+            ) {
+
+                result =
+                    enemy;
+
+
+                best =
+                    d;
+
+            }
+
+        }
+
+
+        return result;
+
+    }
+
+
+    function openBattleConfirmation(
+        enemy
+    ) {
+
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+
+            return false;
+
+        }
+
+
+        state.battle = {
+
+            enemyId:
+                enemy.id,
+
+            enemy
+
+        };
+
+
+        pauseForUI(
+            "battle"
+        );
+
+
+        const panel =
+            getElementAny([
+                "battleConfirmPanel",
+                "battlePanel"
+            ]);
+
+
+        panel
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        const name =
+            $("battleBossName");
+
+
+        const description =
+            $("battleBossDescription");
+
+
+        if (name) {
+
+            name.textContent =
+                enemy.name;
+
+        }
+
+
+        if (description) {
+
+            description.textContent =
+                "Aceitar este confronto?";
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function acceptBattle() {
+
+        const enemy =
+            state.battle
+                ?.enemy;
+
+
+        if (!enemy) {
+
+            return false;
+
+        }
+
+
+        enemy.accepted =
+            true;
+
+
+        enemy.aggressive =
+            true;
+
+
+        enemy.state =
+            "chasing";
+
+
+        discoverBoss(
+            enemy
+        );
+
+
+        state.bossBarTarget =
+            shouldBossUseTopBar(
+                enemy
+            )
+                ? enemy
+                : null;
+
+
+        state.battle =
+            null;
+
+
+        getElementAny([
+            "battleConfirmPanel",
+            "battlePanel"
+        ])
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        resumeFromUI(
+            "battle"
+        );
+
+
+        return true;
+
+    }
+
+
+    function declineBattle() {
+
+        state.battle =
+            null;
+
+
+        state.bossBarTarget =
+            null;
+
+
+        getElementAny([
+            "battleConfirmPanel",
+            "battlePanel"
+        ])
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        resumeFromUI(
+            "battle"
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       BOSS DERROTADO
+       ========================================================= */
+
+    function handleProgressionBossDefeat(
+        enemy
+    ) {
+
+        if (
+            !enemy ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        state.bossBarTarget =
+            null;
+
+
+        switch (
+            enemy.id
+        ) {
+
+            case "road_guardian":
+
+                if (
+                    !state.player
+                        .unlockedAreas
+                        .includes(
+                            "forest"
+                        )
+                ) {
+
+                    state.player
+                        .unlockedAreas
+                        .push(
+                            "forest"
+                        );
+
+                }
+
+
+                showToast(
+                    "A Estrada Leste está livre."
+                );
+
+                break;
+
+
+            case "monarch":
+
+                state.player.monarchDefeated =
+                    true;
+
+
+                showToast(
+                    "O Monarca foi derrotado. Retorne ao altar."
+                );
+
+                break;
+
+
+            case "path_guardian":
+
+                if (
+                    !state.player
+                        .fluteRewardGranted
+                ) {
+
+                    state.player.fluteRewardGranted =
+                        true;
+
+
+                    state.player.inventory
+                        .flautaMemoria =
+                        1;
+
+
+                    showToast(
+                        "Você recebeu a Flauta da Memória."
+                    );
+
+                }
+
+                break;
+
+
+            case "other_self":
+
+                state.finalChoiceShown =
+                    true;
+
+
+                openDialogue(
+
+                    {
+                        name:
+                            "A QUIETUDE",
+
+                        role:
+                            "Uma memória termina",
+
+                        color:
+                            "#c2acd0"
+                    },
+
+                    [
+                        "Por um instante, o mundo lembra de você.",
+                        "VEYRA ainda não terminou de contar sua história."
+                    ]
+
+                );
+
+                break;
+
+        }
+
+
+        saveGame();
+
+    }
+
+
+    /* =========================================================
+       PROGRESSÃO EXTRA DO WORLD
+
+       Inclui o Guardião da Estrada,
+       que precisa existir antes da floresta.
+       ========================================================= */
+
+    function augmentWorldProgression() {
+
+        if (
+            !state.world ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            state.area ===
+            "village"
+        ) {
+
+            const portal =
+                state.world
+                    .portals
+                    .find(
+                        item =>
+                            item.id ===
+                            "village_to_forest"
+                    );
+
+
+            if (portal) {
+
+                portal.condition =
+                    () =>
+                        hasDefeatedBoss(
+                            "road_guardian"
+                        );
+
+            }
+
+
+            if (
+                !hasDefeatedBoss(
+                    "road_guardian"
+                )
+            ) {
+
+                const exists =
+                    state.world
+                        .enemies
+                        .some(
+                            enemy =>
+                                enemy.id ===
+                                "road_guardian" &&
+                                !enemy.dead
+                        );
+
+
+                if (!exists) {
+
+                    addBossToWorld(
+
+                        state.world,
+
+                        "road_guardian",
+
+                        2820,
+
+                        1095,
+
+                        {
+                            hp:
+                                430,
+
+                            damage:
+                                24,
+
+                            defense:
+                                8,
+
+                            speed:
+                                72,
+
+                            radius:
+                                46,
+
+                            xp:
+                                180,
+
+                            money:
+                                90,
+
+                            unlock:
+                                "forest",
+
+                            ability: {
+                                id:
+                                    "roadGuardianSlam",
+                                type:
+                                    "groundSlam",
+                                cooldown:
+                                    3.1
+                            }
+                        }
+
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        if (
+            state.area ===
+            "monarchMaze" &&
+            state.player
+                .monarchAwakened &&
+            !state.player
+                .monarchDefeated
+        ) {
+
+            spawnMonarchNow();
+
+        }
+
+
+        if (
+            state.area ===
+            "sky"
+        ) {
+
+            initializeSkyTrialRuntime();
+
+
+            if (
+                state.player
+                    .skyTrial
+                    .complete
+            ) {
+
+                spawnPathGuardianIfNeeded();
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       TRAVEL
+       ========================================================= */
+
+    function findNearestPortal(
+        maxDistance =
+            120
+    ) {
+
+        if (
+            !state.player ||
+            !state.world ||
+            state.houseMode
+        ) {
+
+            return null;
+
+        }
+
+
+        let result =
+            null;
+
+
+        let best =
+            Infinity;
+
+
+        for (
+            const portal of
+            state.world.portals
+        ) {
+
+            if (
+                portal.hidden ||
+                !portal.active
+            ) {
+
+                continue;
+
+            }
+
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    portal.x +
+                        portal.w /
+                        2,
+
+                    portal.y +
+                        portal.h /
+                        2
+
+                );
+
+
+            if (
+                d <=
+                    maxDistance &&
+                d <
+                    best
+            ) {
+
+                result =
+                    portal;
+
+
+                best =
+                    d;
+
+            }
+
+        }
+
+
+        return result;
+
+    }
+
+
+    function openTravelConfirmation(
+        portal
+    ) {
+
+        if (!portal) {
+
+            return false;
+
+        }
+
+
+        if (
+            typeof portal.condition ===
+                "function" &&
+            !portal.condition()
+        ) {
+
+            showToast(
+                "Algo ainda bloqueia este caminho."
+            );
+
+            return false;
+
+        }
+
+
+        state.travel =
+            portal;
+
+
+        pauseForUI(
+            "travel"
+        );
+
+
+        const panel =
+            getElementAny([
+                "travelPanel",
+                "travelConfirmPanel"
+            ]);
+
+
+        panel
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        const title =
+            $("travelTitle");
+
+
+        const text =
+            $("travelText");
+
+
+        if (title) {
+
+            title.textContent =
+                portal.label ||
+                REGIONS[
+                    portal.targetArea
+                ]?.name ||
+                "VIAJAR";
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                "Deseja seguir por esta passagem?";
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function cancelTravel() {
+
+        state.travel =
+            null;
+
+
+        getElementAny([
+            "travelPanel",
+            "travelConfirmPanel"
+        ])
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        resumeFromUI(
+            "travel"
+        );
+
+
+        return true;
+
+    }
+
+
+    function confirmTravel() {
+
+        const travel =
+            state.travel;
+
+
+        if (!travel) {
+
+            return false;
+
+        }
+
+
+        if (
+            typeof travel.condition ===
+                "function" &&
+            !travel.condition()
+        ) {
+
+            cancelTravel();
+
+
+            showToast(
+                "O caminho ainda está bloqueado."
+            );
+
+
+            return false;
+
+        }
+
+
+        const targetArea =
+            travel.targetArea;
+
+
+        const targetX =
+            finiteNumber(
+                travel.targetX,
+                REGIONS[targetArea]
+                    ?.entry
+                    ?.x ||
+                200
+            );
+
+
+        const targetY =
+            finiteNumber(
+                travel.targetY,
+                REGIONS[targetArea]
+                    ?.entry
+                    ?.y ||
+                200
+            );
+
+
+        cancelTravel();
+
+
+        startSceneTransition(
+
+            REGIONS[targetArea]
+                ?.name ||
+            targetArea,
+
+            () => {
+
+                state.area =
+                    targetArea;
+
+
+                state.houseMode =
+                    false;
+
+
+                state.currentHouse =
+                    null;
+
+
+                state.houseReturn =
+                    null;
+
+
+                buildWorld();
+
+
+                const safe =
+                    findSafeSpawn(
+                        targetX,
+                        targetY,
+                        state.player.radius,
+                        {
+                            ignoreDarknessBarrier:
+                                true
+                        }
+                    );
+
+
+                state.player.x =
+                    safe.x;
+
+
+                state.player.y =
+                    safe.y;
+
+
+                state.portalCooldown =
+                    1;
+
+
+                state.camera.x =
+                    0;
+
+
+                state.camera.y =
+                    0;
+
+
+                saveGame();
+
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       PROVA CELESTE — 5 HORDAS
+       ========================================================= */
+
+    function resetSkyTrialRuntime() {
+
+        state.skyTrialRuntime = {
+
+            initialized:
+                false,
+
+            delay:
+                0,
+
+            announcedWave:
+                0
+
+        };
+
+    }
+
+
+    resetSkyTrialRuntime();
+
+
+    function getSkyArena() {
+
+        return (
+            state.world
+                ?.landmarks
+                ?.find(
+                    landmark =>
+                        landmark.id ===
+                        "sky_trial_arena"
+                ) ||
+            null
+        );
+
+    }
+
+
+    function isPlayerInsideSkyArena() {
+
+        const arena =
+            getSkyArena();
+
+
+        if (
+            !arena ||
+            !state.player ||
+            state.area !==
+                "sky"
+        ) {
+
+            return false;
+
+        }
+
+
+        return (
+
+            distance(
+                state.player.x,
+                state.player.y,
+                arena.x,
+                arena.y
+            ) <=
+
+            arena.radius
+
+        );
+
+    }
+
+
+    function startSkyTrial() {
+
+        const trial =
+            state.player
+                ?.skyTrial;
+
+
+        if (
+            !trial ||
+            trial.started ||
+            trial.complete
+        ) {
+
+            return false;
+
+        }
+
+
+        trial.started =
+            true;
+
+
+        trial.wave =
+            0;
+
+
+        trial.activeWave =
+            0;
+
+
+        state.skyTrialRuntime.delay =
+            1.2;
+
+
+        openDialogue(
+
+            {
+                name:
+                    "PROVA CELESTE",
+
+                role:
+                    "O vento muda de direção",
+
+                color:
+                    "#e4dda8"
+            },
+
+            [
+
+                "O chão abaixo de você vibra.",
+
+                "Cinco ondas de inimigos se aproximam.",
+
+                "Sobreviva."
+
+            ]
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function initializeSkyTrialRuntime() {
+
+        if (
+            state.area !==
+                "sky" ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        state.skyTrialRuntime.initialized =
+            true;
+
+
+        if (
+            state.player
+                .skyTrial
+                .started &&
+            state.player
+                .skyTrial
+                .activeWave >
+                0 &&
+            !state.player
+                .skyTrial
+                .complete
+        ) {
+
+            state.skyTrialRuntime.delay =
+                0.7;
+
+        }
+
+    }
+
+
+    function getSkyWaveSpecies(
+        wave,
+        index
+    ) {
+
+        const sets = [
+
+            [
+                "bat",
+                "thornling"
+            ],
+
+            [
+                "bat",
+                "wolf",
+                "thornling"
+            ],
+
+            [
+                "spider",
+                "bat",
+                "stoneCrawler"
+            ],
+
+            [
+                "rubyHound",
+                "spider",
+                "bat"
+            ],
+
+            [
+                "rubyHound",
+                "scorpion",
+                "stoneCrawler"
+            ]
+
+        ];
+
+
+        const list =
+            sets[
+                clamp(
+                    wave -
+                    1,
+                    0,
+                    4
+                )
+            ];
+
+
+        return list[
+            index %
+            list.length
+        ];
+
+    }
+
+
+    function spawnSkyWave(
+        wave
+    ) {
+
+        if (
+            state.area !==
+                "sky" ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const arena =
+            getSkyArena();
+
+
+        if (!arena) {
+
+            return false;
+
+        }
+
+
+        const count =
+            2 +
+            wave;
+
+
+        state.player
+            .skyTrial
+            .activeWave =
+            wave;
+
+
+        for (
+            let index = 0;
+            index < count;
+            index++
+        ) {
+
+            const angle =
+
+                index /
+                count *
+
+                Math.PI *
+                2;
+
+
+            const radius =
+                175 +
+                (
+                    index %
+                    2
+                ) *
+                55;
+
+
+            const species =
+                getSkyWaveSpecies(
+                    wave,
+                    index
+                );
+
+
+            const template =
+                ENEMY_SPECIES[
+                    species
+                ];
+
+
+            const enemy =
+                createEnemyFromSpecies(
+
+                    species,
+
+                    arena.x +
+                    Math.cos(
+                        angle
+                    ) *
+                    radius,
+
+                    arena.y +
+                    Math.sin(
+                        angle
+                    ) *
+                    radius,
+
+                    {
+                        id:
+                            `sky_wave_${wave}_${index}_${Date.now()}`,
+
+                        name:
+                            `ECO CELESTE — ${template.name}`,
+
+                        hp:
+                            template.hp *
+                            (
+                                1 +
+                                wave *
+                                0.12
+                            ),
+
+                        damage:
+                            template.damage *
+                            (
+                                1 +
+                                wave *
+                                0.08
+                            ),
+
+                        xp:
+                            template.xp +
+                            wave *
+                            9,
+
+                        money:
+                            template.money +
+                            wave *
+                            3,
+
+                        aggressive:
+                            true,
+
+                        metadata: {
+                            skyWaveEnemy:
+                                true,
+                            skyWave:
+                                wave
+                        }
+                    }
+
+                );
+
+
+            if (enemy) {
+
+                enemy.aggressive =
+                    true;
+
+
+                state.world
+                    .enemies
+                    .push(
+                        enemy
+                    );
+
+            }
+
+        }
+
+
+        state.skyTrialRuntime
+            .announcedWave =
+            wave;
+
+
+        showToast(
+            `HORDA ${wave} / 5`
+        );
+
+
+        return true;
+
+    }
+
+
+    function getLivingSkyWaveEnemies() {
+
+        return (
+            state.world
+                ?.enemies
+                ?.filter(
+                    enemy =>
+                        !enemy.dead &&
+                        enemy.metadata
+                            ?.skyWaveEnemy
+                ) ||
+            []
+        );
+
+    }
+
+
+    function finishSkyTrial() {
+
+        const trial =
+            state.player
+                .skyTrial;
+
+
+        trial.wave =
+            5;
+
+
+        trial.activeWave =
+            0;
+
+
+        trial.complete =
+            true;
+
+
+        state.skyTrialRuntime.delay =
+            0;
+
+
+        spawnGroundRing(
+            2500,
+            1125,
+            250,
+            "#eee0a3",
+            1.2
+        );
+
+
+        showToast(
+            "As cinco hordas foram derrotadas."
+        );
+
+
+        spawnPathGuardianIfNeeded();
+
+
+        saveGame();
+
+    }
+
+
+    function spawnPathGuardianIfNeeded() {
+
+        if (
+            state.area !==
+                "sky" ||
+            !state.player
+                ?.skyTrial
+                ?.complete ||
+            hasDefeatedBoss(
+                "path_guardian"
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.world.enemies
+                .some(
+                    enemy =>
+                        enemy.id ===
+                            "path_guardian" &&
+                        !enemy.dead
+                )
+        ) {
+
+            return true;
+
+        }
+
+
+        addBossToWorld(
+
+            state.world,
+
+            "path_guardian",
+
+            2940,
+
+            1125,
+
+            {
+                hp:
+                    1550,
+
+                damage:
+                    52,
+
+                defense:
+                    29,
+
+                speed:
+                    96,
+
+                vision:
+                    470,
+
+                attackRange:
+                    90,
+
+                radius:
+                    53,
+
+                xp:
+                    850,
+
+                money:
+                    440,
+
+                ability: {
+                    id:
+                        "pathGuardianSlam",
+                    type:
+                        "groundSlam",
+                    cooldown:
+                        2.8
+                }
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function updateSkyTrial(
+        dt
+    ) {
+
+        if (
+            state.area !==
+                "sky" ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        const trial =
+            state.player
+                .skyTrial;
+
+
+        if (
+            trial.complete
+        ) {
+
+            spawnPathGuardianIfNeeded();
+
+            return;
+
+        }
+
+
+        if (
+            !trial.started
+        ) {
+
+            if (
+                isPlayerInsideSkyArena()
+            ) {
+
+                startSkyTrial();
+
+            }
+
+
+            return;
+
+        }
+
+
+        const living =
+            getLivingSkyWaveEnemies();
+
+
+        if (
+            trial.activeWave >
+                0 &&
+            living.length ===
+                0
+        ) {
+
+            trial.wave =
+                trial.activeWave;
+
+
+            trial.activeWave =
+                0;
+
+
+            if (
+                trial.wave >=
+                5
+            ) {
+
+                finishSkyTrial();
+
+                return;
+
+            }
+
+
+            state.skyTrialRuntime.delay =
+                1.4;
+
+        }
+
+
+        if (
+            trial.activeWave ===
+                0
+        ) {
+
+            state.skyTrialRuntime.delay -=
+                dt;
+
+
+            if (
+                state.skyTrialRuntime.delay <=
+                0
+            ) {
+
+                spawnSkyWave(
+                    trial.wave +
+                    1
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       FLAUTA DA MEMÓRIA
+       ========================================================= */
+
+    function playMemoryFlute() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            getRealItemCount(
+                "flautaMemoria"
+            ) <=
+                0
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.area !==
+            "sky"
+        ) {
+
+            showToast(
+                "Aqui, a melodia parece não encontrar caminho."
+            );
+
+
+            return false;
+
+        }
+
+
+        player.flutePlayed =
+            true;
+
+
+        const portal =
+            state.world
+                .portals
+                .find(
+                    item =>
+                        item.id ===
+                        "sky_to_hell"
+                );
+
+
+        if (portal) {
+
+            portal.hidden =
+                false;
+
+
+            portal.active =
+                true;
+
+        }
+
+
+        spawnGroundRing(
+            player.x,
+            player.y,
+            180,
+            "#eee0ab",
+            1.2
+        );
+
+
+        spawnRadialParticles(
+            player.x,
+            player.y,
+            "#d5e7e9",
+            28,
+            145
+        );
+
+
+        openDialogue(
+
+            {
+                name:
+                    "FLAUTA DA MEMÓRIA",
+
+                role:
+                    "Uma melodia atravessa o céu",
+
+                color:
+                    "#e9dfaa"
+            },
+
+            [
+
+                "A primeira nota parece desaparecer no vento.",
+
+                "A segunda volta de algum lugar que você não consegue ver.",
+
+                "Quando a última nota termina, uma passagem que antes não existia começa a tomar forma."
+
+            ]
+
+        );
+
+
+        saveGame();
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       INTERAÇÃO GERAL
+       ========================================================= */
+
+    function handleInteractionKeyDown() {
+
+        if (
+            state.dialogue
+        ) {
+
+            advanceDialogue();
+
+            return true;
+
+        }
+
+
+        if (
+            state.paused
+        ) {
+
+            return false;
+
+        }
+
+
+        const bed =
+            getNearbyBed();
+
+
+        if (bed) {
+
+            return startPlayerRest();
+
+        }
+
+
+        const altar =
+            getNearbyAltar();
+
+
+        if (altar) {
+
+            return interactWithMonarchAltar();
+
+        }
+
+
+        const gate =
+            findNearestGate();
+
+
+        if (gate) {
+
+            return interactWithGate(
+                gate
+            );
+
+        }
+
+
+        const boss =
+            findNearestProgressionBoss();
+
+
+        if (boss) {
+
+            return openBattleConfirmation(
+                boss
+            );
+
+        }
+
+
+        const npc =
+            findNearestNPC();
+
+
+        if (npc) {
+
+            return interactWithNPC(
+                npc
+            );
+
+        }
+
+
+        const portal =
+            findNearestPortal();
+
+
+        if (portal) {
+
+            return openTravelConfirmation(
+                portal
+            );
+
+        }
+
+
+        const collectible =
+            getNearestCollectible();
+
+
+        if (collectible) {
+
+            return startHoldCollect(
+                collectible
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function handleInteractionKeyUp() {
+
+        cancelHoldCollect();
+
+    }
+
+
+    function updateInteractionHint() {
+
+        const hint =
+            $("interactionHint");
+
+
+        if (
+            !hint ||
+            !state.running ||
+            !state.player ||
+            state.dialogue ||
+            state.paused
+        ) {
+
+            hint
+                ?.classList
+                .add(
+                    "hidden"
+                );
+
+
+            return;
+
+        }
+
+
+        let text =
+            "";
+
+
+        if (
+            getNearbyBed()
+        ) {
+
+            text =
+                "E — DESCANSAR";
+
+        }
+
+        else if (
+            getNearbyAltar()
+        ) {
+
+            text =
+                "E — EXAMINAR ALTAR";
+
+        }
+
+        else if (
+            findNearestGate()
+        ) {
+
+            text =
+                "E — EXAMINAR PORTÃO";
+
+        }
+
+        else if (
+            findNearestProgressionBoss()
+        ) {
+
+            text =
+                "E — ENFRENTAR";
+
+        }
+
+        else if (
+            findNearestNPC()
+        ) {
+
+            text =
+                "E — CONVERSAR";
+
+        }
+
+        else if (
+            findNearestPortal()
+        ) {
+
+            text =
+                "E — VIAJAR";
+
+        }
+
+        else if (
+            getNearestCollectible()
+        ) {
+
+            text =
+                "SEGURE E — COLETAR";
+
+        }
+
+        else if (
+            state.houseMode &&
+            isPlayerNearInteriorDoor()
+        ) {
+
+            text =
+                "Z — SAIR";
+
+        }
+
+        else if (
+            !state.houseMode &&
+            getNearbyExteriorDoor()
+        ) {
+
+            text =
+                "Z — ENTRAR";
+
+        }
+
+
+        if (!text) {
+
+            hint.classList.add(
+                "hidden"
+            );
+
+            return;
+
+        }
+
+
+        hint.textContent =
+            text;
+
+
+        hint.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    function updateInteractionSystems(
+        dt
+    ) {
+
+        updateSceneTransition(
+            dt
+        );
+
+
+        updateDialogue(
+            dt
+        );
+
+
+        updateGateAnimations(
+            dt
+        );
+
+
+        updateSkyTrial(
+            dt
+        );
+
+
+        updateInteractionHint();
+
+    }
+
+
+    /* =========================================================
+       INVENTÁRIO UI
+       ========================================================= */
+
+    function openInventory() {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const panel =
+            $("inventoryPanel");
+
+
+        if (
+            !panel.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            closeInventory();
+
+            return true;
+
+        }
+
+
+        renderInventory();
+
+
+        panel.classList.remove(
+            "hidden"
+        );
+
+
+        state.activePanel =
+            "inventory";
+
+
+        pauseForUI(
+            "inventory"
+        );
+
+
+        return true;
+
+    }
+
+
+    function closeInventory() {
+
+        $("inventoryPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            state.activePanel ===
+            "inventory"
+        ) {
+
+            state.activePanel =
+                null;
+
+        }
+
+
+        resumeFromUI(
+            "inventory"
+        );
+
+    }
+
+
+    function renderInventory() {
+
+        const player =
+            state.player;
+
+
+        const list =
+            $("inventoryList");
+
+
+        if (
+            !player ||
+            !list
+        ) {
+
+            return;
+
+        }
+
+
+        const items =
+            Object.entries(
+                player.inventory
+            )
+                .filter(
+                    (
+                        [
+                            ,
+                            amount
+                        ]
+                    ) =>
+                        amount >
+                        0
+                );
+
+
+        const weight =
+            $("inventoryWeight");
+
+
+        if (weight) {
+
+            weight.textContent =
+                `Peso: ${getInventoryWeight().toFixed(1)} / ${player.inventoryWeightLimit}`;
+
+        }
+
+
+        if (
+            items.length ===
+            0
+        ) {
+
+            list.innerHTML =
+                "<p>Sua mochila está vazia.</p>";
+
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            items
+                .map(
+                    (
+                        [
+                            id,
+                            amount
+                        ]
+                    ) => {
+
+                        const item =
+                            ITEMS[id];
+
+
+                        if (!item) {
+
+                            return "";
+
+                        }
+
+
+                        const equipped =
+                            isEquippedItem(
+                                id
+                            );
+
+
+                        const usable =
+
+                            item.category ===
+                                "food" ||
+                            item.category ===
+                                "potions" ||
+                            item.category ===
+                                "weapons" ||
+                            item.category ===
+                                "armor" ||
+                            item.category ===
+                                "tools" ||
+                            id ===
+                                "flautaMemoria";
+
+
+                        return `
+                            <div class="inventory-row">
+                                <div>
+                                    <span>
+                                        ${item.icon || "•"}
+                                    </span>
+
+                                    <strong>
+                                        ${escapeHTML(item.name)}
+                                    </strong>
+
+                                    <small>
+                                        x${amount}
+                                        ${equipped ? " • EQUIPADO" : ""}
+                                    </small>
+                                </div>
+
+                                ${
+                                    usable
+
+                                        ? `
+                                            <button
+                                                type="button"
+                                                data-inventory-use="${escapeHTML(id)}"
+                                            >
+                                                ${equipped ? "EQUIPADO" : "USAR"}
+                                            </button>
+                                        `
+
+                                        : ""
+                                }
+                            </div>
+                        `;
+
+                    }
+                )
+                .join(
+                    ""
+                );
+
+    }
+
+
+    /* =========================================================
+       STATUS UI
+       ========================================================= */
+
+    function openStatusPanel() {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const panel =
+            $("statusPanel");
+
+
+        if (
+            !panel.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            closeStatusPanel();
+
+            return true;
+
+        }
+
+
+        renderStatusPanel();
+
+
+        panel.classList.remove(
+            "hidden"
+        );
+
+
+        state.activePanel =
+            "status";
+
+
+        pauseForUI(
+            "status"
+        );
+
+
+        return true;
+
+    }
+
+
+    function closeStatusPanel() {
+
+        $("statusPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            state.activePanel ===
+            "status"
+        ) {
+
+            state.activePanel =
+                null;
+
+        }
+
+
+        resumeFromUI(
+            "status"
+        );
+
+    }
+
+
+    function renderStatusPanel() {
+
+        const player =
+            state.player;
+
+
+        const list =
+            $("statusList");
+
+
+        if (
+            !player ||
+            !list
+        ) {
+
+            return;
+
+        }
+
+
+        const points =
+            $("statusPoints");
+
+
+        if (points) {
+
+            points.textContent =
+                `Pontos disponíveis: ${player.statPoints}`;
+
+        }
+
+
+        list.innerHTML =
+            Object.values(
+                STAT_CONFIG
+            )
+                .map(
+                    stat => {
+
+                        const current =
+                            player.stats[
+                                stat.id
+                            ];
+
+
+                        return `
+                            <div class="status-row">
+                                <div>
+                                    <span>
+                                        ${stat.icon}
+                                    </span>
+
+                                    <strong>
+                                        ${escapeHTML(stat.label)}
+                                    </strong>
+
+                                    <small>
+                                        ${escapeHTML(stat.description)}
+                                    </small>
+                                </div>
+
+                                <div class="status-value">
+                                    <b>
+                                        ${current} / ${STAT_CAP}
+                                    </b>
+
+                                    <button
+                                        type="button"
+                                        data-stat-add="${stat.id}"
+                                        ${
+                                            !canAllocateStat(stat.id)
+                                                ? "disabled"
+                                                : ""
+                                        }
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+
+                    }
+                )
+                .join(
+                    ""
+                );
+
+    }
+
+
+    /* =========================================================
+       MAPA GRANDE
+       ========================================================= */
+
+    function toggleWorldMapPanel() {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !state.player
+                .minimapOwned
+        ) {
+
+            showToast(
+                "Você ainda não possui o mapa."
+            );
+
+
+            return false;
+
+        }
+
+
+        let panel =
+            $("worldMapPanel");
+
+
+        if (!panel) {
+
+            panel =
+                ensureRuntimeElement(
+                    "worldMapPanel",
+                    "game-modal hidden",
+                    `
+                        <div class="modal-card world-map-card">
+                            <div class="modal-header">
+                                <div>
+                                    <span class="modal-eyebrow">
+                                        VEYRA
+                                    </span>
+                                    <h2>MAPA</h2>
+                                </div>
+
+                                <button
+                                    id="worldMapCloseBtn"
+                                    type="button"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <canvas
+                                id="runtimeWorldMapCanvas"
+                                width="800"
+                                height="500"
+                            ></canvas>
+                        </div>
+                    `
+                );
+
+
+            $("worldMapCloseBtn")
+                ?.addEventListener(
+                    "click",
+                    toggleWorldMapPanel
+                );
+
+        }
+
+
+        const opening =
+            panel.classList
+                .contains(
+                    "hidden"
+                );
+
+
+        if (opening) {
+
+            panel.classList.remove(
+                "hidden"
+            );
+
+
+            pauseForUI(
+                "map"
+            );
+
+
+            renderRuntimeWorldMap();
+
+        }
+
+        else {
+
+            panel.classList.add(
+                "hidden"
+            );
+
+
+            resumeFromUI(
+                "map"
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function renderRuntimeWorldMap() {
+
+        const runtimeCanvas =
+            $("runtimeWorldMapCanvas");
+
+
+        if (
+            !runtimeCanvas ||
+            !state.world ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        const map =
+            runtimeCanvas.getContext(
+                "2d"
+            );
+
+
+        const width =
+            runtimeCanvas.width;
+
+
+        const height =
+            runtimeCanvas.height;
+
+
+        const scaleX =
+            width /
+            state.world.width;
+
+
+        const scaleY =
+            height /
+            state.world.height;
+
+
+        map.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        map.fillStyle =
+            getBiomeStyle()
+                .ground;
+
+
+        map.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        map.fillStyle =
+            getPathStyle()
+                .base;
+
+
+        for (
+            const path of
+            state.world.paths
+        ) {
+
+            map.fillRect(
+                path.x *
+                    scaleX,
+                path.y *
+                    scaleY,
+                path.w *
+                    scaleX,
+                path.h *
+                    scaleY
+            );
+
+        }
+
+
+        for (
+            const marker of
+            getVisibleMapMarkers()
+        ) {
+
+            const x =
+                marker.x *
+                scaleX;
+
+
+            const y =
+                marker.y *
+                scaleY;
+
+
+            map.fillStyle =
+
+                marker.type ===
+                "boss"
+
+                    ? "#e26772"
+
+                    : marker.type ===
+                      "fountain"
+
+                        ? "#74bfd4"
+
+                        : marker.type ===
+                          "portal"
+
+                            ? "#dabf83"
+
+                            : "#eee1bd";
+
+
+            map.beginPath();
+
+
+            map.arc(
+                x,
+                y,
+                marker.important
+                    ? 6
+                    : 4,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            map.fill();
+
+
+            if (
+                marker.label
+            ) {
+
+                map.font =
+                    "bold 11px serif";
+
+
+                map.textAlign =
+                    "center";
+
+
+                map.fillStyle =
+                    "#ffffff";
+
+
+                map.fillText(
+                    marker.label,
+                    x,
+                    y -
+                        10
+                );
+
+            }
+
+        }
+
+
+        map.fillStyle =
+            "#ffffff";
+
+
+        map.beginPath();
+
+
+        map.arc(
+            state.player.x *
+                scaleX,
+            state.player.y *
+                scaleY,
+            7,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        map.fill();
+
+    }
+
+
+    /* =========================================================
+       SAVE / LOAD
+       ========================================================= */
+
+    function createSerializablePlayer() {
+
+        if (
+            !state.player
+        ) {
+
+            return null;
+
+        }
+
+
+        const player =
+            deepClone(
+                state.player
+            );
+
+
+        /*
+            Campos somente runtime.
+        */
+
+        player.playerDash =
+            null;
+
+
+        player.zephyrDash =
+            null;
+
+
+        player.guardianRush =
+            null;
+
+
+        player.ironGuard =
+            null;
+
+
+        player.adaptiveBuff =
+            null;
+
+
+        player.poisonEffect =
+            null;
+
+
+        player.attackCooldown =
+            0;
+
+
+        player.skillCooldowns = {
+            q:
+                0,
+            r:
+                0,
+            f:
+                0
+        };
+
+
+        return player;
+
+    }
+
+
+    function createSavePayload() {
+
+        return {
+
+            version:
+                GAME_VERSION,
+
+            versionName:
+                GAME_VERSION_NAME,
+
+            savedAt:
+                Date.now(),
+
+            area:
+                state.area,
+
+            houseMode:
+                state.houseMode,
+
+            currentHouseId:
+                state.currentHouse
+                    ?.id ||
+                null,
+
+            houseReturn:
+                state.houseReturn
+                    ? deepClone(
+                        state.houseReturn
+                    )
+                    : null,
+
+            player:
+                createSerializablePlayer()
+
+            /*
+                state.dev NÃO entra aqui.
+            */
+
+        };
+
+    }
+
+
+    function saveGame(
+        silent =
+            true
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            localStorage.setItem(
+                SAVE_KEY,
+                JSON.stringify(
+                    createSavePayload()
+                )
+            );
+
+
+            renderRuntime.lastSaveAt =
+                performance.now();
+
+
+            if (!silent) {
+
+                showToast(
+                    "Jogo salvo."
+                );
+
+            }
+
+
+            return true;
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "VEYRA: erro ao salvar.",
+                error
+            );
+
+
+            if (!silent) {
+
+                showToast(
+                    "Não foi possível salvar."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+    }
+
+
+    function findExistingSave() {
+
+        const keys = [
+            SAVE_KEY,
+            ...LEGACY_SAVE_KEYS
+        ];
+
+
+        for (
+            const key of
+            keys
+        ) {
+
+            try {
+
+                const raw =
+                    localStorage.getItem(
+                        key
+                    );
+
+
+                if (!raw) {
+
+                    continue;
+
+                }
+
+
+                const parsed =
+                    JSON.parse(
+                        raw
+                    );
+
+
+                if (
+                    parsed?.player
+                ) {
+
+                    return {
+                        key,
+                        data:
+                            parsed
+                    };
+
+                }
+
+            }
+
+            catch (
+                error
+            ) {
+
+                console.warn(
+                    `VEYRA: save inválido em ${key}.`,
+                    error
+                );
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function hasSave() {
+
+        return Boolean(
+            findExistingSave()
+        );
+
+    }
+
+
+    function migratePlayerToV25Rules(
+        oldPlayer
+    ) {
+
+        const character =
+            getCharacterById(
+                oldPlayer
+                    ?.characterId
+            ) ||
+            CHARACTERS[0];
+
+
+        const fresh =
+            createNewPlayer(
+                character,
+                oldPlayer?.name ||
+                character.name
+            );
+
+
+        const player = {
+
+            ...fresh,
+
+            ...oldPlayer
+
+        };
+
+
+        player.stats = {
+
+            ...fresh.stats,
+
+            ...(
+                oldPlayer.stats ||
+                {}
+            )
+
+        };
+
+
+        for (
+            const key of
+            Object.keys(
+                player.stats
+            )
+        ) {
+
+            if (
+                !STAT_CONFIG[key]
+            ) {
+
+                delete player.stats[
+                    key
+                ];
+
+            }
+
+        }
+
+
+        player.inventory = {
+
+            ...createEmptyInventory(),
+
+            ...(
+                oldPlayer.inventory ||
+                {}
+            )
+
+        };
+
+
+        player.equipment = {
+
+            ...fresh.equipment,
+
+            ...(
+                oldPlayer.equipment ||
+                {}
+            )
+
+        };
+
+
+        player.abilities = {
+
+            ...fresh.abilities,
+
+            ...(
+                oldPlayer.abilities ||
+                {}
+            )
+
+        };
+
+
+        player.gateUnlocks = {
+
+            ...fresh.gateUnlocks,
+
+            ...(
+                oldPlayer.gateUnlocks ||
+                {}
+            )
+
+        };
+
+
+        player.gateDialogueIndex = {
+
+            ...fresh.gateDialogueIndex,
+
+            ...(
+                oldPlayer.gateDialogueIndex ||
+                {}
+            )
+
+        };
+
+
+        player.quest = {
+
+            wood: {
+                ...fresh.quest.wood,
+                ...(
+                    oldPlayer.quest
+                        ?.wood ||
+                    {}
+                )
+            },
+
+            coal: {
+                ...fresh.quest.coal,
+                ...(
+                    oldPlayer.quest
+                        ?.coal ||
+                    {}
+                )
+            }
+
+        };
+
+
+        player.defeatedBosses =
+            Array.isArray(
+                oldPlayer.defeatedBosses
+            )
+                ? [
+                    ...new Set(
+                        oldPlayer.defeatedBosses
+                    )
+                ]
+                : [];
+
+
+        player.discoveredBosses =
+            Array.isArray(
+                oldPlayer.discoveredBosses
+            )
+                ? [
+                    ...new Set(
+                        oldPlayer.discoveredBosses
+                    )
+                ]
+                : [];
+
+
+        player.unlockedAreas =
+            Array.isArray(
+                oldPlayer.unlockedAreas
+            )
+                ? [
+                    ...new Set(
+                        oldPlayer.unlockedAreas
+                    )
+                ]
+                : [
+                    "village"
+                ];
+
+
+        player.exploredAreas =
+            Array.isArray(
+                oldPlayer.exploredAreas
+            )
+                ? [
+                    ...new Set(
+                        oldPlayer.exploredAreas
+                    )
+                ]
+                : [
+                    "village"
+                ];
+
+
+        player.purchasedUniqueItems =
+            Array.isArray(
+                oldPlayer.purchasedUniqueItems
+            )
+                ? [
+                    ...new Set(
+                        oldPlayer.purchasedUniqueItems
+                    )
+                ]
+                : [];
+
+
+        player.lanternOwned =
+            Boolean(
+                oldPlayer.lanternOwned ||
+                player.inventory
+                    .lanterna >
+                    0
+            );
+
+
+        player.minimapOwned =
+            Boolean(
+                oldPlayer.minimapOwned ||
+                player.inventory
+                    .minimapa >
+                    0
+            );
+
+
+        player.monarchDefeated =
+            Boolean(
+                oldPlayer.monarchDefeated ||
+                player.defeatedBosses
+                    .includes(
+                        "monarch"
+                    )
+            );
+
+
+        /*
+            Save antigo que já alcançou a floresta
+            não será forçado para trás.
+        */
+
+        if (
+            player.unlockedAreas
+                .includes(
+                    "forest"
+                ) &&
+            !player.defeatedBosses
+                .includes(
+                    "road_guardian"
+                )
+        ) {
+
+            player.defeatedBosses.push(
+                "road_guardian"
+            );
+
+        }
+
+
+        let highestTier =
+            finiteNumber(
+                oldPlayer.armorHighestTierEver,
+                0
+            );
+
+
+        for (
+            const id of
+            ARMOR_PROGRESSION
+        ) {
+
+            if (
+                player.inventory[
+                    id
+                ] >
+                    0 ||
+                player.equipment
+                    .armor ===
+                    id
+            ) {
+
+                highestTier =
+                    Math.max(
+                        highestTier,
+                        getArmorTier(
+                            id
+                        )
+                    );
+
+            }
+
+        }
+
+
+        player.armorHighestTierEver =
+            highestTier;
+
+
+        player.level =
+            clamp(
+                Math.floor(
+                    finiteNumber(
+                        player.level,
+                        1
+                    )
+                ),
+                1,
+                MAX_LEVEL
+            );
+
+
+        player.xpToNext =
+
+            player.level >=
+            MAX_LEVEL
+
+                ? Infinity
+
+                : calculateXpToNext(
+                    player.level
+                );
+
+
+        player.statPoints =
+            Math.max(
+                0,
+                Math.floor(
+                    finiteNumber(
+                        player.statPoints,
+                        0
+                    )
+                )
+            );
+
+
+        player.skyTrial = {
+
+            ...fresh.skyTrial,
+
+            ...(
+                oldPlayer.skyTrial ||
+                {}
+            )
+
+        };
+
+
+        player.activePotionBuffs =
+            [];
+
+
+        player.playerDash =
+            null;
+
+
+        player.zephyrDash =
+            null;
+
+
+        player.guardianRush =
+            null;
+
+
+        player.ironGuard =
+            null;
+
+
+        player.adaptiveBuff =
+            null;
+
+
+        player.poisonEffect =
+            null;
+
+
+        player.attackCooldown =
+            0;
+
+
+        player.skillCooldowns = {
+            q:
+                0,
+            r:
+                0,
+            f:
+                0
+        };
+
+
+        player.dead =
+            false;
+
+
+        return player;
+
+    }
+
+
+    function repairInteriorLoadedPosition() {
+
+        const spec =
+            getHouseSpec(
+                state.currentHouse
+            );
+
+
+        if (
+            !spec ||
+            !state.player
+        ) {
+
+            state.houseMode =
+                false;
+
+            return;
+
+        }
+
+
+        if (
+            isInteriorPositionBlocked(
+                state.player.x,
+                state.player.y,
+                state.player.radius,
+                state.currentHouse
+            )
+        ) {
+
+            state.player.x =
+                spec.playerSpawn.x;
+
+
+            state.player.y =
+                spec.playerSpawn.y;
+
+        }
+
+    }
+
+
+    function loadGame() {
+
+        const found =
+            findExistingSave();
+
+
+        if (!found) {
+
+            showToast(
+                "Nenhum save encontrado."
+            );
+
+            return false;
+
+        }
+
+
+        try {
+
+            const payload =
+                found.data;
+
+
+            state.player =
+                migratePlayerToV25Rules(
+                    payload.player
+                );
+
+
+            state.selectedCharacter =
+                getCharacterById(
+                    state.player
+                        .characterId
+                ) ||
+                CHARACTERS[0];
+
+
+            state.area =
+                REGIONS[
+                    payload.area
+                ]
+                    ? payload.area
+                    : "village";
+
+
+            state.houseMode =
+                Boolean(
+                    payload.houseMode
+                );
+
+
+            state.currentHouse =
+                null;
+
+
+            state.houseReturn =
+                payload.houseReturn ||
+                null;
+
+
+            buildWorld();
+
+
+            if (
+                state.houseMode &&
+                payload.currentHouseId &&
+                HOUSE_INTERIORS[
+                    payload.currentHouseId
+                ]
+            ) {
+
+                state.currentHouse = {
+
+                    id:
+                        payload.currentHouseId,
+
+                    interiorId:
+                        payload.currentHouseId,
+
+                    name:
+                        HOUSE_INTERIORS[
+                            payload.currentHouseId
+                        ].name
+
+                };
+
+
+                repairInteriorLoadedPosition();
+
+            }
+
+            else {
+
+                state.houseMode =
+                    false;
+
+
+                repairPlayerPosition(
+                    state.player.x,
+                    state.player.y
+                );
+
+            }
+
+
+            recalculatePlayerStats();
+
+
+            state.running =
+                true;
+
+
+            state.paused =
+                false;
+
+
+            uiPauseReasons.clear();
+
+
+            state.dialogue =
+                null;
+
+
+            state.travel =
+                null;
+
+
+            state.battle =
+                null;
+
+
+            state.shopNPC =
+                null;
+
+
+            state.questNPC =
+                null;
+
+
+            state.portalCooldown =
+                1;
+
+
+            resetSkyTrialRuntime();
+
+
+            augmentWorldProgression();
+
+
+            showScreen(
+                "game"
+            );
+
+
+            resizeGameCanvas();
+
+
+            updateHUD();
+
+
+            renderInventory();
+
+
+            if (
+                found.key !==
+                SAVE_KEY
+            ) {
+
+                saveGame();
+
+            }
+
+
+            return true;
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "VEYRA: erro ao carregar.",
+                error
+            );
+
+
+            showToast(
+                "O save não pôde ser carregado."
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    function deleteSave() {
+
+        try {
+
+            localStorage.removeItem(
+                SAVE_KEY
+            );
+
+
+            for (
+                const key of
+                LEGACY_SAVE_KEYS
+            ) {
+
+                localStorage.removeItem(
+                    key
+                );
+
+            }
+
+
+            updateContinueButtons();
+
+
+            showToast(
+                "Save apagado."
+            );
+
+
+            return true;
+
+        }
+
+        catch {
+
+            return false;
+
+        }
+
+    }
+
+
+    function updateAutosave(
+        dt
+    ) {
+
+        if (
+            !state.running ||
+            !state.player ||
+            state.player.dead
+        ) {
+
+            return;
+
+        }
+
+
+        state.autosaveTimer +=
+            dt;
+
+
+        if (
+            state.autosaveTimer <
+            GAME_CONFIG
+                .autosaveSeconds
+        ) {
+
+            return;
+
+        }
+
+
+        state.autosaveTimer =
+            0;
+
+
+        saveGame();
+
+    }
+
+
+    /* =========================================================
+       CAMERA
+       ========================================================= */
+
+    function resizeGameCanvas() {
+
+        const gameCanvas =
+            getLiveCanvas();
+
+
+        if (!gameCanvas) {
+
+            return;
+
+        }
+
+
+        const rect =
+            gameCanvas
+                .getBoundingClientRect();
+
+
+        const cssWidth =
+            Math.max(
+                320,
+                rect.width ||
+                window.innerWidth
+            );
+
+
+        const cssHeight =
+            Math.max(
+                240,
+                rect.height ||
+                window.innerHeight
+            );
+
+
+        const dpr =
+            Math.min(
+                2,
+                window.devicePixelRatio ||
+                1
+            );
+
+
+        renderRuntime.width =
+            Math.round(
+                cssWidth
+            );
+
+
+        renderRuntime.height =
+            Math.round(
+                cssHeight
+            );
+
+
+        renderRuntime.dpr =
+            dpr;
+
+
+        const physicalWidth =
+            Math.round(
+                cssWidth *
+                dpr
+            );
+
+
+        const physicalHeight =
+            Math.round(
+                cssHeight *
+                dpr
+            );
+
+
+        if (
+            gameCanvas.width !==
+            physicalWidth
+        ) {
+
+            gameCanvas.width =
+                physicalWidth;
+
+        }
+
+
+        if (
+            gameCanvas.height !==
+            physicalHeight
+        ) {
+
+            gameCanvas.height =
+                physicalHeight;
+
+        }
+
+
+        if (
+            !renderRuntime.darknessCanvas
+        ) {
+
+            renderRuntime.darknessCanvas =
+                document.createElement(
+                    "canvas"
+                );
+
+
+            renderRuntime.darknessCtx =
+                renderRuntime
+                    .darknessCanvas
+                    .getContext(
+                        "2d"
+                    );
+
+        }
+
+
+        renderRuntime.darknessCanvas.width =
+            physicalWidth;
+
+
+        renderRuntime.darknessCanvas.height =
+            physicalHeight;
+
+    }
+
+
+    function getCurrentWorldSize() {
+
+        if (
+            state.houseMode
+        ) {
+
+            return getHouseWorldSize(
+                state.currentHouse
+            );
+
+        }
+
+
+        return {
+
+            width:
+                state.world
+                    ?.width ||
+                1280,
+
+            height:
+                state.world
+                    ?.height ||
+                720
+
+        };
+
+    }
+
+
+    function updateCamera(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        const size =
+            getCurrentWorldSize();
+
+
+        const targetX =
+            player.x -
+            renderRuntime.width /
+                2;
+
+
+        const targetY =
+            player.y -
+            renderRuntime.height /
+                2;
+
+
+        const maxX =
+            Math.max(
+                0,
+                size.width -
+                renderRuntime.width
+            );
+
+
+        const maxY =
+            Math.max(
+                0,
+                size.height -
+                renderRuntime.height
+            );
+
+
+        state.camera.x =
+            lerp(
+                state.camera.x,
+                clamp(
+                    targetX,
+                    0,
+                    maxX
+                ),
+                clamp(
+                    dt *
+                    7,
+                    0,
+                    1
+                )
+            );
+
+
+        state.camera.y =
+            lerp(
+                state.camera.y,
+                clamp(
+                    targetY,
+                    0,
+                    maxY
+                ),
+                clamp(
+                    dt *
+                    7,
+                    0,
+                    1
+                )
+            );
+
+    }
+
+
+    function worldToScreen(
+        x,
+        y
+    ) {
+
+        return {
+
+            x:
+                x -
+                state.camera.x,
+
+            y:
+                y -
+                state.camera.y
+
+        };
+
+    }
+
+
+    function screenToWorld(
+        x,
+        y
+    ) {
+
+        return {
+
+            x:
+                x +
+                state.camera.x,
+
+            y:
+                y +
+                state.camera.y
+
+        };
+
+    }
+
+
+    /* =========================================================
+       RENDER — HELPERS
+       ========================================================= */
+
+    function applyCanvasTransform(
+        context
+    ) {
+
+        context.setTransform(
+            renderRuntime.dpr,
+            0,
+            0,
+            renderRuntime.dpr,
+            0,
+            0
+        );
+
+    }
+
+
+    function drawEntityName(
+        context,
+        text,
+        x,
+        y,
+        color =
+            "#f3ead6"
+    ) {
+
+        context.save();
+
+
+        context.font =
+            "700 12px Georgia, serif";
+
+
+        context.textAlign =
+            "center";
+
+
+        context.textBaseline =
+            "middle";
+
+
+        context.lineWidth =
+            4;
+
+
+        context.strokeStyle =
+            "rgba(0,0,0,.7)";
+
+
+        context.strokeText(
+            text,
+            x,
+            y
+        );
+
+
+        context.fillStyle =
+            color;
+
+
+        context.fillText(
+            text,
+            x,
+            y
+        );
+
+
+        context.restore();
+
+    }
+
+
+    function drawShadow(
+        context,
+        x,
+        y,
+        width,
+        height
+    ) {
+
+        context.save();
+
+
+        context.fillStyle =
+            "rgba(0,0,0,.28)";
+
+
+        context.beginPath();
+
+
+        context.ellipse(
+            x,
+            y,
+            width /
+                2,
+            height /
+                2,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.restore();
+
+    }
+
+
+    /* =========================================================
+       RENDER DO CHÃO
+       ========================================================= */
+
+    function drawGround(
+        context
+    ) {
+
+        const style =
+            getBiomeStyle();
+
+
+        context.fillStyle =
+            style.ground;
+
+
+        context.fillRect(
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+
+        /*
+            Textura discreta baseada em grade.
+        */
+
+        context.save();
+
+
+        context.globalAlpha =
+            0.12;
+
+
+        context.fillStyle =
+            style.groundAlt;
+
+
+        const spacing =
+            80;
+
+
+        const offsetX =
+            -(
+                state.camera.x %
+                spacing
+            );
+
+
+        const offsetY =
+            -(
+                state.camera.y %
+                spacing
+            );
+
+
+        for (
+            let y = offsetY;
+            y <
+                renderRuntime.height +
+                spacing;
+            y +=
+                spacing
+        ) {
+
+            for (
+                let x = offsetX;
+                x <
+                    renderRuntime.width +
+                    spacing;
+                x +=
+                    spacing
+            ) {
+
+                const seed =
+                    Math.sin(
+                        x *
+                        0.02 +
+                        y *
+                        0.017
+                    );
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    x +
+                        seed *
+                        17,
+                    y -
+                        seed *
+                        11,
+                    2 +
+                        Math.abs(
+                            seed
+                        ) *
+                        2,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+            }
+
+        }
+
+
+        context.restore();
+
+    }
+
+
+    function drawPaths(
+        context
+    ) {
+
+        const style =
+            getPathStyle();
+
+
+        for (
+            const path of
+            state.world
+                ?.paths ||
+            []
+        ) {
+
+            const screen =
+                worldToScreen(
+                    path.x,
+                    path.y
+                );
+
+
+            context.fillStyle =
+                style.edge;
+
+
+            context.fillRect(
+                screen.x -
+                    6,
+                screen.y -
+                    6,
+                path.w +
+                    12,
+                path.h +
+                    12
+            );
+
+
+            context.fillStyle =
+                style.base;
+
+
+            context.fillRect(
+                screen.x,
+                screen.y,
+                path.w,
+                path.h
+            );
+
+
+            context.save();
+
+
+            context.globalAlpha =
+                0.2;
+
+
+            context.fillStyle =
+                style.detail;
+
+
+            const rng =
+                mulberry32(
+                    path.detailSeed
+                );
+
+
+            for (
+                let index = 0;
+                index < 18;
+                index++
+            ) {
+
+                const x =
+                    screen.x +
+                    rng() *
+                    path.w;
+
+
+                const y =
+                    screen.y +
+                    rng() *
+                    path.h;
+
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    x,
+                    y,
+                    3 +
+                        rng() *
+                        6,
+                    1 +
+                        rng() *
+                        3,
+                    rng() *
+                        Math.PI,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+            }
+
+
+            context.restore();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       CASAS EXTERNAS
+       ========================================================= */
+
+    function drawExteriorDoor(
+        context,
+        building
+    ) {
+
+        const door =
+            state.world
+                ?.doors
+                ?.find(
+                    item =>
+                        item.buildingId ===
+                        building.id
+                );
+
+
+        if (!door) {
+
+            return;
+
+        }
+
+
+        const screen =
+            worldToScreen(
+                door.x,
+                door.y
+            );
+
+
+        const openness =
+            clamp(
+                door.animation,
+                0,
+                1
+            );
+
+
+        context.save();
+
+
+        context.fillStyle =
+            "#211d19";
+
+
+        context.fillRect(
+            screen.x,
+            screen.y,
+            door.w,
+            door.h
+        );
+
+
+        const panelWidth =
+            door.w *
+            (
+                1 -
+                openness *
+                0.82
+            );
+
+
+        context.fillStyle =
+            "#563a2b";
+
+
+        context.fillRect(
+            screen.x +
+                openness *
+                door.w *
+                0.75,
+            screen.y,
+            panelWidth,
+            door.h
+        );
+
+
+        context.strokeStyle =
+            "#b88d5f";
+
+
+        context.lineWidth =
+            3;
+
+
+        context.strokeRect(
+            screen.x,
+            screen.y,
+            door.w,
+            door.h
+        );
+
+
+        context.fillStyle =
+            "#d8b26e";
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x +
+                Math.max(
+                    7,
+                    panelWidth -
+                    8
+                ),
+            screen.y +
+                door.h /
+                2,
+            3,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.restore();
+
+    }
+
+
+    function drawBuilding(
+        context,
+        building
+    ) {
+
+        const screen =
+            worldToScreen(
+                building.x,
+                building.y
+            );
+
+
+        drawShadow(
+            context,
+            screen.x +
+                building.w /
+                2,
+            screen.y +
+                building.h +
+                15,
+            building.w *
+                0.88,
+            32
+        );
+
+
+        context.fillStyle =
+            building.wallColor;
+
+
+        context.fillRect(
+            screen.x,
+            screen.y +
+                70,
+            building.w,
+            building.h -
+                70
+        );
+
+
+        /*
+            Telhado.
+        */
+
+        context.fillStyle =
+            building.roof;
+
+
+        context.beginPath();
+
+
+        context.moveTo(
+            screen.x -
+                25,
+            screen.y +
+                85
+        );
+
+
+        context.lineTo(
+            screen.x +
+                building.w /
+                2,
+            screen.y
+        );
+
+
+        context.lineTo(
+            screen.x +
+                building.w +
+                25,
+            screen.y +
+                85
+        );
+
+
+        context.closePath();
+
+
+        context.fill();
+
+
+        context.strokeStyle =
+            building.trimColor;
+
+
+        context.lineWidth =
+            5;
+
+
+        context.stroke();
+
+
+        /*
+            Janelas.
+        */
+
+        const windowY =
+            screen.y +
+            building.h -
+            125;
+
+
+        for (
+            const fraction of
+            [
+                0.22,
+                0.78
+            ]
+        ) {
+
+            const x =
+                screen.x +
+                building.w *
+                fraction;
+
+
+            context.fillStyle =
+                "rgba(255,211,124,.18)";
+
+
+            context.shadowBlur =
+                22;
+
+
+            context.shadowColor =
+                building.windowColor;
+
+
+            context.fillRect(
+                x -
+                    27,
+                windowY -
+                    31,
+                54,
+                62
+            );
+
+
+            context.shadowBlur =
+                0;
+
+
+            context.strokeStyle =
+                building.trimColor;
+
+
+            context.lineWidth =
+                4;
+
+
+            context.strokeRect(
+                x -
+                    27,
+                windowY -
+                    31,
+                54,
+                62
+            );
+
+        }
+
+
+        if (
+            building.sign
+        ) {
+
+            context.fillStyle =
+                "rgba(35,25,19,.78)";
+
+
+            context.fillRect(
+                screen.x +
+                    building.w /
+                    2 -
+                    60,
+                screen.y +
+                    95,
+                120,
+                34
+            );
+
+
+            drawEntityName(
+                context,
+                building.sign,
+                screen.x +
+                    building.w /
+                    2,
+                screen.y +
+                    112,
+                "#e2c58c"
+            );
+
+        }
+
+
+        drawExteriorDoor(
+            context,
+            building
+        );
+
+    }
+
+
+    /* =========================================================
+       ÁRVORES / RECURSOS
+       ========================================================= */
+
+    function drawTree(
+        context,
+        tree
+    ) {
+
+        if (
+            !tree.alive
+        ) {
+
+            return;
+
+        }
+
+
+        const screen =
+            worldToScreen(
+                tree.x,
+                tree.y
+            );
+
+
+        const sway =
+            Math.sin(
+                state.time *
+                1.4 +
+                tree.swayPhase
+            ) *
+            2;
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                13,
+            55 *
+                tree.scale,
+            18
+        );
+
+
+        context.fillStyle =
+            "#54402e";
+
+
+        context.fillRect(
+            screen.x -
+                9,
+            screen.y -
+                10,
+            18,
+            48
+        );
+
+
+        const green =
+
+            state.area ===
+            "mountains"
+
+                ? "#5e7064"
+
+                : state.area ===
+                  "grove"
+
+                    ? "#36533b"
+
+                    : "#486644";
+
+
+        context.fillStyle =
+            green;
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x +
+                sway,
+            screen.y -
+                32,
+            42 *
+                tree.scale,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.arc(
+            screen.x -
+                25 +
+                sway,
+            screen.y -
+                17,
+            30 *
+                tree.scale,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.arc(
+            screen.x +
+                25 +
+                sway,
+            screen.y -
+                18,
+            30 *
+                tree.scale,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+    }
+
+
+    function drawResource(
+        context,
+        resource
+    ) {
+
+        if (
+            !resource.alive
+        ) {
+
+            return;
+
+        }
+
+
+        const screen =
+            worldToScreen(
+                resource.x,
+                resource.y
+            );
+
+
+        const color =
+            getResourceColor(
+                resource.type
+            );
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                15,
+            38,
+            12
+        );
+
+
+        context.save();
+
+
+        context.shadowBlur =
+            10;
+
+
+        context.shadowColor =
+            color;
+
+
+        context.fillStyle =
+            color;
+
+
+        context.beginPath();
+
+
+        context.moveTo(
+            screen.x,
+            screen.y -
+                25
+        );
+
+
+        context.lineTo(
+            screen.x +
+                19,
+            screen.y -
+                5
+        );
+
+
+        context.lineTo(
+            screen.x +
+                12,
+            screen.y +
+                20
+        );
+
+
+        context.lineTo(
+            screen.x -
+                15,
+            screen.y +
+                16
+        );
+
+
+        context.lineTo(
+            screen.x -
+                21,
+            screen.y -
+                5
+        );
+
+
+        context.closePath();
+
+
+        context.fill();
+
+
+        context.restore();
+
+    }
+
+
+    /* =========================================================
+       FONTE
+       ========================================================= */
+
+    function drawFountain(
+        context
+    ) {
+
+        if (
+            !state.world
+                ?.fountain
+        ) {
+
+            return;
+
+        }
+
+
+        const fountain =
+            state.world.fountain;
+
+
+        const screen =
+            worldToScreen(
+                fountain.x,
+                fountain.y
+            );
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                24,
+            175,
+            45
+        );
+
+
+        context.fillStyle =
+            "#777a75";
+
+
+        context.beginPath();
+
+
+        context.ellipse(
+            screen.x,
+            screen.y,
+            86,
+            55,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.fillStyle =
+            "#4d8ba0";
+
+
+        context.beginPath();
+
+
+        context.ellipse(
+            screen.x,
+            screen.y -
+                4,
+            69,
+            40,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.fillStyle =
+            "#999b93";
+
+
+        context.fillRect(
+            screen.x -
+                12,
+            screen.y -
+                68,
+            24,
+            72
+        );
+
+
+        context.fillStyle =
+            "#81c6d6";
+
+
+        for (
+            let index = 0;
+            index < 5;
+            index++
+        ) {
+
+            const phase =
+
+                state.time *
+                2.5 +
+
+                index *
+                1.2;
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x +
+                    Math.cos(
+                        phase
+                    ) *
+                    17,
+                screen.y -
+                    62 +
+                    (
+                        phase %
+                        1
+                    ) *
+                    42,
+                3,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       PORTAIS / PORTÕES / ALTAR
+       ========================================================= */
+
+    function drawPortal(
+        context,
+        portal
+    ) {
+
+        if (
+            portal.hidden
+        ) {
+
+            return;
+
+        }
+
+
+        const screen =
+            worldToScreen(
+                portal.x +
+                    portal.w /
+                    2,
+                portal.y +
+                    portal.h /
+                    2
+            );
+
+
+        const pulse =
+            0.75 +
+            Math.sin(
+                state.time *
+                    3
+            ) *
+            0.15;
+
+
+        context.save();
+
+
+        context.globalAlpha =
+            pulse;
+
+
+        context.strokeStyle =
+            portal.active
+                ? "#d8bd83"
+                : "#5e5a54";
+
+
+        context.lineWidth =
+            5;
+
+
+        context.beginPath();
+
+
+        context.ellipse(
+            screen.x,
+            screen.y,
+            portal.w *
+                0.35,
+            portal.h *
+                0.42,
+            0,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.stroke();
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            portal.label,
+            screen.x,
+            screen.y -
+                portal.h *
+                0.48,
+            "#e6d8b8"
+        );
+
+    }
+
+
+    function drawGate(
+        context,
+        gate
+    ) {
+
+        const screen =
+            worldToScreen(
+                gate.x,
+                gate.y
+            );
+
+
+        context.save();
+
+
+        context.fillStyle =
+            "#4a4039";
+
+
+        context.strokeStyle =
+            "#99836a";
+
+
+        context.lineWidth =
+            5;
+
+
+        if (
+            gate.orientation ===
+            "vertical"
+        ) {
+
+            const shift =
+                gate.w *
+                gate.animation;
+
+
+            context.fillRect(
+                screen.x -
+                    shift,
+                screen.y,
+                gate.w,
+                gate.h
+            );
+
+        }
+
+        else {
+
+            const half =
+                gate.w /
+                2;
+
+
+            const shift =
+                half *
+                gate.animation;
+
+
+            context.fillRect(
+                screen.x -
+                    shift,
+                screen.y,
+                half,
+                gate.h
+            );
+
+
+            context.fillRect(
+                screen.x +
+                    half +
+                    shift,
+                screen.y,
+                half,
+                gate.h
+            );
+
+        }
+
+
+        context.strokeRect(
+            screen.x,
+            screen.y,
+            gate.w,
+            gate.h
+        );
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            gate.name,
+            screen.x +
+                gate.w /
+                2,
+            screen.y -
+                15,
+            "#d7c5a7"
+        );
+
+    }
+
+
+    function drawAltar(
+        context
+    ) {
+
+        const altar =
+            state.world
+                ?.altar;
+
+
+        if (!altar) {
+
+            return;
+
+        }
+
+
+        const screen =
+            worldToScreen(
+                altar.x,
+                altar.y
+            );
+
+
+        const pulse =
+            0.5 +
+            Math.sin(
+                state.time *
+                2.8
+            ) *
+            0.18;
+
+
+        context.save();
+
+
+        context.shadowBlur =
+            25;
+
+
+        context.shadowColor =
+            "#9875b7";
+
+
+        context.fillStyle =
+            "#37303f";
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y,
+            63,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.strokeStyle =
+            `rgba(180,140,216,${pulse})`;
+
+
+        context.lineWidth =
+            5;
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y,
+            49,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.stroke();
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            "ALTAR",
+            screen.x,
+            screen.y -
+                82,
+            "#bea5d1"
+        );
+
+    }
+
+
+    /* =========================================================
+       NPC
+       ========================================================= */
+
+    function drawNPC(
+        context,
+        npc
+    ) {
+
+        const screen =
+            worldToScreen(
+                npc.x,
+                npc.y
+            );
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                17,
+            30,
+            10
+        );
+
+
+        context.fillStyle =
+            npc.color ||
+            "#a98f72";
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y -
+                13,
+            10,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.fillRect(
+            screen.x -
+                10,
+            screen.y -
+                4,
+            20,
+            28
+        );
+
+
+        drawEntityName(
+            context,
+            npc.name,
+            screen.x,
+            screen.y -
+                42,
+            npc.color ||
+            "#eee2c8"
+        );
+
+    }
+
+
+    /* =========================================================
+       PLAYER MODELADO
+       ========================================================= */
+
+    function drawPlayer(
+        context
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        const character =
+            currentCharacter();
+
+
+        const sprite =
+            character.sprite;
+
+
+        const screen =
+            worldToScreen(
+                player.x,
+                player.y
+            );
+
+
+        const walking =
+            getMovementDirection()
+                .length >
+            0;
+
+
+        const bob =
+
+            walking
+
+                ? Math.sin(
+                    player.walkTime
+                ) *
+                  2
+
+                : Math.sin(
+                    state.time *
+                    2
+                ) *
+                  0.5;
+
+
+        context.save();
+
+
+        if (
+            player.hurtAnim >
+            0
+        ) {
+
+            context.globalAlpha =
+                0.65 +
+                Math.sin(
+                    state.time *
+                    45
+                ) *
+                0.25;
+
+        }
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                22,
+            36 *
+                sprite.scale,
+            12
+        );
+
+
+        /*
+            Capa.
+        */
+
+        if (
+            sprite.cape
+        ) {
+
+            const wave =
+                Math.sin(
+                    state.time *
+                    5 +
+                    player.walkTime
+                ) *
+                3;
+
+
+            context.fillStyle =
+                sprite.cape;
+
+
+            context.beginPath();
+
+
+            context.moveTo(
+                screen.x -
+                    12,
+                screen.y -
+                    5 +
+                    bob
+            );
+
+
+            context.lineTo(
+                screen.x +
+                    12,
+                screen.y -
+                    5 +
+                    bob
+            );
+
+
+            context.lineTo(
+                screen.x +
+                    16 +
+                    wave,
+                screen.y +
+                    24 +
+                    bob
+            );
+
+
+            context.lineTo(
+                screen.x -
+                    14 +
+                    wave,
+                screen.y +
+                    22 +
+                    bob
+            );
+
+
+            context.closePath();
+
+
+            context.fill();
+
+        }
+
+
+        /*
+            Pernas.
+        */
+
+        context.strokeStyle =
+            "#302a27";
+
+
+        context.lineWidth =
+            6;
+
+
+        context.lineCap =
+            "round";
+
+
+        const step =
+            walking
+                ? Math.sin(
+                    player.walkTime
+                ) *
+                  5
+                : 0;
+
+
+        context.beginPath();
+
+
+        context.moveTo(
+            screen.x -
+                5,
+            screen.y +
+                14 +
+                bob
+        );
+
+
+        context.lineTo(
+            screen.x -
+                6 +
+                step,
+            screen.y +
+                28 +
+                bob
+        );
+
+
+        context.moveTo(
+            screen.x +
+                5,
+            screen.y +
+                14 +
+                bob
+        );
+
+
+        context.lineTo(
+            screen.x +
+                6 -
+                step,
+            screen.y +
+                28 +
+                bob
+        );
+
+
+        context.stroke();
+
+
+        /*
+            Corpo.
+        */
+
+        context.fillStyle =
+            sprite.body;
+
+
+        context.beginPath();
+
+
+        context.roundRect(
+            screen.x -
+                12 *
+                sprite.scale,
+            screen.y -
+                10 +
+                bob,
+            24 *
+                sprite.scale,
+            30 *
+                sprite.scale,
+            7
+        );
+
+
+        context.fill();
+
+
+        context.strokeStyle =
+            sprite.trim;
+
+
+        context.lineWidth =
+            3;
+
+
+        context.stroke();
+
+
+        /*
+            Cabeça.
+        */
+
+        context.fillStyle =
+            sprite.skin;
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y -
+                20 +
+                bob,
+            10 *
+                sprite.scale,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        /*
+            Cabelo.
+        */
+
+        context.fillStyle =
+            sprite.hair;
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y -
+                24 +
+                bob,
+            9.5 *
+                sprite.scale,
+            Math.PI,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        /*
+            Asas de Lirael.
+        */
+
+        if (
+            sprite.wings
+        ) {
+
+            context.globalAlpha =
+                0.65;
+
+
+            context.fillStyle =
+                "#f1b7df";
+
+
+            const wing =
+                Math.sin(
+                    state.time *
+                    8
+                ) *
+                3;
+
+
+            context.beginPath();
+
+
+            context.ellipse(
+                screen.x -
+                    14,
+                screen.y +
+                    wing,
+                10,
+                18,
+                -0.45,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.ellipse(
+                screen.x +
+                    14,
+                screen.y -
+                    wing,
+                10,
+                18,
+                0.45,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.globalAlpha =
+                1;
+
+        }
+
+
+        /*
+            Ícone/motivo pequeno.
+        */
+
+        context.font =
+            "14px serif";
+
+
+        context.textAlign =
+            "center";
+
+
+        context.fillText(
+            character.icon,
+            screen.x,
+            screen.y +
+                7 +
+                bob
+        );
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            player.name,
+            screen.x,
+            screen.y -
+                48,
+            character.glow
+        );
+
+    }
+
+
+    /* =========================================================
+       INIMIGOS
+       ========================================================= */
+
+    function drawNormalEnemy(
+        context,
+        enemy
+    ) {
+
+        const screen =
+            worldToScreen(
+                enemy.x,
+                enemy.y
+            );
+
+
+        const bob =
+            Math.sin(
+                enemy.animationTime *
+                5
+            ) *
+            2;
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                enemy.radius *
+                0.7,
+            enemy.radius *
+                1.8,
+            enemy.radius *
+                0.55
+        );
+
+
+        context.save();
+
+
+        if (
+            enemy.hitFlash >
+            0
+        ) {
+
+            context.shadowBlur =
+                18;
+
+
+            context.shadowColor =
+                "#ffffff";
+
+        }
+
+
+        context.fillStyle =
+            enemy.color;
+
+
+        if (
+            enemy.spriteType ===
+                "wolf" ||
+            enemy.spriteType ===
+                "rubyHound" ||
+            enemy.spriteType ===
+                "boar"
+        ) {
+
+            context.beginPath();
+
+
+            context.ellipse(
+                screen.x,
+                screen.y +
+                    bob,
+                enemy.radius *
+                    1.15,
+                enemy.radius *
+                    0.72,
+                0,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x +
+                    enemy.radius *
+                    0.8,
+                screen.y -
+                    enemy.radius *
+                    0.25 +
+                    bob,
+                enemy.radius *
+                    0.56,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+        }
+
+        else if (
+            enemy.spriteType ===
+            "bat"
+        ) {
+
+            context.beginPath();
+
+
+            context.moveTo(
+                screen.x,
+                screen.y
+            );
+
+
+            context.lineTo(
+                screen.x -
+                    28,
+                screen.y -
+                    12 +
+                    bob
+            );
+
+
+            context.lineTo(
+                screen.x -
+                    16,
+                screen.y +
+                    12
+            );
+
+
+            context.lineTo(
+                screen.x,
+                screen.y +
+                    3
+            );
+
+
+            context.lineTo(
+                screen.x +
+                    16,
+                screen.y +
+                    12
+            );
+
+
+            context.lineTo(
+                screen.x +
+                    28,
+                screen.y -
+                    12 -
+                    bob
+            );
+
+
+            context.closePath();
+
+
+            context.fill();
+
+        }
+
+        else {
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x,
+                screen.y +
+                    bob,
+                enemy.radius,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.fillStyle =
+                "rgba(255,255,255,.12)";
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x -
+                    enemy.radius *
+                    0.28,
+                screen.y -
+                    enemy.radius *
+                    0.32 +
+                    bob,
+                enemy.radius *
+                    0.35,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+        }
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            enemy.name,
+            screen.x,
+            screen.y -
+                enemy.radius -
+                23,
+            "#e4daca"
+        );
+
+    }
+
+
+    /* =========================================================
+       BOSSES MODELADOS
+       ========================================================= */
+
+    function drawBoss(
+        context,
+        enemy
+    ) {
+
+        const screen =
+            worldToScreen(
+                enemy.x,
+                enemy.y
+            );
+
+
+        const pulse =
+            0.65 +
+            Math.sin(
+                state.time *
+                    3 +
+                enemy.animationTime
+            ) *
+            0.18;
+
+
+        const radius =
+            enemy.radius;
+
+
+        context.save();
+
+
+        /*
+            Aura.
+        */
+
+        context.globalAlpha =
+            pulse *
+            0.45;
+
+
+        context.fillStyle =
+            enemy.aura ||
+            enemy.color;
+
+
+        context.beginPath();
+
+
+        context.arc(
+            screen.x,
+            screen.y,
+            radius *
+                1.45,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        context.fill();
+
+
+        context.globalAlpha =
+            1;
+
+
+        drawShadow(
+            context,
+            screen.x,
+            screen.y +
+                radius *
+                0.65,
+            radius *
+                2.1,
+            radius *
+                0.65
+        );
+
+
+        /*
+            Corpo principal.
+        */
+
+        context.fillStyle =
+            enemy.color;
+
+
+        switch (
+            enemy.bodyStyle ||
+            enemy.spriteType
+        ) {
+
+            case "monarch":
+
+                context.beginPath();
+
+
+                context.moveTo(
+                    screen.x -
+                        radius *
+                        0.7,
+                    screen.y +
+                        radius *
+                        0.7
+                );
+
+
+                context.lineTo(
+                    screen.x -
+                        radius *
+                        0.45,
+                    screen.y -
+                        radius *
+                        0.7
+                );
+
+
+                context.lineTo(
+                    screen.x,
+                    screen.y -
+                        radius
+                );
+
+
+                context.lineTo(
+                    screen.x +
+                        radius *
+                        0.45,
+                    screen.y -
+                        radius *
+                        0.7
+                );
+
+
+                context.lineTo(
+                    screen.x +
+                        radius *
+                        0.7,
+                    screen.y +
+                        radius *
+                        0.7
+                );
+
+
+                context.closePath();
+
+
+                context.fill();
+
+
+                /*
+                    Coroa.
+                */
+
+                context.fillStyle =
+                    enemy.aura;
+
+
+                context.beginPath();
+
+
+                context.moveTo(
+                    screen.x -
+                        30,
+                    screen.y -
+                        radius *
+                        0.85
+                );
+
+
+                context.lineTo(
+                    screen.x -
+                        22,
+                    screen.y -
+                        radius *
+                        1.35
+                );
+
+
+                context.lineTo(
+                    screen.x -
+                        5,
+                    screen.y -
+                        radius
+                );
+
+
+                context.lineTo(
+                    screen.x +
+                        10,
+                    screen.y -
+                        radius *
+                        1.4
+                );
+
+
+                context.lineTo(
+                    screen.x +
+                        28,
+                    screen.y -
+                        radius *
+                        0.86
+                );
+
+
+                context.closePath();
+
+
+                context.fill();
+
+                break;
+
+
+            case "rubyChimera":
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    screen.x,
+                    screen.y,
+                    radius,
+                    radius *
+                        0.7,
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                for (
+                    const side of
+                    [
+                        -1,
+                        1
+                    ]
+                ) {
+
+                    context.beginPath();
+
+
+                    context.moveTo(
+                        screen.x +
+                            side *
+                            radius *
+                            0.45,
+                        screen.y -
+                            radius *
+                            0.5
+                    );
+
+
+                    context.lineTo(
+                        screen.x +
+                            side *
+                            radius *
+                            1.05,
+                        screen.y -
+                            radius *
+                            1.1
+                    );
+
+
+                    context.lineTo(
+                        screen.x +
+                            side *
+                            radius *
+                            0.72,
+                        screen.y +
+                            radius *
+                            0.05
+                    );
+
+
+                    context.closePath();
+
+
+                    context.fill();
+
+                }
+
+                break;
+
+
+            case "fairyGuardian":
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    screen.x,
+                    screen.y,
+                    radius *
+                        0.65,
+                    radius,
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                context.globalAlpha =
+                    0.6;
+
+
+                context.fillStyle =
+                    enemy.aura;
+
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    screen.x -
+                        radius,
+                    screen.y,
+                    radius *
+                        0.65,
+                    radius *
+                        1.15,
+                    -0.4,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.ellipse(
+                    screen.x +
+                        radius,
+                    screen.y,
+                    radius *
+                        0.65,
+                    radius *
+                        1.15,
+                    0.4,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                context.globalAlpha =
+                    1;
+
+                break;
+
+
+            case "ancientDeer":
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    screen.x,
+                    screen.y +
+                        15,
+                    radius,
+                    radius *
+                        0.6,
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                context.strokeStyle =
+                    enemy.aura;
+
+
+                context.lineWidth =
+                    6;
+
+
+                for (
+                    const side of
+                    [
+                        -1,
+                        1
+                    ]
+                ) {
+
+                    context.beginPath();
+
+
+                    context.moveTo(
+                        screen.x +
+                            side *
+                            17,
+                        screen.y -
+                            18
+                    );
+
+
+                    context.lineTo(
+                        screen.x +
+                            side *
+                            35,
+                        screen.y -
+                            67
+                    );
+
+
+                    context.lineTo(
+                        screen.x +
+                            side *
+                            58,
+                        screen.y -
+                            84
+                    );
+
+
+                    context.moveTo(
+                        screen.x +
+                            side *
+                            34,
+                        screen.y -
+                            61
+                    );
+
+
+                    context.lineTo(
+                        screen.x +
+                            side *
+                            15,
+                        screen.y -
+                            82
+                    );
+
+
+                    context.stroke();
+
+                }
+
+                break;
+
+
+            default:
+
+                context.beginPath();
+
+
+                context.ellipse(
+                    screen.x,
+                    screen.y,
+                    radius *
+                        0.82,
+                    radius,
+                    0,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                context.strokeStyle =
+                    enemy.aura ||
+                    "#ffffff";
+
+
+                context.lineWidth =
+                    6;
+
+
+                context.stroke();
+
+                break;
+
+        }
+
+
+        /*
+            Símbolo continua sendo motivo,
+            não o corpo inteiro.
+        */
+
+        context.font =
+            `${Math.max(24, radius * 0.65)}px serif`;
+
+
+        context.textAlign =
+            "center";
+
+
+        context.textBaseline =
+            "middle";
+
+
+        context.fillText(
+            enemy.icon ||
+            getBossDefinition(
+                enemy.id
+            )?.icon ||
+            "◆",
+            screen.x,
+            screen.y
+        );
+
+
+        context.restore();
+
+
+        drawEntityName(
+            context,
+            enemy.name,
+            screen.x,
+            screen.y -
+                radius -
+                33,
+            enemy.aura ||
+            "#f1e8d4"
+        );
+
+    }
+
+
+    /* =========================================================
+       EFEITOS / PARTÍCULAS / SANGUE
+       ========================================================= */
+
+    function drawBloodMarks(
+        context
+    ) {
+
+        for (
+            const mark of
+            state.bloodMarks
+        ) {
+
+            const screen =
+                worldToScreen(
+                    mark.x,
+                    mark.y
+                );
+
+
+            context.save();
+
+
+            context.globalAlpha =
+                clamp(
+                    mark.life /
+                    mark.maxLife,
+                    0,
+                    1
+                ) *
+                0.45;
+
+
+            context.fillStyle =
+                "#621f27";
+
+
+            context.translate(
+                screen.x,
+                screen.y
+            );
+
+
+            context.rotate(
+                mark.angle
+            );
+
+
+            context.beginPath();
+
+
+            context.ellipse(
+                0,
+                0,
+                mark.radius *
+                    mark.stretch,
+                mark.radius,
+                0,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.restore();
+
+        }
+
+    }
+
+
+    function drawParticles(
+        context
+    ) {
+
+        for (
+            const particle of
+            state.world
+                ?.particles ||
+            []
+        ) {
+
+            const screen =
+                worldToScreen(
+                    particle.x,
+                    particle.y
+                );
+
+
+            context.save();
+
+
+            context.globalAlpha =
+                clamp(
+                    particle.life /
+                    particle.maxLife,
+                    0,
+                    1
+                );
+
+
+            context.fillStyle =
+                particle.color;
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x,
+                screen.y,
+                particle.radius,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.restore();
+
+        }
+
+    }
+
+
+    function drawEffects(
+        context
+    ) {
+
+        for (
+            const effect of
+            state.world
+                ?.effects ||
+            []
+        ) {
+
+            const screen =
+                worldToScreen(
+                    effect.x,
+                    effect.y
+                );
+
+
+            const progress =
+
+                effect.duration
+
+                    ? clamp(
+                        effect.timer /
+                        effect.duration,
+                        0,
+                        1
+                    )
+
+                    : 1;
+
+
+            context.save();
+
+
+            context.globalAlpha =
+                Math.max(
+                    0.15,
+                    progress
+                );
+
+
+            if (
+                effect.type ===
+                    "groundRing" ||
+                effect.type ===
+                    "delayedPlayerArea" ||
+                effect.type ===
+                    "delayedEnemyArea"
+            ) {
+
+                context.strokeStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                context.lineWidth =
+                    effect.logicalArea
+                        ? 3
+                        : 5;
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    screen.x,
+                    screen.y,
+                    effect.radius ||
+                        50,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.stroke();
+
+            }
+
+            else if (
+                effect.type ===
+                    "arc" ||
+                effect.type ===
+                    "heavyArc" ||
+                effect.type ===
+                    "riftSlash"
+            ) {
+
+                const angle =
+                    Math.atan2(
+                        effect.directionY,
+                        effect.directionX
+                    );
+
+
+                context.strokeStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                context.lineWidth =
+                    effect.type ===
+                        "heavyArc"
+                            ? 9
+                            : 6;
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    screen.x,
+                    screen.y,
+                    effect.range ||
+                        80,
+                    angle -
+                        (
+                            effect.arc ||
+                            Math.PI /
+                                2
+                        ) /
+                        2,
+                    angle +
+                        (
+                            effect.arc ||
+                            Math.PI /
+                                2
+                        ) /
+                        2
+                );
+
+
+                context.stroke();
+
+            }
+
+            else if (
+                effect.type ===
+                    "afterimage"
+            ) {
+
+                context.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                context.globalAlpha =
+                    progress *
+                    0.25;
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    screen.x,
+                    screen.y,
+                    17,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+            }
+
+            else {
+
+                context.fillStyle =
+                    effect.color ||
+                    "#ffffff";
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    screen.x,
+                    screen.y,
+                    effect.radius ||
+                        15,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+            }
+
+
+            context.restore();
+
+        }
+
+    }
+
+
+    function drawProjectiles(
+        context
+    ) {
+
+        for (
+            const projectile of
+            state.world
+                ?.projectiles ||
+            []
+        ) {
+
+            const screen =
+                worldToScreen(
+                    projectile.x,
+                    projectile.y
+                );
+
+
+            context.save();
+
+
+            context.shadowBlur =
+                15;
+
+
+            context.shadowColor =
+                projectile.color;
+
+
+            context.fillStyle =
+                projectile.color;
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x,
+                screen.y,
+                projectile.radius,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.restore();
+
+        }
+
+
+        for (
+            const projectile of
+            state.world
+                ?.enemyProjectiles ||
+            []
+        ) {
+
+            const screen =
+                worldToScreen(
+                    projectile.x,
+                    projectile.y
+                );
+
+
+            context.save();
+
+
+            context.shadowBlur =
+                12;
+
+
+            context.shadowColor =
+                projectile.color;
+
+
+            context.fillStyle =
+                projectile.color;
+
+
+            context.beginPath();
+
+
+            context.arc(
+                screen.x,
+                screen.y,
+                projectile.radius,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            context.fill();
+
+
+            context.restore();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       INTERIOR
+       ========================================================= */
+
+    function drawFurniture(
+        context,
+        object,
+        theme
+    ) {
+
+        const screen =
+            worldToScreen(
+                object.x,
+                object.y
+            );
+
+
+        switch (
+            object.type
+        ) {
+
+            case "rug":
+
+                context.fillStyle =
+                    theme.accent;
+
+
+                context.fillRect(
+                    screen.x,
+                    screen.y,
+                    object.w,
+                    object.h
+                );
+
+                break;
+
+
+            case "bed":
+
+                context.fillStyle =
+                    "#45362f";
+
+
+                context.fillRect(
+                    screen.x,
+                    screen.y,
+                    object.w,
+                    object.h
+                );
+
+
+                context.fillStyle =
+                    theme.accent;
+
+
+                context.fillRect(
+                    screen.x +
+                        8,
+                    screen.y +
+                        8,
+                    object.w -
+                        16,
+                    object.h -
+                        16
+                );
+
+
+                context.fillStyle =
+                    "#d7c6a6";
+
+
+                context.fillRect(
+                    screen.x +
+                        12,
+                    screen.y +
+                        12,
+                    object.w *
+                        0.32,
+                    object.h -
+                        24
+                );
+
+                break;
+
+
+            case "forge":
+
+                context.fillStyle =
+                    "#3a302c";
+
+
+                context.fillRect(
+                    screen.x,
+                    screen.y,
+                    object.w,
+                    object.h
+                );
+
+
+                context.fillStyle =
+                    "#d86435";
+
+
+                context.shadowBlur =
+                    20;
+
+
+                context.shadowColor =
+                    "#ff6a32";
+
+
+                context.beginPath();
+
+
+                context.arc(
+                    screen.x +
+                        object.w /
+                        2,
+                    screen.y +
+                        object.h /
+                        2,
+                    35,
+                    0,
+                    Math.PI *
+                        2
+                );
+
+
+                context.fill();
+
+
+                context.shadowBlur =
+                    0;
+
+                break;
+
+
+            default:
+
+                context.fillStyle =
+                    theme.trim;
+
+
+                context.fillRect(
+                    screen.x,
+                    screen.y,
+                    object.w,
+                    object.h
+                );
+
+
+                context.fillStyle =
+                    "rgba(30,20,15,.28)";
+
+
+                context.fillRect(
+                    screen.x +
+                        6,
+                    screen.y +
+                        6,
+                    Math.max(
+                        0,
+                        object.w -
+                            12
+                    ),
+                    Math.max(
+                        0,
+                        object.h -
+                            12
+                    )
+                );
+
+                break;
+
+        }
+
+    }
+
+
+    function drawHouseInterior(
+        context
+    ) {
+
+        const spec =
+            getHouseSpec(
+                state.currentHouse
+            );
+
+
+        if (!spec) {
+
+            return;
+
+        }
+
+
+        const room =
+            spec.room;
+
+
+        const theme =
+            spec.theme;
+
+
+        context.fillStyle =
+            "#181512";
+
+
+        context.fillRect(
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+
+        const screen =
+            worldToScreen(
+                room.x,
+                room.y
+            );
+
+
+        context.fillStyle =
+            theme.wall;
+
+
+        context.fillRect(
+            screen.x -
+                24,
+            screen.y -
+                24,
+            room.w +
+                48,
+            room.h +
+                48
+        );
+
+
+        context.fillStyle =
+            theme.floor;
+
+
+        context.fillRect(
+            screen.x,
+            screen.y,
+            room.w,
+            room.h
+        );
+
+
+        /*
+            Tábuas.
+        */
+
+        context.strokeStyle =
+            theme.floorAlt;
+
+
+        context.lineWidth =
+            2;
+
+
+        for (
+            let y = 0;
+            y <
+                room.h;
+            y +=
+                32
+        ) {
+
+            context.beginPath();
+
+
+            context.moveTo(
+                screen.x,
+                screen.y +
+                    y
+            );
+
+
+            context.lineTo(
+                screen.x +
+                    room.w,
+                screen.y +
+                    y
+            );
+
+
+            context.stroke();
+
+        }
+
+
+        for (
+            const object of
+            spec.furniture
+        ) {
+
+            drawFurniture(
+                context,
+                object,
+                theme
+            );
+
+        }
+
+
+        /*
+            Porta interna.
+        */
+
+        const door =
+            spec.door;
+
+
+        const doorScreen =
+            worldToScreen(
+                door.x,
+                door.y
+            );
+
+
+        context.fillStyle =
+            "#2b211b";
+
+
+        context.fillRect(
+            doorScreen.x,
+            doorScreen.y,
+            door.w,
+            door.h
+        );
+
+
+        for (
+            const npc of
+            getHouseInteriorNPCs(
+                state.currentHouse
+            )
+        ) {
+
+            drawNPC(
+                context,
+                npc
+            );
+
+        }
+
+
+        drawPlayer(
+            context
+        );
+
+    }
+
+
+    /* =========================================================
+       LANTERNA — OFFSCREEN
+
+       destination-out SOMENTE NESTE CANVAS.
+
+       Nunca apaga pixels do mundo principal.
+       ========================================================= */
+
+    function rayRectDistance(
+        originX,
+        originY,
+        dirX,
+        dirY,
+        rect,
+        maxDistance
+    ) {
+
+        let nearest =
+            maxDistance;
+
+
+        const edges = [
+
+            [
+                rect.x,
+                rect.y,
+                rect.x +
+                    rect.w,
+                rect.y
+            ],
+
+            [
+                rect.x +
+                    rect.w,
+                rect.y,
+                rect.x +
+                    rect.w,
+                rect.y +
+                    rect.h
+            ],
+
+            [
+                rect.x +
+                    rect.w,
+                rect.y +
+                    rect.h,
+                rect.x,
+                rect.y +
+                    rect.h
+            ],
+
+            [
+                rect.x,
+                rect.y +
+                    rect.h,
+                rect.x,
+                rect.y
+            ]
+
+        ];
+
+
+        const rayEndX =
+            originX +
+            dirX *
+            maxDistance;
+
+
+        const rayEndY =
+            originY +
+            dirY *
+            maxDistance;
+
+
+        for (
+            const edge of
+            edges
+        ) {
+
+            const [
+                x1,
+                y1,
+                x2,
+                y2
+            ] =
+                edge;
+
+
+            const denominator =
+
+                (
+                    rayEndX -
+                    originX
+                ) *
+                (
+                    y2 -
+                    y1
+                ) -
+
+                (
+                    rayEndY -
+                    originY
+                ) *
+                (
+                    x2 -
+                    x1
+                );
+
+
+            if (
+                Math.abs(
+                    denominator
+                ) <
+                0.00001
+            ) {
+
+                continue;
+
+            }
+
+
+            const t =
+
+                (
+                    (
+                        x1 -
+                        originX
+                    ) *
+                    (
+                        y2 -
+                        y1
+                    ) -
+
+                    (
+                        y1 -
+                        originY
+                    ) *
+                    (
+                        x2 -
+                        x1
+                    )
+                ) /
+
+                denominator;
+
+
+            const u =
+
+                -(
+                    (
+                        rayEndX -
+                        originX
+                    ) *
+                    (
+                        y1 -
+                        originY
+                    ) -
+
+                    (
+                        rayEndY -
+                        originY
+                    ) *
+                    (
+                        x1 -
+                        originX
+                    )
+                ) /
+
+                denominator;
+
+
+            if (
+                t >=
+                    0 &&
+                t <=
+                    1 &&
+                u >=
+                    0 &&
+                u <=
+                    1
+            ) {
+
+                nearest =
+                    Math.min(
+                        nearest,
+                        t *
+                        maxDistance
+                    );
+
+            }
+
+        }
+
+
+        return nearest;
+
+    }
+
+
+    function buildLightVisibilityPolygon(
+        radius
+    ) {
+
+        const player =
+            state.player;
+
+
+        const blockers =
+            getLightBlockingRects();
+
+
+        const points =
+            [];
+
+
+        const rayCount =
+            96;
+
+
+        for (
+            let index = 0;
+            index < rayCount;
+            index++
+        ) {
+
+            const angle =
+
+                index /
+                rayCount *
+
+                Math.PI *
+                2;
+
+
+            const dx =
+                Math.cos(
+                    angle
+                );
+
+
+            const dy =
+                Math.sin(
+                    angle
+                );
+
+
+            let hitDistance =
+                radius;
+
+
+            for (
+                const blocker of
+                blockers
+            ) {
+
+                hitDistance =
+                    Math.min(
+
+                        hitDistance,
+
+                        rayRectDistance(
+                            player.x,
+                            player.y,
+                            dx,
+                            dy,
+                            blocker,
+                            radius
+                        )
+
+                    );
+
+            }
+
+
+            /*
+                Alguns pixels além da parede para
+                deixar a superfície legível.
+            */
+
+            hitDistance =
+                Math.min(
+                    radius,
+                    hitDistance +
+                    4
+                );
+
+
+            points.push({
+
+                x:
+                    player.x +
+                    dx *
+                    hitDistance,
+
+                y:
+                    player.y +
+                    dy *
+                    hitDistance
+
+            });
+
+        }
+
+
+        return points;
+
+    }
+
+
+    function drawDarknessLayer(
+        mainContext
+    ) {
+
+        if (
+            state.houseMode ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        const darkArea =
+
+            state.area ===
+                "monarchMaze" ||
+            state.area ===
+                "shadow";
+
+
+        if (!darkArea) {
+
+            return;
+
+        }
+
+
+        if (
+            !renderRuntime.darknessCanvas ||
+            !renderRuntime.darknessCtx
+        ) {
+
+            resizeGameCanvas();
+
+        }
+
+
+        const darknessCanvas =
+            renderRuntime.darknessCanvas;
+
+
+        const dark =
+            renderRuntime.darknessCtx;
+
+
+        if (
+            !darknessCanvas ||
+            !dark
+        ) {
+
+            return;
+
+        }
+
+
+        dark.setTransform(
+            renderRuntime.dpr,
+            0,
+            0,
+            renderRuntime.dpr,
+            0,
+            0
+        );
+
+
+        dark.clearRect(
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+
+        dark.globalCompositeOperation =
+            "source-over";
+
+
+        dark.fillStyle =
+
+            state.area ===
+            "monarchMaze"
+
+                ? "rgba(5,5,9,.94)"
+
+                : "rgba(8,7,12,.87)";
+
+
+        dark.fillRect(
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+
+        const radius =
+
+            state.player
+                .lanternOwned
+
+                ? VISUAL_CONFIG
+                    .lantern
+                    .radius
+
+                : VISUAL_CONFIG
+                    .lantern
+                    .noLanternRadius;
+
+
+        const polygon =
+            buildLightVisibilityPolygon(
+                radius
+            );
+
+
+        const playerScreen =
+            worldToScreen(
+                state.player.x,
+                state.player.y
+            );
+
+
+        dark.save();
+
+
+        dark.beginPath();
+
+
+        if (
+            polygon.length >
+            0
+        ) {
+
+            const first =
+                worldToScreen(
+                    polygon[0].x,
+                    polygon[0].y
+                );
+
+
+            dark.moveTo(
+                first.x,
+                first.y
+            );
+
+
+            for (
+                let index = 1;
+                index < polygon.length;
+                index++
+            ) {
+
+                const point =
+                    worldToScreen(
+                        polygon[index].x,
+                        polygon[index].y
+                    );
+
+
+                dark.lineTo(
+                    point.x,
+                    point.y
+                );
+
+            }
+
+
+            dark.closePath();
+
+
+            dark.clip();
+
+        }
+
+
+        /*
+            destination-out APENAS NA CAMADA.
+        */
+
+        dark.globalCompositeOperation =
+            "destination-out";
+
+
+        const gradient =
+            dark.createRadialGradient(
+
+                playerScreen.x,
+                playerScreen.y,
+                0,
+
+                playerScreen.x,
+                playerScreen.y,
+                radius
+
+            );
+
+
+        gradient.addColorStop(
+            0,
+            "rgba(0,0,0,1)"
+        );
+
+
+        gradient.addColorStop(
+            0.58,
+            "rgba(0,0,0,.97)"
+        );
+
+
+        gradient.addColorStop(
+            0.82,
+            "rgba(0,0,0,.7)"
+        );
+
+
+        gradient.addColorStop(
+            1,
+            "rgba(0,0,0,0)"
+        );
+
+
+        dark.fillStyle =
+            gradient;
+
+
+        dark.beginPath();
+
+
+        dark.arc(
+            playerScreen.x,
+            playerScreen.y,
+            radius,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        dark.fill();
+
+
+        dark.restore();
+
+
+        dark.globalCompositeOperation =
+            "source-over";
+
+
+        mainContext.drawImage(
+            darknessCanvas,
+            0,
+            0,
+            darknessCanvas.width,
+            darknessCanvas.height,
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+    }
+
+
+    /* =========================================================
+       BOSS BAR
+       ========================================================= */
+
+    function drawBossBar(
+        context
+    ) {
+
+        let boss =
+            state.bossBarTarget;
+
+
+        if (
+            !boss ||
+            boss.dead ||
+            !shouldBossUseTopBar(
+                boss
+            )
+        ) {
+
+            boss =
+                state.world
+                    ?.enemies
+                    ?.find(
+                        enemy =>
+                            !enemy.dead &&
+                            enemy.accepted &&
+                            enemy.type ===
+                                "progression" &&
+                            shouldBossUseTopBar(
+                                enemy
+                            )
+                    ) ||
+                null;
+
+        }
+
+
+        if (!boss) {
+
+            return;
+
+        }
+
+
+        const width =
+            clamp(
+                renderRuntime.width *
+                    0.45,
+                VISUAL_CONFIG
+                    .bossBar
+                    .minWidth,
+                VISUAL_CONFIG
+                    .bossBar
+                    .maxWidth
+            );
+
+
+        const x =
+            renderRuntime.width /
+                2 -
+            width /
+                2;
+
+
+        const y =
+            VISUAL_CONFIG
+                .bossBar
+                .topDesktop;
+
+
+        context.save();
+
+
+        context.fillStyle =
+            "rgba(12,10,14,.82)";
+
+
+        context.fillRect(
+            x -
+                10,
+            y -
+                30,
+            width +
+                20,
+            56
+        );
+
+
+        context.fillStyle =
+            "#262029";
+
+
+        context.fillRect(
+            x,
+            y,
+            width,
+            VISUAL_CONFIG
+                .bossBar
+                .height
+        );
+
+
+        context.fillStyle =
+            boss.aura ||
+            boss.color;
+
+
+        context.fillRect(
+            x,
+            y,
+            width *
+                clamp(
+                    boss.hp /
+                    boss.maxHp,
+                    0,
+                    1
+                ),
+            VISUAL_CONFIG
+                .bossBar
+                .height
+        );
+
+
+        context.font =
+            "700 14px Georgia, serif";
+
+
+        context.textAlign =
+            "center";
+
+
+        context.fillStyle =
+            "#eee6d8";
+
+
+        context.fillText(
+            boss.name,
+            renderRuntime.width /
+                2,
+            y -
+                11
+        );
+
+
+        context.restore();
+
+    }
+
+
+    /* =========================================================
+       RENDER PRINCIPAL
+       ========================================================= */
+
+    function renderGameWorld() {
+
+        const gameCanvas =
+            getLiveCanvas();
+
+
+        const context =
+            getLiveContext();
+
+
+        if (
+            !gameCanvas ||
+            !context ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        applyCanvasTransform(
+            context
+        );
+
+
+        context.clearRect(
+            0,
+            0,
+            renderRuntime.width,
+            renderRuntime.height
+        );
+
+
+        const shakeX =
+
+            state.screenShake >
+            0
+
+                ? random(
+                    -state.screenShakePower,
+                    state.screenShakePower
+                )
+
+                : 0;
+
+
+        const shakeY =
+
+            state.screenShake >
+            0
+
+                ? random(
+                    -state.screenShakePower,
+                    state.screenShakePower
+                )
+
+                : 0;
+
+
+        context.save();
+
+
+        context.translate(
+            shakeX,
+            shakeY
+        );
+
+
+        if (
+            state.houseMode
+        ) {
+
+            drawHouseInterior(
+                context
+            );
+
+        }
+
+        else {
+
+            drawGround(
+                context
+            );
+
+
+            drawPaths(
+                context
+            );
+
+
+            drawBloodMarks(
+                context
+            );
+
+
+            drawFountain(
+                context
+            );
+
+
+            /*
+                Ordenação aproximada por Y.
+            */
+
+            const drawable =
+                [];
+
+
+            for (
+                const tree of
+                state.world
+                    ?.trees ||
+                []
+            ) {
+
+                drawable.push({
+                    y:
+                        tree.y,
+                    type:
+                        "tree",
+                    value:
+                        tree
+                });
+
+            }
+
+
+            for (
+                const resource of
+                state.world
+                    ?.resources ||
+                []
+            ) {
+
+                drawable.push({
+                    y:
+                        resource.y,
+                    type:
+                        "resource",
+                    value:
+                        resource
+                });
+
+            }
+
+
+            for (
+                const building of
+                state.world
+                    ?.buildings ||
+                []
+            ) {
+
+                drawable.push({
+                    y:
+                        building.y +
+                        building.h,
+                    type:
+                        "building",
+                    value:
+                        building
+                });
+
+            }
+
+
+            for (
+                const npc of
+                state.world
+                    ?.npcs ||
+                []
+            ) {
+
+                drawable.push({
+                    y:
+                        npc.y,
+                    type:
+                        "npc",
+                    value:
+                        npc
+                });
+
+            }
+
+
+            for (
+                const enemy of
+                state.world
+                    ?.enemies ||
+                []
+            ) {
+
+                if (
+                    !enemy.dead
+                ) {
+
+                    drawable.push({
+                        y:
+                            enemy.y,
+                        type:
+                            enemy.type ===
+                                "progression" ||
+                            enemy.bossType
+                                ? "boss"
+                                : "enemy",
+                        value:
+                            enemy
+                    });
+
+                }
+
+            }
+
+
+            drawable.push({
+                y:
+                    state.player.y,
+                type:
+                    "player",
+                value:
+                    state.player
+            });
+
+
+            drawable.sort(
+                (
+                    a,
+                    b
+                ) =>
+                    a.y -
+                    b.y
+            );
+
+
+            for (
+                const entry of
+                drawable
+            ) {
+
+                switch (
+                    entry.type
+                ) {
+
+                    case "tree":
+                        drawTree(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "resource":
+                        drawResource(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "building":
+                        drawBuilding(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "npc":
+                        drawNPC(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "enemy":
+                        drawNormalEnemy(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "boss":
+                        drawBoss(
+                            context,
+                            entry.value
+                        );
+                        break;
+
+                    case "player":
+                        drawPlayer(
+                            context
+                        );
+                        break;
+
+                }
+
+            }
+
+
+            for (
+                const portal of
+                state.world
+                    ?.portals ||
+                []
+            ) {
+
+                drawPortal(
+                    context,
+                    portal
+                );
+
+            }
+
+
+            for (
+                const gate of
+                state.world
+                    ?.gates ||
+                []
+            ) {
+
+                drawGate(
+                    context,
+                    gate
+                );
+
+            }
+
+
+            drawAltar(
+                context
+            );
+
+
+            drawProjectiles(
+                context
+            );
+
+
+            drawEffects(
+                context
+            );
+
+
+            drawParticles(
+                context
+            );
+
+
+            drawDarknessLayer(
+                context
+            );
+
+        }
+
+
+        context.restore();
+
+
+        /*
+            Flash vermelho fica sobre o mundo.
+        */
+
+        if (
+            state.damageFlash >
+            0
+        ) {
+
+            context.fillStyle =
+                `rgba(120,15,25,${state.damageFlash})`;
+
+
+            context.fillRect(
+                0,
+                0,
+                renderRuntime.width,
+                renderRuntime.height
+            );
+
+        }
+
+
+        if (
+            !state.houseMode
+        ) {
+
+            drawBossBar(
+                context
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       HUD
+       ========================================================= */
+
+    function setBar(
+        ids,
+        current,
+        max
+    ) {
+
+        const element =
+            getElementAny(
+                ids
+            );
+
+
+        if (!element) {
+
+            return;
+
+        }
+
+
+        const percent =
+
+            max >
+            0
+
+                ? clamp(
+                    current /
+                    max *
+                    100,
+                    0,
+                    100
+                )
+
+                : 0;
+
+
+        element.style.width =
+            `${percent}%`;
+
+    }
+
+
+    function updateHUD() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        const hud =
+            getElementAny([
+                "runtimeHUD",
+                "hud"
+            ]);
+
+
+        hud
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        const name =
+            getElementAny([
+                "hudPlayerName",
+                "hudName"
+            ]);
+
+
+        if (name) {
+
+            name.textContent =
+                player.name;
+
+        }
+
+
+        const level =
+            getElementAny([
+                "hudPlayerLevel",
+                "levelText"
+            ]);
+
+
+        if (level) {
+
+            level.textContent =
+                `NÍVEL ${player.level}`;
+
+        }
+
+
+        setBar(
+            [
+                "hudHpFill",
+                "hpBar"
+            ],
+            player.hp,
+            player.maxHp
+        );
+
+
+        setBar(
+            [
+                "hudMagicFill",
+                "magicBar"
+            ],
+            player.magic,
+            player.maxMagic
+        );
+
+
+        setBar(
+            [
+                "hudEnergyFill",
+                "energyBar"
+            ],
+            player.energy,
+            player.maxEnergy
+        );
+
+
+        setBar(
+            [
+                "hungerBar",
+                "hudHungerFill"
+            ],
+            player.hunger,
+            player.maxHunger
+        );
+
+
+        setBar(
+            [
+                "fatigueBar",
+                "hudFatigueFill"
+            ],
+            player.fatigue,
+            player.maxFatigue
+        );
+
+
+        const hpText =
+            getElementAny([
+                "hudHpText",
+                "hpText"
+            ]);
+
+
+        if (hpText) {
+
+            hpText.textContent =
+                `${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`;
+
+        }
+
+
+        const magicText =
+            getElementAny([
+                "hudMagicText",
+                "magicText"
+            ]);
+
+
+        if (magicText) {
+
+            magicText.textContent =
+                `${Math.ceil(player.magic)} / ${Math.ceil(player.maxMagic)}`;
+
+        }
+
+
+        const energyText =
+            getElementAny([
+                "hudEnergyText",
+                "energyText"
+            ]);
+
+
+        if (energyText) {
+
+            energyText.textContent =
+                `${Math.ceil(player.energy)} / ${Math.ceil(player.maxEnergy)}`;
+
+        }
+
+
+        const hungerText =
+            getElementAny([
+                "hungerText",
+                "hudHungerText"
+            ]);
+
+
+        if (hungerText) {
+
+            hungerText.textContent =
+                `${Math.ceil(player.hunger)} / ${Math.ceil(player.maxHunger)}`;
+
+        }
+
+
+        const fatigueText =
+            getElementAny([
+                "fatigueText",
+                "hudFatigueText"
+            ]);
+
+
+        if (fatigueText) {
+
+            fatigueText.textContent =
+                `${Math.ceil(player.fatigue)} / ${Math.ceil(player.maxFatigue)}`;
+
+        }
+
+
+        const money =
+            getElementAny([
+                "hudMoney",
+                "moneyText"
+            ]);
+
+
+        if (money) {
+
+            money.textContent =
+                `🪙 ${getMoneyDisplay()}`;
+
+        }
+
+
+        const location =
+            getElementAny([
+                "hudArea",
+                "locationLabel"
+            ]);
+
+
+        if (location) {
+
+            location.textContent =
+
+                state.houseMode
+
+                    ? getHouseSpec(
+                        state.currentHouse
+                    )?.name ||
+                      "INTERIOR"
+
+                    : REGIONS[
+                        state.area
+                    ]?.name ||
+                      state.area;
+
+        }
+
+
+        const xp =
+            getElementAny([
+                "xpText",
+                "hudXp"
+            ]);
+
+
+        if (xp) {
+
+            xp.textContent =
+
+                player.level >=
+                MAX_LEVEL
+
+                    ? "NÍVEL MÁXIMO"
+
+                    : `XP ${Math.floor(player.xp)} / ${player.xpToNext}`;
+
+        }
+
+
+        const statPoints =
+            getElementAny([
+                "statPointsText",
+                "hudStatPoints"
+            ]);
+
+
+        if (statPoints) {
+
+            statPoints.textContent =
+                `PONTOS: ${player.statPoints}`;
+
+        }
+
+
+        const skillData =
+            CLASS_SKILLS[
+                player.characterId
+            ];
+
+
+        for (
+            const slot of
+            [
+                "q",
+                "r",
+                "f"
+            ]
+        ) {
+
+            const element =
+                getElementAny([
+                    `skill${slot.toUpperCase()}`,
+                    `${slot}Skill`
+                ]);
+
+
+            if (element) {
+
+                const cd =
+                    player
+                        .skillCooldowns[
+                            slot
+                        ];
+
+
+                element.textContent =
+
+                    cd >
+                    0
+
+                        ? `${slot.toUpperCase()} ${cd.toFixed(1)}s`
+
+                        : `${slot.toUpperCase()} ${skillData?.[slot]?.name || ""}`;
+
+            }
+
+        }
+
+
+        renderMiniMap();
+
+    }
+
+
+    /* =========================================================
+       MINIMAPA
+       ========================================================= */
+
+    function renderMiniMap() {
+
+        const player =
+            state.player;
+
+
+        const mini =
+            getLiveMiniCanvas();
+
+
+        if (
+            !player ||
+            !mini
+        ) {
+
+            return;
+
+        }
+
+
+        const wrapper =
+            mini.parentElement;
+
+
+        if (
+            !player.minimapOwned ||
+            state.houseMode
+        ) {
+
+            wrapper
+                ?.classList
+                .add(
+                    "hidden"
+                );
+
+
+            return;
+
+        }
+
+
+        wrapper
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        const map =
+            mini.getContext(
+                "2d"
+            );
+
+
+        const width =
+            mini.width;
+
+
+        const height =
+            mini.height;
+
+
+        const scaleX =
+            width /
+            state.world.width;
+
+
+        const scaleY =
+            height /
+            state.world.height;
+
+
+        map.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        map.fillStyle =
+            getBiomeStyle()
+                .ground;
+
+
+        map.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        map.fillStyle =
+            getPathStyle()
+                .base;
+
+
+        for (
+            const path of
+            state.world.paths
+        ) {
+
+            map.fillRect(
+                path.x *
+                    scaleX,
+                path.y *
+                    scaleY,
+                path.w *
+                    scaleX,
+                path.h *
+                    scaleY
+            );
+
+        }
+
+
+        for (
+            const marker of
+            getVisibleMapMarkers()
+        ) {
+
+            map.fillStyle =
+
+                marker.type ===
+                "boss"
+
+                    ? "#e5626c"
+
+                    : marker.type ===
+                      "portal"
+
+                        ? "#e1c577"
+
+                        : marker.type ===
+                          "fountain"
+
+                            ? "#78c9df"
+
+                            : "#eee5d1";
+
+
+            map.beginPath();
+
+
+            map.arc(
+                marker.x *
+                    scaleX,
+                marker.y *
+                    scaleY,
+                marker.important
+                    ? 3
+                    : 2,
+                0,
+                Math.PI *
+                    2
+            );
+
+
+            map.fill();
+
+        }
+
+
+        map.fillStyle =
+            "#ffffff";
+
+
+        map.beginPath();
+
+
+        map.arc(
+            player.x *
+                scaleX,
+            player.y *
+                scaleY,
+            4,
+            0,
+            Math.PI *
+                2
+        );
+
+
+        map.fill();
+
+    }
+
+
+    /* =========================================================
+       CHARACTER SELECTION
+       ========================================================= */
+
+    function renderCharacterSelection() {
+
+        const container =
+            getElementAny([
+                "characterCards",
+                "characterList"
+            ]);
+
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        container.innerHTML =
+            CHARACTERS
+                .map(
+                    character => {
+
+                        const stats = [
+
+                            [
+                                "VIDA",
+                                "hp"
+                            ],
+
+                            [
+                                "MAGIA",
+                                "magic"
+                            ],
+
+                            [
+                                "ENERGIA",
+                                "energy"
+                            ],
+
+                            [
+                                "FORÇA",
+                                "damage"
+                            ],
+
+                            [
+                                "DEFESA",
+                                "defense"
+                            ],
+
+                            [
+                                "VELOCIDADE",
+                                "speed"
+                            ]
+
+                        ];
+
+
+                        const bars =
+                            stats
+                                .map(
+                                    (
+                                        [
+                                            label,
+                                            key
+                                        ]
+                                    ) => {
+
+                                        const value =
+                                            getCharacterStatBarValue(
+                                                character,
+                                                key
+                                            );
+
+
+                                        return `
+                                            <div class="character-stat-row">
+                                                <span>${label}</span>
+
+                                                <div class="character-stat-track">
+                                                    <div
+                                                        class="character-stat-fill"
+                                                        style="width:${value}%"
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        `;
+
+                                    }
+                                )
+                                .join(
+                                    ""
+                                );
+
+
+                        return `
+                            <button
+                                type="button"
+                                class="character-card"
+                                data-character="${character.id}"
+                            >
+                                <div class="character-symbol">
+                                    ${character.icon}
+                                </div>
+
+                                <div class="character-card-title">
+                                    <strong>
+                                        ${character.name}
+                                    </strong>
+
+                                    <span>
+                                        ${character.className}
+                                    </span>
+                                </div>
+
+                                <p>
+                                    ${escapeHTML(character.description)}
+                                </p>
+
+                                <div class="character-stat-chart">
+                                    ${bars}
+                                </div>
+
+                                <small>
+                                    ATAQUE BÁSICO:
+                                    ${escapeHTML(character.basicAttack.name)}
+                                </small>
+                            </button>
+                        `;
+
+                    }
+                )
+                .join(
+                    ""
+                );
+
+
+        container
+            .querySelectorAll(
+                "[data-character]"
+            )
+            .forEach(
+                card => {
+
+                    card.addEventListener(
+                        "click",
+                        () => {
+
+                            selectCharacter(
+                                card.dataset
+                                    .character
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    function selectCharacter(
+        id
+    ) {
+
+        const character =
+            getCharacterById(
+                id
+            );
+
+
+        if (!character) {
+
+            return false;
+
+        }
+
+
+        state.selectedCharacter =
+            character;
+
+
+        document
+            .querySelectorAll(
+                "[data-character]"
+            )
+            .forEach(
+                card => {
+
+                    card.classList.toggle(
+                        "selected",
+                        card.dataset
+                            .character ===
+                            id
+                    );
+
+                }
+            );
+
+
+        const start =
+            getElementAny([
+                "startGameBtn",
+                "startCharacterBtn"
+            ]);
+
+
+        if (start) {
+
+            start.disabled =
+                false;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       TELAS
+       ========================================================= */
+
+    function showScreen(
+        name
+    ) {
+
+        refreshDOMReferences();
+
+
+        for (
+            const [
+                key,
+                screen
+            ] of
+            Object.entries(
+                screens
+            )
+        ) {
+
+            if (!screen) {
+
+                continue;
+
+            }
+
+
+            const active =
+                key ===
+                name;
+
+
+            screen.classList.toggle(
+                "active",
+                active
+            );
+
+
+            screen.classList.toggle(
+                "hidden",
+                !active
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       NOVO JOGO
+       ========================================================= */
+
+    function startNewGame() {
+
+        state.selectedCharacter =
+            null;
+
+
+        showScreen(
+            "character"
+        );
+
+
+        renderCharacterSelection();
+
+
+        const start =
+            getElementAny([
+                "startGameBtn",
+                "startCharacterBtn"
+            ]);
+
+
+        if (start) {
+
+            start.disabled =
+                true;
+
+        }
+
+    }
+
+
+    function confirmCharacterStart() {
+
+        const character =
+            state.selectedCharacter;
+
+
+        if (!character) {
+
+            showToast(
+                "Escolha um personagem."
+            );
+
+            return false;
+
+        }
+
+
+        const input =
+            getElementAny([
+                "playerName",
+                "playerNameInput"
+            ]);
+
+
+        const name =
+            input
+                ?.value
+                ?.trim() ||
+            character.name;
+
+
+        state.player =
+            createNewPlayer(
+                character,
+                name
+            );
+
+
+        state.area =
+            "village";
+
+
+        state.houseMode =
+            true;
+
+
+        state.currentHouse = {
+            id:
+                "home",
+            interiorId:
+                "home",
+            name:
+                "CASA DO AVENTUREIRO"
+        };
+
+
+        state.houseReturn =
+            null;
+
+
+        buildWorld();
+
+
+        placePlayerInsideHouse(
+            "home"
+        );
+
+
+        recalculatePlayerStats({
+            fillResources:
+                true
+        });
+
+
+        state.running =
+            true;
+
+
+        state.paused =
+            false;
+
+
+        uiPauseReasons.clear();
+
+
+        state.lastTime =
+            performance.now();
+
+
+        state.autosaveTimer =
+            0;
+
+
+        resetSkyTrialRuntime();
+
+
+        showScreen(
+            "game"
+        );
+
+
+        resizeGameCanvas();
+
+
+        updateHUD();
+
+
+        renderInventory();
+
+
+        saveGame();
+
+
+        updateContinueButtons();
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       COMO JOGAR / CRÉDITOS
+       ========================================================= */
+
+    function renderHowToPlay() {
+
+        const container =
+            $("howContent");
+
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        container.innerHTML = `
+            <article class="how-item">
+                <span>⌨️</span>
+                <div>
+                    <strong>MOVIMENTO</strong>
+                    <p>W A S D ou setas para caminhar.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>🖱️</span>
+                <div>
+                    <strong>ATAQUE</strong>
+                    <p>Um clique realiza um ataque. Segurar o mouse não repete ataques.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>✦</span>
+                <div>
+                    <strong>HABILIDADES</strong>
+                    <p>Use Q, R e F para suas habilidades de classe.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>🤝</span>
+                <div>
+                    <strong>INTERAÇÃO</strong>
+                    <p>Use E para interagir. Para coletar recursos, segure E.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>🚪</span>
+                <div>
+                    <strong>CASAS</strong>
+                    <p>As portas abrem ao se aproximar. Use Z para entrar e sair.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>🎒</span>
+                <div>
+                    <strong>INVENTÁRIO E STATUS</strong>
+                    <p>I abre o inventário. C abre os pontos de status.</p>
+                </div>
+            </article>
+
+            <article class="how-item">
+                <span>🗺️</span>
+                <div>
+                    <strong>MAPA</strong>
+                    <p>Após comprar o mapa, pressione M.</p>
+                </div>
+            </article>
+
+            <article class="how-item how-warning">
+                <span>⚠️</span>
+                <div>
+                    <strong>PERIGO</strong>
+                    <p>Criaturas possuem habilidades próprias e ataques especiais.</p>
+                </div>
+            </article>
+
+            <article class="how-item how-warning">
+                <span>⚠️</span>
+                <div>
+                    <strong>ESCURIDÃO</strong>
+                    <p>Certas passagens exigem a Lanterna Antiga.</p>
+                </div>
+            </article>
+        `;
+
+    }
+
+
+    function renderCredits() {
+
+        const container =
+            $("creditsContent");
+
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        container.innerHTML = `
+            <div class="credits-entry">
+                <span>CONCEITO E CRIAÇÃO DO PROJETO</span>
+                <strong>Pedro</strong>
+            </div>
+
+            <div class="credits-entry">
+                <span>DESENVOLVIMENTO E APOIO DE PROGRAMAÇÃO</span>
+                <strong>ChatGPT</strong>
+            </div>
+        `;
+
+    }
+
+
+    /* =========================================================
+       INPUT
+       ========================================================= */
+
+    function isTypingTarget(
+        target
+    ) {
+
+        if (!target) {
+
+            return false;
+
+        }
+
+
+        const tag =
+            target.tagName
+                ?.toLowerCase();
+
+
+        return (
+
+            tag ===
+                "input" ||
+
+            tag ===
+                "textarea" ||
+
+            tag ===
+                "select" ||
+
+            target.isContentEditable
+
+        );
+
+    }
+
+
+    function handleKeyDown(
+        event
+    ) {
+
+        if (
+            isTypingTarget(
+                event.target
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            COMANDOS DE TESTE PRIMEIRO.
+
+            Isso impede X+1 de também usar poção.
+        */
+
+        if (
+            handleDevShortcutKeyDown(
+                event
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        state.keys.add(
+            event.code
+        );
+
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            event.repeat &&
+            [
+                "KeyE",
+                "KeyZ",
+                "KeyQ",
+                "KeyR",
+                "KeyF",
+                "Space"
+            ].includes(
+                event.code
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        switch (
+            event.code
+        ) {
+
+            case "Escape":
+
+                closeTopUI();
+
+                break;
+
+
+            case "KeyE":
+
+                handleInteractionKeyDown();
+
+                break;
+
+
+            case "KeyZ":
+
+                useDoorKey();
+
+                break;
+
+
+            case "KeyQ":
+
+                useClassSkill(
+                    "q"
+                );
+
+                break;
+
+
+            case "KeyR":
+
+                useClassSkill(
+                    "r"
+                );
+
+                break;
+
+
+            case "KeyF":
+
+                useClassSkill(
+                    "f"
+                );
+
+                break;
+
+
+            case "Space":
+
+                if (
+                    state.dialogue
+                ) {
+
+                    advanceDialogue();
+
+                }
+
+                else {
+
+                    attemptUniversalDash();
+
+                }
+
+
+                event.preventDefault();
+
+                break;
+
+
+            case "KeyI":
+
+                if (
+                    !state.dialogue &&
+                    !state.battle &&
+                    !state.travel
+                ) {
+
+                    openInventory();
+
+                }
+
+                break;
+
+
+            case "KeyC":
+
+                if (
+                    !state.dialogue &&
+                    !state.battle &&
+                    !state.travel
+                ) {
+
+                    openStatusPanel();
+
+                }
+
+                break;
+
+
+            case "KeyM":
+
+                toggleWorldMapPanel();
+
+                break;
+
+
+            case "Digit1":
+
+                if (
+                    !state.dev.keys.has(
+                        "KeyX"
+                    )
+                ) {
+
+                    useQuickItem(
+                        "pocao"
+                    );
+
+                }
+
+                break;
+
+
+            case "Digit2":
+
+                if (
+                    !state.dev.keys.has(
+                        "KeyX"
+                    )
+                ) {
+
+                    useQuickItem(
+                        "elixir"
+                    );
+
+                }
+
+                break;
+
+        }
+
+    }
+
+
+    function handleKeyUp(
+        event
+    ) {
+
+        state.keys.delete(
+            event.code
+        );
+
+
+        handleDevShortcutKeyUp(
+            event
+        );
+
+
+        if (
+            event.code ===
+            "KeyE"
+        ) {
+
+            handleInteractionKeyUp();
+
+        }
+
+    }
+
+
+    function useQuickItem(
+        id
+    ) {
+
+        if (
+            state.paused
+        ) {
+
+            return false;
+
+        }
+
+
+        const result =
+            activateInventoryItem(
+                id
+            );
+
+
+        if (result) {
+
+            updateHUD();
+
+
+            renderInventory();
+
+        }
+
+
+        return result;
+
+    }
+
+
+    function updatePointerPosition(
+        event
+    ) {
+
+        const gameCanvas =
+            getLiveCanvas();
+
+
+        if (!gameCanvas) {
+
+            return;
+
+        }
+
+
+        const rect =
+            gameCanvas
+                .getBoundingClientRect();
+
+
+        if (
+            rect.width <=
+                0 ||
+            rect.height <=
+                0
+        ) {
+
+            return;
+
+        }
+
+
+        state.pointer.x =
+
+            (
+                event.clientX -
+                rect.left
+            ) *
+
+            (
+                renderRuntime.width /
+                rect.width
+            );
+
+
+        state.pointer.y =
+
+            (
+                event.clientY -
+                rect.top
+            ) *
+
+            (
+                renderRuntime.height /
+                rect.height
+            );
+
+
+        const world =
+            screenToWorld(
+                state.pointer.x,
+                state.pointer.y
+            );
+
+
+        state.pointer.worldX =
+            world.x;
+
+
+        state.pointer.worldY =
+            world.y;
+
+    }
+
+
+    function handlePointerDown(
+        event
+    ) {
+
+        if (
+            event.button !==
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        updatePointerPosition(
+            event
+        );
+
+
+        state.pointer.down =
+            true;
+
+
+        /*
+            UM CLICK = UM ATAQUE.
+            Não existe auto ataque segurando.
+        */
+
+        performBasicAttack();
+
+    }
+
+
+    function handlePointerUp() {
+
+        state.pointer.down =
+            false;
+
+    }
+
+
+    /* =========================================================
+       CLOSE TOP UI
+       ========================================================= */
+
+    function closeTopUI() {
+
+        if (
+            state.dialogue
+        ) {
+
+            closeDialogue(
+                true
+            );
+
+            return true;
+
+        }
+
+
+        if (
+            state.battle
+        ) {
+
+            declineBattle();
+
+            return true;
+
+        }
+
+
+        if (
+            state.travel
+        ) {
+
+            cancelTravel();
+
+            return true;
+
+        }
+
+
+        if (
+            state.shopNPC
+        ) {
+
+            closeShop();
+
+            return true;
+
+        }
+
+
+        if (
+            state.questNPC
+        ) {
+
+            closeQuestPanel();
+
+            return true;
+
+        }
+
+
+        const map =
+            $("worldMapPanel");
+
+
+        if (
+            map &&
+            !map.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            toggleWorldMapPanel();
+
+            return true;
+
+        }
+
+
+        const inventory =
+            $("inventoryPanel");
+
+
+        if (
+            inventory &&
+            !inventory.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            closeInventory();
+
+            return true;
+
+        }
+
+
+        const status =
+            $("statusPanel");
+
+
+        if (
+            status &&
+            !status.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            closeStatusPanel();
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       BOTÕES — BIND DEFENSIVO
+
+       Usa IDs do HTML novo e antigo.
+       ========================================================= */
+
+    function bindClickOnce(
+        element,
+        handler,
+        key
+    ) {
+
+        if (
+            !element ||
+            typeof handler !==
+                "function"
+        ) {
+
+            return;
+
+        }
+
+
+        const marker =
+            `veyraBound${key}`;
+
+
+        if (
+            element.dataset[
+                marker
+            ] ===
+            "1"
+        ) {
+
+            return;
+
+        }
+
+
+        element.dataset[
+            marker
+        ] =
+            "1";
+
+
+        element.addEventListener(
+            "click",
+            handler
+        );
+
+    }
+
+
+    function bindAllIds(
+        ids,
+        handler,
+        key
+    ) {
+
+        const used =
+            new Set();
+
+
+        for (
+            const id of
+            ids
+        ) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (
+                !element ||
+                used.has(
+                    element
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            used.add(
+                element
+            );
+
+
+            bindClickOnce(
+                element,
+                handler,
+                key
+            );
+
+        }
+
+    }
+
+
+    function updateContinueButtons() {
+
+        const available =
+            hasSave();
+
+
+        for (
+            const id of
+            [
+                "continueBtn",
+                "btnContinue"
+            ]
+        ) {
+
+            const button =
+                document.getElementById(
+                    id
+                );
+
+
+            if (button) {
+
+                button.disabled =
+                    !available;
+
+            }
+
+        }
+
+    }
+
+
+    function bindMenuButtons() {
+
+        bindAllIds(
+            [
+                "newGameBtn",
+                "btnNewGame"
+            ],
+            startNewGame,
+            "NewGame"
+        );
+
+
+        bindAllIds(
+            [
+                "continueBtn",
+                "btnContinue"
+            ],
+            loadGame,
+            "Continue"
+        );
+
+
+        /*
+            HTML NOVO:
+            howToBtn
+
+            HTML ANTIGO:
+            howBtn
+        */
+
+        bindAllIds(
+            [
+                "howToBtn",
+                "howBtn",
+                "btnHow"
+            ],
+            () =>
+                showScreen(
+                    "how"
+                ),
+            "How"
+        );
+
+
+        bindAllIds(
+            [
+                "creditsBtn",
+                "btnCredits"
+            ],
+            () =>
+                showScreen(
+                    "credits"
+                ),
+            "Credits"
+        );
+
+
+        /*
+            HTML NOVO:
+            startGameBtn
+
+            HTML ANTIGO:
+            startCharacterBtn
+        */
+
+        bindAllIds(
+            [
+                "startGameBtn",
+                "startCharacterBtn"
+            ],
+            confirmCharacterStart,
+            "StartCharacter"
+        );
+
+
+        const backSelectors = [
+
+            "[data-back-menu]",
+
+            "#howBackBtn",
+
+            "#backHowBtn",
+
+            "#creditsBackBtn",
+
+            "#backCreditsBtn",
+
+            "#characterBackBtn",
+
+            "#backCharacterBtn"
+
+        ];
+
+
+        document
+            .querySelectorAll(
+                backSelectors.join(
+                    ","
+                )
+            )
+            .forEach(
+                element => {
+
+                    bindClickOnce(
+                        element,
+                        () =>
+                            showScreen(
+                                "menu"
+                            ),
+                        "BackMenu"
+                    );
+
+                }
+            );
+
+
+        updateContinueButtons();
+
+    }
+
+
+    function bindRuntimeButtons() {
+
+        bindAllIds(
+            [
+                "battleAcceptBtn",
+                "battleAccept"
+            ],
+            acceptBattle,
+            "BattleAccept"
+        );
+
+
+        bindAllIds(
+            [
+                "battleDeclineBtn",
+                "battleDecline"
+            ],
+            declineBattle,
+            "BattleDecline"
+        );
+
+
+        bindAllIds(
+            [
+                "travelConfirmBtn",
+                "travelYes"
+            ],
+            confirmTravel,
+            "TravelConfirm"
+        );
+
+
+        bindAllIds(
+            [
+                "travelCancelBtn",
+                "travelNo"
+            ],
+            cancelTravel,
+            "TravelCancel"
+        );
+
+
+        bindAllIds(
+            [
+                "questActionBtn"
+            ],
+            questAction,
+            "QuestAction"
+        );
+
+
+        bindAllIds(
+            [
+                "questCloseBtn"
+            ],
+            closeQuestPanel,
+            "QuestClose"
+        );
+
+
+        bindAllIds(
+            [
+                "shopBuyTab"
+            ],
+            () =>
+                setShopMode(
+                    "buy"
+                ),
+            "ShopBuyTab"
+        );
+
+
+        bindAllIds(
+            [
+                "shopSellTab"
+            ],
+            () =>
+                setShopMode(
+                    "sell"
+                ),
+            "ShopSellTab"
+        );
+
+
+        bindAllIds(
+            [
+                "shopCloseBtn"
+            ],
+            closeShop,
+            "ShopClose"
+        );
+
+
+        bindAllIds(
+            [
+                "inventoryCloseBtn"
+            ],
+            closeInventory,
+            "InventoryClose"
+        );
+
+
+        bindAllIds(
+            [
+                "statusCloseBtn"
+            ],
+            closeStatusPanel,
+            "StatusClose"
+        );
+
+
+        bindAllIds(
+            [
+                "respawnBtn"
+            ],
+            respawnPlayer,
+            "Respawn"
+        );
+
+
+        /*
+            Delegação SHOP.
+            Um único handler para evitar listeners antigos.
+        */
+
+        const shopList =
+            $("shopList");
+
+
+        if (
+            shopList &&
+            shopList.dataset
+                .veyraDelegated !==
+                "1"
+        ) {
+
+            shopList.dataset
+                .veyraDelegated =
+                "1";
+
+
+            shopList.addEventListener(
+                "click",
+                event => {
+
+                    const button =
+                        event.target
+                            .closest(
+                                "button"
+                            );
+
+
+                    if (!button) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        button.dataset
+                            .shopBuy
+                    ) {
+
+                        purchaseShopItem(
+                            button.dataset
+                                .shopBuy
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        button.dataset
+                            .shopSellOne
+                    ) {
+
+                        sellShopItem(
+                            button.dataset
+                                .shopSellOne,
+                            false
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        button.dataset
+                            .shopSellAll
+                    ) {
+
+                        sellShopItem(
+                            button.dataset
+                                .shopSellAll,
+                            true
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        const inventoryList =
+            $("inventoryList");
+
+
+        if (
+            inventoryList &&
+            inventoryList.dataset
+                .veyraDelegated !==
+                "1"
+        ) {
+
+            inventoryList.dataset
+                .veyraDelegated =
+                "1";
+
+
+            inventoryList.addEventListener(
+                "click",
+                event => {
+
+                    const button =
+                        event.target
+                            .closest(
+                                "[data-inventory-use]"
+                            );
+
+
+                    if (!button) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        activateInventoryItem(
+                            button.dataset
+                                .inventoryUse
+                        )
+                    ) {
+
+                        renderInventory();
+
+
+                        updateHUD();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        const statusList =
+            $("statusList");
+
+
+        if (
+            statusList &&
+            statusList.dataset
+                .veyraDelegated !==
+                "1"
+        ) {
+
+            statusList.dataset
+                .veyraDelegated =
+                "1";
+
+
+            statusList.addEventListener(
+                "click",
+                event => {
+
+                    const button =
+                        event.target
+                            .closest(
+                                "[data-stat-add]"
+                            );
+
+
+                    if (!button) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        allocateStatPoint(
+                            button.dataset
+                                .statAdd
+                        )
+                    ) {
+
+                        renderStatusPanel();
+
+
+                        updateHUD();
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       GLOBAL EVENTS
+       ========================================================= */
+
+    let globalEventsBound =
+        false;
+
+
+    function bindGlobalEvents() {
+
+        if (
+            globalEventsBound
+        ) {
+
+            return;
+
+        }
+
+
+        globalEventsBound =
+            true;
+
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+
+        window.addEventListener(
+            "keyup",
+            handleKeyUp
+        );
+
+
+        window.addEventListener(
+            "blur",
+            () => {
+
+                state.keys.clear();
+
+
+                clearDevHeldKeys();
+
+
+                state.pointer.down =
+                    false;
+
+
+                cancelHoldCollect();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            resizeGameCanvas
+        );
+
+
+        const gameCanvas =
+            getLiveCanvas();
+
+
+        if (gameCanvas) {
+
+            gameCanvas.addEventListener(
+                "pointermove",
+                updatePointerPosition
+            );
+
+
+            gameCanvas.addEventListener(
+                "pointerdown",
+                handlePointerDown
+            );
+
+
+            gameCanvas.addEventListener(
+                "contextmenu",
+                event =>
+                    event.preventDefault()
+            );
+
+        }
+
+
+        window.addEventListener(
+            "pointerup",
+            handlePointerUp
+        );
+
+
+        window.addEventListener(
+            "beforeunload",
+            () => {
+
+                if (
+                    state.player &&
+                    !state.player.dead
+                ) {
+
+                    saveGame();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       BUILD WORLD WRAPPER
+
+       Adiciona sistemas que dependem do save
+       depois da construção básica.
+       ========================================================= */
+
+    const buildWorldBase =
+        buildWorld;
+
+
+    buildWorld =
+        function () {
+
+            const result =
+                buildWorldBase();
+
+
+            augmentWorldProgression();
+
+
+            return (
+                result ||
+                state.world
+            );
+
+        };
+
+
+    /* =========================================================
+       FRAME
+       ========================================================= */
+
+    function updatePointerWorldCoordinates() {
+
+        const world =
+            screenToWorld(
+                state.pointer.x,
+                state.pointer.y
+            );
+
+
+        state.pointer.worldX =
+            world.x;
+
+
+        state.pointer.worldY =
+            world.y;
+
+    }
+
+
+    function updateFrame(
+        dt
+    ) {
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        state.time +=
+            dt;
+
+
+        /*
+            Diálogo/transição continuam mesmo pausado.
+        */
+
+        updateInteractionSystems(
+            dt
+        );
+
+
+        if (
+            !state.paused
+        ) {
+
+            updateGameplaySystems(
+                dt
+            );
+
+        }
+
+        else {
+
+            updateBloodEffects(
+                dt
+            );
+
+        }
+
+
+        updateCamera(
+            dt
+        );
+
+
+        updatePointerWorldCoordinates();
+
+
+        updateAutosave(
+            dt
+        );
+
+
+        renderRuntime.lastHudUpdate +=
+            dt;
+
+
+        if (
+            renderRuntime.lastHudUpdate >=
+            0.08
+        ) {
+
+            renderRuntime.lastHudUpdate =
+                0;
+
+
+            updateHUD();
+
+        }
+
+
+        renderRuntime.lastMiniMapUpdate +=
+            dt;
+
+
+        if (
+            renderRuntime.lastMiniMapUpdate >=
+            0.18
+        ) {
+
+            renderRuntime.lastMiniMapUpdate =
+                0;
+
+
+            renderMiniMap();
+
+        }
+
+    }
+
+
+    function gameLoop(
+        timestamp
+    ) {
+
+        const previous =
+            state.lastTime ||
+            timestamp;
+
+
+        const dt =
+            clamp(
+                (
+                    timestamp -
+                    previous
+                ) /
+                1000,
+                0,
+                0.05
+            );
+
+
+        state.lastTime =
+            timestamp;
+
+
+        renderRuntime.fpsTime +=
+            dt;
+
+
+        renderRuntime.fpsFrames++;
+
+
+        if (
+            renderRuntime.fpsTime >=
+            1
+        ) {
+
+            renderRuntime.fps =
+                Math.round(
+
+                    renderRuntime.fpsFrames /
+
+                    renderRuntime.fpsTime
+
+                );
+
+
+            renderRuntime.fpsTime =
+                0;
+
+
+            renderRuntime.fpsFrames =
+                0;
+
+        }
+
+
+        if (
+            state.running
+        ) {
+
+            updateFrame(
+                dt
+            );
+
+
+            renderGameWorld();
+
+        }
+
+
+        window.requestAnimationFrame(
+            gameLoop
+        );
+
+    }
+
+
+    /* =========================================================
+       VALIDAÇÃO FINAL
+       ========================================================= */
+
+    function validatePart4Data() {
+
+        const errors =
+            [];
+
+
+        if (
+            typeof openDialogue !==
+            "function"
+        ) {
+
+            errors.push(
+                "Diálogo ausente."
+            );
+
+        }
+
+
+        if (
+            typeof openShop !==
+            "function"
+        ) {
+
+            errors.push(
+                "Loja ausente."
+            );
+
+        }
+
+
+        if (
+            typeof useDoorKey !==
+            "function"
+        ) {
+
+            errors.push(
+                "Sistema de casas ausente."
+            );
+
+        }
+
+
+        if (
+            typeof saveGame !==
+            "function" ||
+            typeof loadGame !==
+            "function"
+        ) {
+
+            errors.push(
+                "Save/load ausente."
+            );
+
+        }
+
+
+        if (
+            typeof renderGameWorld !==
+            "function"
+        ) {
+
+            errors.push(
+                "Render principal ausente."
+            );
+
+        }
+
+
+        if (
+            typeof handleDevShortcutKeyDown !==
+            "function"
+        ) {
+
+            errors.push(
+                "Comandos de teste ausentes."
+            );
+
+        }
+
+
+        if (
+            LANTERN_PRICE !==
+            350
+        ) {
+
+            errors.push(
+                "Lanterna precisa custar 350."
+            );
+
+        }
+
+
+        if (
+            MINIMAP_PRICE !==
+            180
+        ) {
+
+            errors.push(
+                "Minimapa precisa custar 180."
+            );
+
+        }
+
+
+        if (
+            DASH_RITUAL_COST.rubi !==
+                60 ||
+            DASH_RITUAL_COST.diamante !==
+                45
+        ) {
+
+            errors.push(
+                "Custo do Dash incorreto."
+            );
+
+        }
+
+
+        if (
+            errors.length >
+            0
+        ) {
+
+            console.error(
+                "VEYRA V25 — Parte 4 encontrou erros:",
+                errors
+            );
+
+
+            return false;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function validateEntireRuntime() {
+
+        const errors =
+            [];
+
+
+        try {
+
+            if (
+                typeof validatePart2Data ===
+                    "function" &&
+                !validatePart2Data()
+            ) {
+
+                errors.push(
+                    "Falha na Parte 2."
+                );
+
+            }
+
+        }
+
+        catch (
+            error
+        ) {
+
+            errors.push(
+                `Parte 2: ${error.message}`
+            );
+
+        }
+
+
+        try {
+
+            if (
+                typeof validatePart3Data ===
+                    "function" &&
+                !validatePart3Data()
+            ) {
+
+                errors.push(
+                    "Falha na Parte 3."
+                );
+
+            }
+
+        }
+
+        catch (
+            error
+        ) {
+
+            errors.push(
+                `Parte 3: ${error.message}`
+            );
+
+        }
+
+
+        try {
+
+            if (
+                !validatePart4Data()
+            ) {
+
+                errors.push(
+                    "Falha na Parte 4."
+                );
+
+            }
+
+        }
+
+        catch (
+            error
+        ) {
+
+            errors.push(
+                `Parte 4: ${error.message}`
+            );
+
+        }
+
+
+        if (
+            errors.length >
+            0
+        ) {
+
+            console.error(
+                "VEYRA V25 — VALIDAÇÃO:",
+                errors
+            );
+
+
+            return false;
+
+        }
+
+
+        console.info(
+            "VEYRA V25 — estrutura carregada."
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       INICIALIZAÇÃO
+       ========================================================= */
+
+    function initialize() {
+
+        try {
+
+            refreshDOMReferences();
+
+
+            ensureRuntimeUI();
+
+
+            /*
+                Recarrega referências depois que os
+                painéis de segurança foram criados.
+            */
+
+            refreshDOMReferences();
+
+
+            bindMenuButtons();
+
+
+            bindRuntimeButtons();
+
+
+            bindGlobalEvents();
+
+
+            renderCharacterSelection();
+
+
+            renderHowToPlay();
+
+
+            renderCredits();
+
+
+            createDevCommandPanel();
+
+
+            closeDevCommandPanel();
+
+
+            resizeGameCanvas();
+
+
+            updateContinueButtons();
+
+
+            validateEntireRuntime();
+
+
+            showScreen(
+                "menu"
+            );
+
+
+            window.requestAnimationFrame(
+                timestamp => {
+
+                    state.lastTime =
+                        timestamp;
+
+
+                    gameLoop(
+                        timestamp
+                    );
+
+                }
+            );
+
+
+            console.info(
+                `${GAME_VERSION_NAME} iniciado.`
+            );
+
+        }
+
+        catch (
+            error
+        ) {
+
+            /*
+                Se alguma coisa falhar na inicialização,
+                agora o erro fica muito mais visível.
+            */
+
+            console.error(
+                "VEYRA — ERRO DE INICIALIZAÇÃO:",
+                error
+            );
+
+
+            const message =
+                document.createElement(
+                    "div"
+                );
+
+
+            message.className =
+                "veyra-startup-error";
+
+
+            message.textContent =
+                `Erro ao iniciar VEYRA: ${error.message}`;
+
+
+            document.body.appendChild(
+                message
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DOM READY
+
+       IMPORTANTE:
+
+       Os eventos só são ligados depois do HTML
+       estar completamente disponível.
+
+       Isso evita os botões ficarem mortos
+       simplesmente porque o script carregou antes.
+       ========================================================= */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once:
+                    true
+            }
+        );
+
+    }
+
+    else {
+
+        initialize();
+
+    }
+
+
+    /* =========================================================
+       FIM VEYRA V25
+
+       ÚNICO FECHAMENTO DO IIFE.
+       ========================================================= */
+
+})();
