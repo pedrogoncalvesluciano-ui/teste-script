@@ -29048,3 +29048,10552 @@
 
        NÃO COLOQUE })(); AINDA.
        ========================================================= */
+     /* =========================================================
+       VEYRA: A QUIETUDE — V20 — PARTE 4/5
+
+       INTERAÇÕES
+       DIÁLOGOS
+       PORTAS
+       PORTAIS
+       DORAN
+       BORIN
+       ARMADURAS SEQUENCIAIS
+       MIGUEL
+       PORTÕES
+       ALTAR DO MONARCA
+       DASH
+       ROTA NORTE
+       SOMBRAS
+       FADAS
+       CÉU
+       5 HORDAS
+       FLAUTA
+       INFERNO
+       CÂMARA FINAL
+       OUTRO EU
+
+       CONTINUA DIRETAMENTE DA PARTE 3.
+       NÃO FECHE O IIFE.
+       ========================================================= */
+
+
+    /* =========================================================
+       TRANSIÇÕES
+       ========================================================= */
+
+    function startTransition(
+        options = {}
+    ) {
+
+        if (
+            state.transition
+        ) {
+
+            state.transitionQueue
+                .push(
+                    options
+                );
+
+            return;
+
+        }
+
+
+        const fadeOut =
+            Math.max(
+
+                0.01,
+
+                options.fadeOut ??
+                0.46
+
+            );
+
+
+        const hold =
+            Math.max(
+
+                0,
+
+                options.hold ??
+                0.16
+
+            );
+
+
+        const fadeIn =
+            Math.max(
+
+                0.01,
+
+                options.fadeIn ??
+                0.52
+
+            );
+
+
+        const startBlack =
+            Boolean(
+                options.startBlack
+            );
+
+
+        state.transition = {
+
+            phase:
+
+                startBlack
+
+                    ? "hold"
+
+                    : "out",
+
+            alpha:
+
+                startBlack
+
+                    ? 1
+
+                    : 0,
+
+            fadeOut,
+
+            hold,
+
+            fadeIn,
+
+            timer:
+
+                startBlack
+
+                    ? hold
+
+                    : fadeOut,
+
+            label:
+                options.label ||
+                "",
+
+            midpointDone:
+                false,
+
+            onMidpoint:
+                typeof options.onMidpoint ===
+                "function"
+
+                    ? options.onMidpoint
+
+                    : null,
+
+            done:
+                typeof options.done ===
+                "function"
+
+                    ? options.done
+
+                    : null
+
+        };
+
+    }
+
+
+    function updateTransition(
+        dt
+    ) {
+
+        const transition =
+            state.transition;
+
+
+        if (!transition) {
+
+            return;
+
+        }
+
+
+        transition.timer -=
+            dt;
+
+
+        if (
+            transition.phase ===
+            "out"
+        ) {
+
+            transition.alpha =
+                clamp(
+
+                    1 -
+
+                    transition.timer /
+                    transition.fadeOut,
+
+                    0,
+                    1
+
+                );
+
+
+            if (
+                transition.timer <=
+                0
+            ) {
+
+                transition.alpha =
+                    1;
+
+
+                transition.phase =
+                    "hold";
+
+
+                transition.timer =
+                    transition.hold;
+
+
+                if (
+                    !transition.midpointDone
+                ) {
+
+                    transition.midpointDone =
+                        true;
+
+
+                    transition
+                        .onMidpoint
+                        ?.();
+
+                }
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            transition.phase ===
+            "hold"
+        ) {
+
+            transition.alpha =
+                1;
+
+
+            if (
+                !transition.midpointDone
+            ) {
+
+                transition.midpointDone =
+                    true;
+
+
+                transition
+                    .onMidpoint
+                    ?.();
+
+            }
+
+
+            if (
+                transition.timer <=
+                0
+            ) {
+
+                transition.phase =
+                    "in";
+
+
+                transition.timer =
+                    transition.fadeIn;
+
+            }
+
+
+            return;
+
+        }
+
+
+        transition.alpha =
+            clamp(
+
+                transition.timer /
+                transition.fadeIn,
+
+                0,
+                1
+
+            );
+
+
+        if (
+            transition.timer >
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        const done =
+            transition.done;
+
+
+        state.transition =
+            null;
+
+
+        done?.();
+
+
+        const next =
+            state.transitionQueue
+                .shift();
+
+
+        if (next) {
+
+            startTransition(
+                next
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DIÁLOGO
+       ========================================================= */
+
+    function openDialogue(
+        speaker,
+        lines,
+        options = {}
+    ) {
+
+        const safeLines =
+            Array.isArray(
+                lines
+            )
+
+                ? lines.filter(
+                    line =>
+                        typeof line ===
+                        "string" &&
+                        line.trim()
+                )
+
+                : [];
+
+
+        if (
+            safeLines.length ===
+            0
+        ) {
+
+            return false;
+
+        }
+
+
+        state.dialogue = {
+
+            speaker:
+                speaker ||
+                "???",
+
+            lines:
+                safeLines,
+
+            index:
+                0,
+
+            onClose:
+
+                typeof options.onClose ===
+                "function"
+
+                    ? options.onClose
+
+                    : null,
+
+            lockPlayer:
+                options.lockPlayer !==
+                false,
+
+            data:
+                options.data ||
+                null
+
+        };
+
+
+        const box =
+            $("dialogueBox");
+
+
+        if (box) {
+
+            box.classList
+                .remove(
+                    "hidden"
+                );
+
+        }
+
+
+        renderDialogueState();
+
+
+        return true;
+
+    }
+
+
+    function renderDialogueState() {
+
+        if (
+            !state.dialogue
+        ) {
+
+            return;
+
+        }
+
+
+        const speaker =
+            $("dialogueSpeaker");
+
+
+        const text =
+            $("dialogueText");
+
+
+        if (speaker) {
+
+            speaker.textContent =
+                state.dialogue.speaker;
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                state.dialogue
+                    .lines[
+                        state.dialogue.index
+                    ] ||
+                "";
+
+        }
+
+    }
+
+
+    function advanceDialogue() {
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (!dialogue) {
+
+            return false;
+
+        }
+
+
+        if (
+            dialogue.index <
+            dialogue.lines.length -
+            1
+        ) {
+
+            dialogue.index++;
+
+
+            renderDialogueState();
+
+
+            return true;
+
+        }
+
+
+        closeDialogue();
+
+
+        return true;
+
+    }
+
+
+    function closeDialogue() {
+
+        const dialogue =
+            state.dialogue;
+
+
+        state.dialogue =
+            null;
+
+
+        const box =
+            $("dialogueBox");
+
+
+        if (box) {
+
+            box.classList
+                .add(
+                    "hidden"
+                );
+
+        }
+
+
+        dialogue
+            ?.onClose
+            ?.();
+
+    }
+
+
+    /* =========================================================
+       PORTA EXTERNA
+       ========================================================= */
+
+    function getNearbyExteriorDoor() {
+
+        if (
+            state.houseMode ||
+            !state.player
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const door of
+            state.world.doors
+        ) {
+
+            const centerX =
+
+                door.x +
+
+                door.w /
+                2;
+
+
+            const centerY =
+
+                door.y +
+
+                door.h /
+                2;
+
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    centerX,
+                    centerY
+
+                );
+
+
+            if (
+                d <=
+                98 &&
+                d <
+                bestDistance
+            ) {
+
+                best =
+                    door;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    function isNearInteriorExit() {
+
+        if (
+            !state.houseMode
+        ) {
+
+            return false;
+
+        }
+
+
+        const door =
+            getInteriorDoor();
+
+
+        const centerX =
+
+            door.x +
+
+            door.w /
+            2;
+
+
+        const centerY =
+
+            door.y +
+
+            door.h /
+            2;
+
+
+        return (
+
+            distance(
+
+                state.player.x,
+                state.player.y,
+
+                centerX,
+                centerY
+
+            ) <=
+            105
+
+        );
+
+    }
+
+
+    function updateDoors(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const door of
+            state.world.doors
+        ) {
+
+            const speed =
+                7.5;
+
+
+            door.animation =
+                lerp(
+
+                    door.animation,
+
+                    door.targetAnimation,
+
+                    clamp(
+                        dt *
+                        speed,
+                        0,
+                        1
+                    )
+
+                );
+
+
+            if (
+                Math.abs(
+
+                    door.animation -
+                    door.targetAnimation
+
+                ) <
+                0.005
+            ) {
+
+                door.animation =
+                    door.targetAnimation;
+
+            }
+
+        }
+
+    }
+
+
+    function openExteriorDoor(
+        door
+    ) {
+
+        if (!door) {
+
+            return;
+
+        }
+
+
+        door.open =
+            true;
+
+
+        door.targetAnimation =
+            1;
+
+    }
+
+
+    function closeExteriorDoor(
+        door
+    ) {
+
+        if (!door) {
+
+            return;
+
+        }
+
+
+        door.open =
+            false;
+
+
+        door.targetAnimation =
+            0;
+
+    }
+
+
+    function useDoorKey() {
+
+        if (
+            !state.player ||
+            state.player.dead ||
+            state.transition ||
+            state.paused
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.houseMode
+        ) {
+
+            if (
+                !isNearInteriorExit()
+            ) {
+
+                if (
+                    typeof showToast ===
+                    "function"
+                ) {
+
+                    showToast(
+                        "A porta está mais ao sul."
+                    );
+
+                }
+
+
+                return false;
+
+            }
+
+
+            exitHouse();
+
+
+            return true;
+
+        }
+
+
+        const door =
+            getNearbyExteriorDoor();
+
+
+        if (!door) {
+
+            return false;
+
+        }
+
+
+        const building =
+            state.world
+                .buildings
+                .find(
+                    item =>
+                        item.id ===
+                        door.buildingId
+                );
+
+
+        if (!building) {
+
+            return false;
+
+        }
+
+
+        openExteriorDoor(
+            door
+        );
+
+
+        /*
+            Mantém o efeito visual aprovado:
+            primeiro a porta abre,
+            depois ocorre a transição.
+        */
+        window.setTimeout(
+            () => {
+
+                if (
+                    state.area !==
+                    "village" ||
+                    state.houseMode ||
+                    state.transition
+                ) {
+
+                    return;
+
+                }
+
+
+                enterHouse(
+                    building
+                );
+
+
+                window.setTimeout(
+                    () => {
+
+                        closeExteriorDoor(
+                            door
+                        );
+
+                    },
+                    420
+                );
+
+            },
+            155
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       NPC PRÓXIMO
+       ========================================================= */
+
+    function getNearbyExteriorNPC() {
+
+        if (
+            state.houseMode
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const npc of
+            state.world.npcs
+        ) {
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    npc.x,
+                    npc.y
+
+                );
+
+
+            if (
+                d <=
+                GAME_CONFIG
+                    .interactDistance &&
+                d <
+                bestDistance
+            ) {
+
+                best =
+                    npc;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    /* =========================================================
+       MIGUEL
+       ========================================================= */
+
+    function getMiguelDialogue(
+        npc
+    ) {
+
+        const hasDash =
+            Boolean(
+                state.player
+                    ?.abilities
+                    ?.dash
+            );
+
+
+        if (
+            !hasDash
+        ) {
+
+            return (
+
+                npc.beforeDashLines ||
+
+                [
+                    "Você ainda não está pronto.",
+                    "Volte mais tarde."
+                ]
+
+            );
+
+        }
+
+
+        /*
+            NÃO criamos a loja dele.
+            vendorConfig continuará null
+            até a definição futura.
+        */
+        if (
+            !npc.vendorConfig
+        ) {
+
+            return (
+
+                npc.afterDashLines ||
+
+                [
+                    "Agora você se move diferente.",
+                    "Volte mais tarde."
+                ]
+
+            );
+
+        }
+
+
+        return npc.afterDashLines ||
+        [
+            "Volte mais tarde."
+        ];
+
+    }
+
+
+    /* =========================================================
+       QUESTS
+       ========================================================= */
+
+    function getQuestData(
+        id
+    ) {
+
+        return (
+            state.player
+                ?.quest
+                ?.[id] ||
+            null
+        );
+
+    }
+
+
+    function getQuestRequirementItem(
+        id
+    ) {
+
+        switch (
+            id
+        ) {
+
+            case "wood":
+                return "madeira";
+
+
+            case "coal":
+                return "carvao";
+
+
+            default:
+                return null;
+
+        }
+
+    }
+
+
+    function getQuestTitle(
+        id
+    ) {
+
+        switch (
+            id
+        ) {
+
+            case "wood":
+
+                return "MADEIRA PARA BRAN";
+
+
+            case "coal":
+
+                return "CARVÃO PARA BORIN";
+
+
+            default:
+
+                return "TAREFA";
+
+        }
+
+    }
+
+
+    function getQuestDescription(
+        id
+    ) {
+
+        const quest =
+            getQuestData(
+                id
+            );
+
+
+        if (!quest) {
+
+            return "";
+
+        }
+
+
+        const itemId =
+            getQuestRequirementItem(
+                id
+            );
+
+
+        const item =
+            ITEMS[itemId];
+
+
+        const current =
+            getItemCount(
+                itemId
+            );
+
+
+        if (
+            id ===
+            "wood"
+        ) {
+
+            return (
+                `Bran precisa de ${quest.need} unidades de Madeira.\n` +
+                `Você possui ${current} / ${quest.need}.`
+            );
+
+        }
+
+
+        if (
+            id ===
+            "coal"
+        ) {
+
+            return (
+                `Borin precisa de ${quest.need} unidades de Carvão.\n` +
+                `Você possui ${current} / ${quest.need}.`
+            );
+
+        }
+
+
+        return (
+            `${item?.name || "Item"}: ` +
+            `${current} / ${quest.need}`
+        );
+
+    }
+
+
+    function refreshQuestState(
+        id
+    ) {
+
+        const quest =
+            getQuestData(
+                id
+            );
+
+
+        if (!quest) {
+
+            return;
+
+        }
+
+
+        if (
+            quest.state ===
+            "active"
+        ) {
+
+            const itemId =
+                getQuestRequirementItem(
+                    id
+                );
+
+
+            if (
+                getItemCount(
+                    itemId
+                ) >=
+                quest.need
+            ) {
+
+                quest.state =
+                    "ready";
+
+            }
+
+        }
+
+    }
+
+
+    function startQuest(
+        id
+    ) {
+
+        const quest =
+            getQuestData(
+                id
+            );
+
+
+        if (
+            !quest ||
+            quest.state !==
+            "none"
+        ) {
+
+            return false;
+
+        }
+
+
+        quest.state =
+            "active";
+
+
+        if (
+            typeof showToast ===
+            "function"
+        ) {
+
+            showToast(
+                `Nova tarefa: ${getQuestTitle(id)}`
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function completeQuest(
+        id
+    ) {
+
+        const quest =
+            getQuestData(
+                id
+            );
+
+
+        if (!quest) {
+
+            return false;
+
+        }
+
+
+        refreshQuestState(
+            id
+        );
+
+
+        if (
+            quest.state !==
+            "ready"
+        ) {
+
+            return false;
+
+        }
+
+
+        const itemId =
+            getQuestRequirementItem(
+                id
+            );
+
+
+        if (
+            !removeItem(
+                itemId,
+                quest.need
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        quest.state =
+            "done";
+
+
+        quest.rewarded =
+            true;
+
+
+        state.player.money +=
+            quest.rewardMoney;
+
+
+        gainXP(
+            quest.rewardXP
+        );
+
+
+        if (
+            typeof showToast ===
+            "function"
+        ) {
+
+            showToast(
+
+                `Tarefa concluída! +${quest.rewardMoney} moedas.`
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function openQuestForNPC(
+        npc
+    ) {
+
+        if (
+            !npc?.questId
+        ) {
+
+            return false;
+
+        }
+
+
+        const quest =
+            getQuestData(
+                npc.questId
+            );
+
+
+        if (!quest) {
+
+            return false;
+
+        }
+
+
+        refreshQuestState(
+            npc.questId
+        );
+
+
+        state.questNPC =
+            npc;
+
+
+        const panel =
+            $("questPanel");
+
+
+        if (panel) {
+
+            panel.classList
+                .remove(
+                    "hidden"
+                );
+
+        }
+
+
+        renderQuestPanelState();
+
+
+        return true;
+
+    }
+
+
+    function renderQuestPanelState() {
+
+        const npc =
+            state.questNPC;
+
+
+        if (
+            !npc?.questId
+        ) {
+
+            return;
+
+        }
+
+
+        const id =
+            npc.questId;
+
+
+        const quest =
+            getQuestData(
+                id
+            );
+
+
+        if (!quest) {
+
+            return;
+
+        }
+
+
+        refreshQuestState(
+            id
+        );
+
+
+        const title =
+            $("questTitle");
+
+
+        const text =
+            $("questText");
+
+
+        const status =
+            $("questStatus");
+
+
+        const action =
+            $("questActionBtn");
+
+
+        if (title) {
+
+            title.textContent =
+                getQuestTitle(
+                    id
+                );
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                getQuestDescription(
+                    id
+                );
+
+        }
+
+
+        if (status) {
+
+            if (
+                quest.state ===
+                "none"
+            ) {
+
+                status.textContent =
+                    "Tarefa ainda não iniciada.";
+
+            }
+
+            else if (
+                quest.state ===
+                "active"
+            ) {
+
+                status.textContent =
+                    "Em andamento.";
+
+            }
+
+            else if (
+                quest.state ===
+                "ready"
+            ) {
+
+                status.textContent =
+                    "Materiais suficientes.";
+
+            }
+
+            else {
+
+                status.textContent =
+                    "Tarefa concluída.";
+
+            }
+
+        }
+
+
+        if (action) {
+
+            if (
+                quest.state ===
+                "none"
+            ) {
+
+                action.textContent =
+                    "ACEITAR";
+
+                action.disabled =
+                    false;
+
+            }
+
+            else if (
+                quest.state ===
+                "ready"
+            ) {
+
+                action.textContent =
+                    "ENTREGAR";
+
+                action.disabled =
+                    false;
+
+            }
+
+            else if (
+                quest.state ===
+                "active"
+            ) {
+
+                action.textContent =
+                    "AINDA FALTA";
+
+                action.disabled =
+                    true;
+
+            }
+
+            else {
+
+                action.textContent =
+                    "CONCLUÍDA";
+
+                action.disabled =
+                    true;
+
+            }
+
+        }
+
+    }
+
+
+    function questAction() {
+
+        const npc =
+            state.questNPC;
+
+
+        if (
+            !npc?.questId
+        ) {
+
+            return false;
+
+        }
+
+
+        const quest =
+            getQuestData(
+                npc.questId
+            );
+
+
+        if (!quest) {
+
+            return false;
+
+        }
+
+
+        if (
+            quest.state ===
+            "none"
+        ) {
+
+            startQuest(
+                npc.questId
+            );
+
+        }
+
+        else {
+
+            completeQuest(
+                npc.questId
+            );
+
+        }
+
+
+        renderQuestPanelState();
+
+
+        return true;
+
+    }
+
+
+    function closeQuestPanel() {
+
+        state.questNPC =
+            null;
+
+
+        $("questPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       ARMADURA — SUBSTITUIÇÃO DE UPGRADE
+       ========================================================= */
+
+    function replaceArmorWithUpgrade(
+        previousId,
+        newId
+    ) {
+
+        if (
+            !state.player ||
+            !ITEMS[newId]
+        ) {
+
+            return false;
+
+        }
+
+
+        const player =
+            state.player;
+
+
+        const wasEquipped =
+            player.equipment
+                .armor ===
+            previousId;
+
+
+        if (previousId) {
+
+            if (
+                !playerOwnsArmor(
+                    previousId
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                getItemCount(
+                    previousId
+                ) >
+                0
+            ) {
+
+                removeItem(
+                    previousId,
+                    1
+                );
+
+            }
+
+        }
+
+
+        /*
+            Upgrade é substituição, então não bloqueamos
+            por limite de peso durante a troca.
+        */
+        addItem(
+
+            newId,
+
+            1,
+
+            {
+                ignoreWeight:
+                    true,
+
+                notify:
+                    false
+            }
+
+        );
+
+
+        if (
+            wasEquipped
+        ) {
+
+            player.equipment
+                .armor =
+                newId;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       CATÁLOGO DE DORAN
+       ========================================================= */
+
+    const DORAN_GENERAL_STOCK =
+        Object.freeze([
+
+            "pao",
+
+            "carneAssada",
+
+            "pocao",
+
+            "elixir",
+
+            "pocaoForca",
+
+            "pocaoResistencia",
+
+            "pocaoVelocidade",
+
+            "minimapa",
+
+            "lanterna"
+
+        ]);
+
+
+    function getDoranArmorOffer() {
+
+        const next =
+            getNextArmorUpgradeId();
+
+
+        if (
+            !next ||
+            !DORAN_ARMOR_IDS
+                .includes(
+                    next
+                )
+        ) {
+
+            return null;
+
+        }
+
+
+        return next;
+
+    }
+
+
+    function getDoranBuyOffers() {
+
+        const offers =
+            [];
+
+
+        for (
+            const id of
+            DORAN_GENERAL_STOCK
+        ) {
+
+            if (
+                id ===
+                "minimapa" &&
+                (
+                    state.player.minimapOwned ||
+                    hasItem(
+                        "minimapa"
+                    )
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                id ===
+                "lanterna" &&
+                (
+                    state.player.lanternOwned ||
+                    hasItem(
+                        "lanterna"
+                    )
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            offers.push({
+
+                type:
+                    "item",
+
+                itemId:
+                    id,
+
+                price:
+                    ITEMS[id].value
+
+            });
+
+        }
+
+
+        const armor =
+            getDoranArmorOffer();
+
+
+        if (armor) {
+
+            offers.push({
+
+                type:
+                    "armorUpgrade",
+
+                itemId:
+                    armor,
+
+                previousId:
+                    ITEMS[
+                        armor
+                    ].previousArmor,
+
+                price:
+                    ITEMS[
+                        armor
+                    ].value
+
+            });
+
+        }
+
+
+        return offers;
+
+    }
+
+
+    /* =========================================================
+       BORIN — APENAS PRÓXIMO UPGRADE
+       ========================================================= */
+
+    function getBorinUpgradeOffer() {
+
+        const next =
+            getNextArmorUpgradeId();
+
+
+        if (
+            !next ||
+            !BORIN_ARMOR_IDS
+                .includes(
+                    next
+                )
+        ) {
+
+            return null;
+
+        }
+
+
+        return ARMOR_UPGRADES
+            .find(
+                recipe =>
+                    recipe.id ===
+                    next
+            ) ||
+            null;
+
+    }
+
+
+    /* =========================================================
+       SHOP
+       ========================================================= */
+
+    function openShop(
+        npc,
+        mode = "buy"
+    ) {
+
+        if (!npc) {
+
+            return false;
+
+        }
+
+
+        state.shopNPC =
+            npc;
+
+
+        state.shopMode =
+            mode;
+
+
+        const title =
+            $("shopTitle");
+
+
+        if (title) {
+
+            if (
+                mode ===
+                "forge"
+            ) {
+
+                title.textContent =
+                    "FORJA DE BORIN";
+
+            }
+
+            else {
+
+                title.textContent =
+                    "LOJA DE DORAN";
+
+            }
+
+        }
+
+
+        $("shopPanel")
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        if (
+            typeof renderShop ===
+            "function"
+        ) {
+
+            renderShop();
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function closeShop() {
+
+        state.shopNPC =
+            null;
+
+
+        $("shopPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+    }
+
+
+    function getShopOffers() {
+
+        if (
+            !state.shopNPC
+        ) {
+
+            return [];
+
+        }
+
+
+        if (
+            state.shopMode ===
+            "forge"
+        ) {
+
+            const recipe =
+                getBorinUpgradeOffer();
+
+
+            return recipe
+                ? [
+                    {
+                        type:
+                            "forgeUpgrade",
+
+                        itemId:
+                            recipe.id,
+
+                        recipe
+                    }
+                ]
+                : [];
+
+        }
+
+
+        if (
+            state.shopMode ===
+            "sell"
+        ) {
+
+            return Object
+                .entries(
+                    state.player.inventory ||
+                    {}
+                )
+                .filter(
+                    ([id, amount]) => {
+
+                        if (
+                            amount <=
+                            0
+                        ) {
+
+                            return false;
+
+                        }
+
+
+                        const item =
+                            ITEMS[id];
+
+
+                        if (!item) {
+
+                            return false;
+
+                        }
+
+
+                        if (
+                            item.questItem ||
+                            item.unique ||
+                            item.category ===
+                            "armor"
+                        ) {
+
+                            return false;
+
+                        }
+
+
+                        if (
+                            state.player
+                                .equipment
+                                .weapon ===
+                            id ||
+
+                            state.player
+                                .equipment
+                                .tool ===
+                            id
+                        ) {
+
+                            return false;
+
+                        }
+
+
+                        return (
+                            item.value >
+                            0
+                        );
+
+                    }
+                )
+                .map(
+                    ([id, amount]) => ({
+
+                        type:
+                            "sell",
+
+                        itemId:
+                            id,
+
+                        amount,
+
+                        price:
+                            Math.max(
+
+                                1,
+
+                                Math.floor(
+
+                                    ITEMS[id].value *
+                                    0.45
+
+                                )
+
+                            )
+
+                    })
+                );
+
+        }
+
+
+        return getDoranBuyOffers();
+
+    }
+
+
+    /* =========================================================
+       COMPRA NORMAL
+       ========================================================= */
+
+    function purchaseNormalShopItem(
+        id
+    ) {
+
+        const item =
+            ITEMS[id];
+
+
+        if (
+            !item ||
+            state.shopNPC
+                ?.id !==
+            "doran"
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !DORAN_GENERAL_STOCK
+                .includes(
+                    id
+                )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            item.unique &&
+            (
+                hasItem(
+                    id
+                ) ||
+
+                (
+                    id ===
+                    "minimapa" &&
+                    state.player
+                        .minimapOwned
+                ) ||
+
+                (
+                    id ===
+                    "lanterna" &&
+                    state.player
+                        .lanternOwned
+                )
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.player.money <
+            item.value
+        ) {
+
+            showToast?.(
+                "Moedas insuficientes."
+            );
+
+
+            return false;
+
+        }
+
+
+        if (
+            !canCarryItem(
+                id,
+                1
+            )
+        ) {
+
+            showToast?.(
+                "Seu inventário está pesado demais."
+            );
+
+
+            return false;
+
+        }
+
+
+        state.player.money -=
+            item.value;
+
+
+        addItem(
+
+            id,
+
+            1,
+
+            {
+                notify:
+                    false
+            }
+
+        );
+
+
+        if (
+            id ===
+            "minimapa"
+        ) {
+
+            state.player.minimapOwned =
+                true;
+
+        }
+
+
+        if (
+            id ===
+            "lanterna"
+        ) {
+
+            state.player.lanternOwned =
+                true;
+
+        }
+
+
+        showToast?.(
+            `${item.icon} ${item.name} comprado.`
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       DORAN — UPGRADE SEQUENCIAL
+       ========================================================= */
+
+    function purchaseDoranArmorUpgrade(
+        id
+    ) {
+
+        const next =
+            getDoranArmorOffer();
+
+
+        if (
+            !next ||
+            next !==
+            id
+        ) {
+
+            showToast?.(
+                "Esta armadura ainda não está disponível."
+            );
+
+
+            return false;
+
+        }
+
+
+        const item =
+            ITEMS[id];
+
+
+        const previous =
+            item.previousArmor;
+
+
+        if (
+            previous &&
+            !playerOwnsArmor(
+                previous
+            )
+        ) {
+
+            showToast?.(
+                `Você precisa da ${ITEMS[previous].name}.`
+            );
+
+
+            return false;
+
+        }
+
+
+        if (
+            state.player.money <
+            item.value
+        ) {
+
+            showToast?.(
+                "Moedas insuficientes."
+            );
+
+
+            return false;
+
+        }
+
+
+        state.player.money -=
+            item.value;
+
+
+        if (
+            !replaceArmorWithUpgrade(
+                previous,
+                id
+            )
+        ) {
+
+            state.player.money +=
+                item.value;
+
+
+            return false;
+
+        }
+
+
+        showToast?.(
+            `${item.icon} Upgrade concluído: ${item.name}`
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       BORIN — FORJA
+       ========================================================= */
+
+    function craftArmorUpgrade(
+        id
+    ) {
+
+        const recipe =
+            getBorinUpgradeOffer();
+
+
+        if (
+            !recipe ||
+            recipe.id !==
+            id
+        ) {
+
+            showToast?.(
+                "Borin não pode fabricar isso agora."
+            );
+
+
+            return false;
+
+        }
+
+
+        if (
+            !playerOwnsArmor(
+                recipe.previous
+            )
+        ) {
+
+            showToast?.(
+                `Você precisa da ${ITEMS[recipe.previous].name}.`
+            );
+
+
+            return false;
+
+        }
+
+
+        const currentMaterial =
+            getItemCount(
+                recipe.material
+            );
+
+
+        if (
+            currentMaterial <
+            recipe.materialAmount
+        ) {
+
+            const missing =
+
+                recipe.materialAmount -
+
+                currentMaterial;
+
+
+            showToast?.(
+
+                `Faltam ${missing} ${ITEMS[recipe.material].name}.`
+
+            );
+
+
+            return false;
+
+        }
+
+
+        if (
+            state.player.money <
+            recipe.coins
+        ) {
+
+            showToast?.(
+                "Moedas insuficientes para a forja."
+            );
+
+
+            return false;
+
+        }
+
+
+        /*
+            Só desconta depois de confirmar
+            TODOS os requisitos.
+        */
+        if (
+            !removeItem(
+
+                recipe.material,
+
+                recipe.materialAmount
+
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        state.player.money -=
+            recipe.coins;
+
+
+        if (
+            !replaceArmorWithUpgrade(
+
+                recipe.previous,
+
+                recipe.id
+
+            )
+        ) {
+
+            /*
+                Rollback defensivo.
+            */
+            addItem(
+
+                recipe.material,
+
+                recipe.materialAmount,
+
+                {
+                    ignoreWeight:
+                        true,
+
+                    notify:
+                        false
+                }
+
+            );
+
+
+            state.player.money +=
+                recipe.coins;
+
+
+            return false;
+
+        }
+
+
+        createBurst(
+
+            state.player.x,
+
+            state.player.y,
+
+            "#e1b564",
+
+            24,
+
+            {
+                speedMin:
+                    30,
+
+                speedMax:
+                    135,
+
+                shape:
+                    "metalSpark",
+
+                glow:
+                    4
+            }
+
+        );
+
+
+        createRingEffect({
+
+            x:
+                state.player.x,
+
+            y:
+                state.player.y,
+
+            radius:
+                14,
+
+            maxRadius:
+                70,
+
+            life:
+                0.55,
+
+            color:
+                "#e2c17a",
+
+            lineWidth:
+                4
+
+        });
+
+
+        showToast?.(
+
+            `Borin forjou ${ITEMS[recipe.id].name}.`
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       VENDA
+       ========================================================= */
+
+    function sellItemToDoran(
+        id,
+        amount = 1
+    ) {
+
+        const item =
+            ITEMS[id];
+
+
+        if (
+            !item ||
+            state.shopNPC
+                ?.id !==
+            "doran"
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            item.unique ||
+            item.questItem ||
+            item.category ===
+            "armor"
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.player
+                .equipment
+                .weapon ===
+            id ||
+
+            state.player
+                .equipment
+                .tool ===
+            id
+        ) {
+
+            showToast?.(
+                "Você está usando esse item."
+            );
+
+
+            return false;
+
+        }
+
+
+        amount =
+            Math.max(
+                1,
+                Math.floor(
+                    amount
+                )
+            );
+
+
+        if (
+            getItemCount(
+                id
+            ) <
+            amount
+        ) {
+
+            return false;
+
+        }
+
+
+        const unitPrice =
+            Math.max(
+
+                1,
+
+                Math.floor(
+
+                    item.value *
+                    0.45
+
+                )
+
+            );
+
+
+        removeItem(
+            id,
+            amount
+        );
+
+
+        state.player.money +=
+
+            unitPrice *
+            amount;
+
+
+        showToast?.(
+
+            `Vendido por ${unitPrice * amount} moedas.`
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       AÇÃO DE SHOP
+       ========================================================= */
+
+    function performShopAction(
+        offer
+    ) {
+
+        if (!offer) {
+
+            return false;
+
+        }
+
+
+        let success =
+            false;
+
+
+        switch (
+            offer.type
+        ) {
+
+            case "item":
+
+                success =
+                    purchaseNormalShopItem(
+                        offer.itemId
+                    );
+
+                break;
+
+
+            case "armorUpgrade":
+
+                success =
+                    purchaseDoranArmorUpgrade(
+                        offer.itemId
+                    );
+
+                break;
+
+
+            case "forgeUpgrade":
+
+                success =
+                    craftArmorUpgrade(
+                        offer.itemId
+                    );
+
+                break;
+
+
+            case "sell":
+
+                success =
+                    sellItemToDoran(
+                        offer.itemId,
+                        1
+                    );
+
+                break;
+
+        }
+
+
+        if (
+            success &&
+            typeof renderShop ===
+            "function"
+        ) {
+
+            renderShop();
+
+        }
+
+
+        return success;
+
+    }
+
+
+    /* =========================================================
+       EQUIPAR
+       ========================================================= */
+
+    function equipInventoryItem(
+        id
+    ) {
+
+        const item =
+            ITEMS[id];
+
+
+        if (
+            !item ||
+            !hasItem(
+                id
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            item.category ===
+            "armor"
+        ) {
+
+            state.player
+                .equipment
+                .armor =
+                id;
+
+
+            showToast?.(
+                `${item.name} equipada.`
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            item.category ===
+            "weapons"
+        ) {
+
+            state.player
+                .equipment
+                .weapon =
+                id;
+
+
+            return true;
+
+        }
+
+
+        if (
+            item.category ===
+            "tools"
+        ) {
+
+            state.player
+                .equipment
+                .tool =
+                id;
+
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       PORTÕES — BUSCA
+       ========================================================= */
+
+    function getNearbyGate() {
+
+        if (
+            state.houseMode
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const gate of
+            state.world.gates
+        ) {
+
+            const centerX =
+
+                gate.x +
+
+                gate.w /
+                2;
+
+
+            const centerY =
+
+                gate.y +
+
+                gate.h /
+                2;
+
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    centerX,
+                    centerY
+
+                );
+
+
+            if (
+                d <=
+                125 &&
+                d <
+                bestDistance
+            ) {
+
+                best =
+                    gate;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    function cycleGateDialogue(
+        side
+    ) {
+
+        if (
+            !state.player
+                .gateDialogueIndex
+        ) {
+
+            state.player
+                .gateDialogueIndex = {
+
+                    north: 0,
+                    west: 0,
+                    south: 0
+
+                };
+
+        }
+
+
+        let list;
+
+
+        if (
+            side ===
+            "north"
+        ) {
+
+            list =
+                NORTH_GATE_DIALOGUES;
+
+        }
+
+        else {
+
+            list =
+                BLOCKED_ROUTE_DIALOGUES[
+                    side
+                ];
+
+        }
+
+
+        if (
+            !list?.length
+        ) {
+
+            return [
+                "O caminho permanece fechado."
+            ];
+
+        }
+
+
+        const index =
+
+            state.player
+                .gateDialogueIndex[
+                    side
+                ] %
+            list.length;
+
+
+        state.player
+            .gateDialogueIndex[
+                side
+            ] =
+
+            (
+                index +
+                1
+            ) %
+            list.length;
+
+
+        return list[
+            index
+        ];
+
+    }
+
+
+    function getNorthGateMaterialLines() {
+
+        const diamond =
+            getItemCount(
+                "diamante"
+            );
+
+
+        const ruby =
+            getItemCount(
+                "rubi"
+            );
+
+
+        const diamondMissing =
+            Math.max(
+
+                0,
+
+                NORTH_GATE_COST
+                    .diamante -
+                diamond
+
+            );
+
+
+        const rubyMissing =
+            Math.max(
+
+                0,
+
+                NORTH_GATE_COST
+                    .rubi -
+                ruby
+
+            );
+
+
+        return [
+
+            "Você domina a técnica necessária, mas sua preparação ainda está incompleta.",
+
+            `💎 Diamante: ${diamond} / ${NORTH_GATE_COST.diamante} — faltam ${diamondMissing}`,
+
+            `♦️ Rubi: ${ruby} / ${NORTH_GATE_COST.rubi} — faltam ${rubyMissing}`
+
+        ];
+
+    }
+
+
+    function canPayNorthGateCost() {
+
+        return (
+
+            getItemCount(
+                "diamante"
+            ) >=
+            NORTH_GATE_COST.diamante &&
+
+            getItemCount(
+                "rubi"
+            ) >=
+            NORTH_GATE_COST.rubi
+
+        );
+
+    }
+
+
+    function unlockNorthGate() {
+
+        if (
+            state.player
+                .gateUnlocks
+                .north
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            !state.player
+                .abilities
+                .dash
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !canPayNorthGateCost()
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+            Só consome depois de TODAS
+            as verificações passarem.
+        */
+        removeItem(
+
+            "diamante",
+
+            NORTH_GATE_COST
+                .diamante
+
+        );
+
+
+        removeItem(
+
+            "rubi",
+
+            NORTH_GATE_COST
+                .rubi
+
+        );
+
+
+        state.player
+            .gateUnlocks
+            .north =
+            true;
+
+
+        refreshGateCollisions();
+
+
+        createRingEffect({
+
+            x:
+                1600,
+
+            y:
+                100,
+
+            radius:
+                30,
+
+            maxRadius:
+                170,
+
+            life:
+                0.8,
+
+            color:
+                "#a99cc1",
+
+            lineWidth:
+                5
+
+        });
+
+
+        showToast?.(
+            "O Portão do Norte foi aberto."
+        );
+
+
+        return true;
+
+    }
+
+
+    function interactGate(
+        gate
+    ) {
+
+        if (!gate) {
+
+            return false;
+
+        }
+
+
+        const side =
+            gate.side;
+
+
+        if (
+            state.player
+                .gateUnlocks
+                ?.[side]
+        ) {
+
+            openDialogue(
+
+                gate.title,
+
+                [
+                    "O caminho está aberto."
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            side ===
+            "north"
+        ) {
+
+            /*
+                NUNCA revela os materiais
+                antes de obter Dash.
+            */
+            if (
+                !state.player
+                    .abilities
+                    .dash
+            ) {
+
+                openDialogue(
+
+                    gate.title,
+
+                    cycleGateDialogue(
+                        "north"
+                    )
+
+                );
+
+
+                return true;
+
+            }
+
+
+            if (
+                !canPayNorthGateCost()
+            ) {
+
+                openDialogue(
+
+                    gate.title,
+
+                    getNorthGateMaterialLines()
+
+                );
+
+
+                return true;
+
+            }
+
+
+            openDialogue(
+
+                gate.title,
+
+                [
+
+                    "A técnica que você aprendeu responde às inscrições do portão.",
+
+                    "Os minerais começam a vibrar em seu inventário.",
+
+                    "O caminho aceita sua preparação."
+
+                ],
+
+                {
+
+                    onClose:
+                        () => {
+
+                            unlockNorthGate();
+
+                        }
+
+                }
+
+            );
+
+
+            return true;
+
+        }
+
+
+        /*
+            Oeste e Sul continuam sem habilidade
+            inventada.
+        */
+        openDialogue(
+
+            gate.title,
+
+            cycleGateDialogue(
+                side
+            )
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       NORTE — PORTAL ADICIONADO À VILA
+       ========================================================= */
+
+    const buildVillagePart2 =
+        buildVillage;
+
+
+    buildVillage =
+        function () {
+
+            buildVillagePart2();
+
+
+            addPortal(
+
+                1515,
+                5,
+
+                170,
+                88,
+
+                "shadow",
+
+                () =>
+                    Boolean(
+
+                        state.player
+                            ?.gateUnlocks
+                            ?.north
+
+                    ),
+
+                "CAMINHO DO NORTE",
+
+                {
+
+                    id:
+                        "village_to_shadow",
+
+                    spawn: {
+
+                        x:
+                            1600,
+
+                        y:
+                            2010,
+
+                        facing:
+                            "up"
+
+                    }
+
+                }
+
+            );
+
+        };
+
+
+    /* =========================================================
+       PORTAIS
+       ========================================================= */
+
+    function portalRequirementMet(
+        portal
+    ) {
+
+        if (
+            !portal?.requirement
+        ) {
+
+            return true;
+
+        }
+
+
+        try {
+
+            return Boolean(
+                portal.requirement()
+            );
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "VEYRA: erro em requisito de portal:",
+                error
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    function openTravelPrompt(
+        portal
+    ) {
+
+        if (
+            !portal ||
+            state.travel ||
+            state.transition
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !portalRequirementMet(
+                portal
+            )
+        ) {
+
+            showToast?.(
+                "Este caminho ainda está bloqueado."
+            );
+
+
+            state.portalCooldown =
+                0.9;
+
+
+            return false;
+
+        }
+
+
+        state.travel = {
+
+            portalId:
+                portal.id,
+
+            target:
+                portal.target,
+
+            title:
+                portal.title,
+
+            spawn:
+                portal.spawn
+
+        };
+
+
+        const panel =
+            $("travelPanel");
+
+
+        const text =
+            $("travelText");
+
+
+        if (text) {
+
+            text.textContent =
+
+                portal.title
+
+                    ? `Viajar para ${portal.title}?`
+
+                    : "Seguir por este caminho?";
+
+        }
+
+
+        panel
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        return true;
+
+    }
+
+
+    function confirmTravel() {
+
+        const travel =
+            state.travel;
+
+
+        if (!travel) {
+
+            return false;
+
+        }
+
+
+        const portal =
+            state.world
+                .portals
+                .find(
+                    item =>
+                        item.id ===
+                        travel.portalId
+                );
+
+
+        state.travel =
+            null;
+
+
+        $("travelPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            !portal ||
+            !portalRequirementMet(
+                portal
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        transitionToRegion(
+
+            portal.target,
+
+            {
+
+                label:
+                    portal.title ||
+                    REGIONS[
+                        portal.target
+                    ]?.name,
+
+                spawn:
+                    portal.spawn ||
+                    getDefaultSpawn(
+                        portal.target
+                    )
+
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function cancelTravel() {
+
+        state.travel =
+            null;
+
+
+        state.portalCooldown =
+            0.8;
+
+
+        $("travelPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+    }
+
+
+    function updatePortalInteractions(
+        dt
+    ) {
+
+        if (
+            state.houseMode ||
+            !state.player ||
+            state.player.dead
+        ) {
+
+            return;
+
+        }
+
+
+        state.portalCooldown =
+            Math.max(
+
+                0,
+
+                state.portalCooldown -
+                dt
+
+            );
+
+
+        if (
+            state.portalCooldown >
+            0 ||
+            state.travel ||
+            state.dialogue ||
+            state.battle ||
+            state.transition
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const portal of
+            state.world.portals
+        ) {
+
+            if (
+                portal.hidden
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                circleRectCollision(
+
+                    state.player.x,
+                    state.player.y,
+                    state.player.radius,
+
+                    portal
+
+                )
+            ) {
+
+                openTravelPrompt(
+                    portal
+                );
+
+
+                state.portalCooldown =
+                    0.8;
+
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       BATTLE PANEL
+       ========================================================= */
+
+    function openBattleChallenge(
+        enemy
+    ) {
+
+        if (
+            !enemy ||
+            enemy.dead ||
+            enemy.accepted
+        ) {
+
+            return false;
+
+        }
+
+
+        state.battle =
+            enemy;
+
+
+        if (
+            !state.player
+                .discoveredBosses
+                .includes(
+                    enemy.id
+                )
+        ) {
+
+            state.player
+                .discoveredBosses
+                .push(
+                    enemy.id
+                );
+
+        }
+
+
+        const definition =
+            getBossDefinition(
+                enemy.id
+            );
+
+
+        const panel =
+            $("battlePanel");
+
+
+        const icon =
+            $("battleIcon");
+
+
+        const title =
+            $("battleTitle");
+
+
+        const text =
+            $("battleText");
+
+
+        if (icon) {
+
+            icon.textContent =
+                definition?.icon ||
+                enemy.icon ||
+                "◆";
+
+        }
+
+
+        if (title) {
+
+            title.textContent =
+                enemy.name;
+
+        }
+
+
+        if (text) {
+
+            text.textContent =
+                "Enfrentar este inimigo?";
+
+        }
+
+
+        panel
+            ?.classList
+            .remove(
+                "hidden"
+            );
+
+
+        return true;
+
+    }
+
+
+    function acceptBattle() {
+
+        const enemy =
+            state.battle;
+
+
+        state.battle =
+            null;
+
+
+        $("battlePanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+
+            return false;
+
+        }
+
+
+        activateBoss(
+            enemy
+        );
+
+
+        showToast?.(
+            `${enemy.name} despertou.`
+        );
+
+
+        return true;
+
+    }
+
+
+    function declineBattle() {
+
+        state.battle =
+            null;
+
+
+        $("battlePanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       ALTAR DO DASH
+       ========================================================= */
+
+    function getDashMaterialLines() {
+
+        const ruby =
+            getItemCount(
+                "rubi"
+            );
+
+
+        const diamond =
+            getItemCount(
+                "diamante"
+            );
+
+
+        return [
+
+            `♦️ Rubi: ${ruby} / ${DASH_RITUAL_COST.rubi} — faltam ${Math.max(0, DASH_RITUAL_COST.rubi - ruby)}`,
+
+            `💎 Diamante: ${diamond} / ${DASH_RITUAL_COST.diamante} — faltam ${Math.max(0, DASH_RITUAL_COST.diamante - diamond)}`
+
+        ];
+
+    }
+
+
+    function hasDashRitualMaterials() {
+
+        return (
+
+            getItemCount(
+                "rubi"
+            ) >=
+            DASH_RITUAL_COST.rubi &&
+
+            getItemCount(
+                "diamante"
+            ) >=
+            DASH_RITUAL_COST.diamante
+
+        );
+
+    }
+
+
+    function consumeDashRitualMaterials() {
+
+        if (
+            !hasDashRitualMaterials()
+        ) {
+
+            return false;
+
+        }
+
+
+        removeItem(
+
+            "rubi",
+
+            DASH_RITUAL_COST.rubi
+
+        );
+
+
+        removeItem(
+
+            "diamante",
+
+            DASH_RITUAL_COST.diamante
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function awakenMonarchFromAltar() {
+
+        if (
+            state.player
+                .monarchAwakened
+        ) {
+
+            return false;
+
+        }
+
+
+        state.player
+            .monarchAwakened =
+            true;
+
+
+        startTransition({
+
+            label:
+                "A OFERENDA FOI ACEITA...",
+
+            fadeOut:
+                0.45,
+
+            hold:
+                0.7,
+
+            fadeIn:
+                0.4,
+
+            done:
+                () => {
+
+                    openDialogue(
+
+                        "???",
+
+                        [
+
+                            "A OFERENDA FOI ACEITA...",
+
+                            "…MAS NÃO POR VOCÊ.",
+
+                            "O MONARCA DESPERTOU"
+
+                        ],
+
+                        {
+
+                            onClose:
+                                () => {
+
+                                    spawnMonarch();
+
+                                }
+
+                        }
+
+                    );
+
+                }
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function unlockDashAtAltar() {
+
+        if (
+            state.player
+                .abilities
+                .dash
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            !state.player
+                .monarchDefeated
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !consumeDashRitualMaterials()
+        ) {
+
+            return false;
+
+        }
+
+
+        state.player
+            .abilities
+            .dash =
+            true;
+
+
+        state.player
+            .dashPurchased =
+            true;
+
+
+        createRingEffect({
+
+            x:
+                state.player.x,
+
+            y:
+                state.player.y,
+
+            radius:
+                18,
+
+            maxRadius:
+                165,
+
+            life:
+                1,
+
+            color:
+                "#d7edf4",
+
+            lineWidth:
+                6
+
+        });
+
+
+        createBurst(
+
+            state.player.x,
+            state.player.y,
+
+            "#d4edf5",
+
+            46,
+
+            {
+                speedMin:
+                    40,
+
+                speedMax:
+                    220,
+
+                lifeMax:
+                    1.1,
+
+                sizeMax:
+                    7,
+
+                shape:
+                    "spark",
+
+                glow:
+                    8
+            }
+
+        );
+
+
+        addScreenShake(
+            8,
+            0.3
+        );
+
+
+        openDialogue(
+
+            "ALTAR ESQUECIDO",
+
+            [
+
+                "A força escondida nas inscrições atravessa seu corpo.",
+
+                "Por um instante, o mundo parece lento.",
+
+                "DASH DESBLOQUEADO.",
+
+                "Pressione ESPAÇO para avançar rapidamente na direção do mouse."
+
+            ]
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function interactDashAltar() {
+
+        if (
+            state.player
+                .abilities
+                .dash
+        ) {
+
+            openDialogue(
+
+                "ALTAR ESQUECIDO",
+
+                [
+                    "As inscrições estão apagadas.",
+                    "O poder que dormia aqui agora pertence a você."
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        /*
+            Primeiro contato:
+            precisa ter material,
+            MAS NÃO CONSOME.
+        */
+        if (
+            !state.player
+                .monarchAwakened
+        ) {
+
+            if (
+                !hasDashRitualMaterials()
+            ) {
+
+                openDialogue(
+
+                    "ALTAR ESQUECIDO",
+
+                    [
+
+                        "As inscrições do altar despertam sob seus pés.",
+
+                        "Por um instante, uma força tenta alcançar você... mas o brilho desaparece.",
+
+                        "A oferenda é insuficiente para despertar o poder adormecido.",
+
+                        ...getDashMaterialLines()
+
+                    ]
+
+                );
+
+
+                return true;
+
+            }
+
+
+            awakenMonarchFromAltar();
+
+
+            return true;
+
+        }
+
+
+        /*
+            Monarca acordou,
+            mas ainda está vivo.
+        */
+        if (
+            !state.player
+                .monarchDefeated
+        ) {
+
+            const monarch =
+                state.world.enemies
+                    .find(
+                        enemy =>
+                            enemy.id ===
+                            "monarch" &&
+                            !enemy.dead
+                    );
+
+
+            if (!monarch) {
+
+                spawnMonarch();
+
+            }
+
+
+            openDialogue(
+
+                "ALTAR ESQUECIDO",
+
+                [
+
+                    "O poder não responde a você.",
+
+                    "Algo ainda está ligado às inscrições.",
+
+                    "O Monarca precisa cair."
+
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        /*
+            Monarca derrotado.
+
+            AGORA sim os materiais são consumidos.
+        */
+        if (
+            !hasDashRitualMaterials()
+        ) {
+
+            openDialogue(
+
+                "ALTAR ESQUECIDO",
+
+                [
+
+                    "O Monarca caiu.",
+
+                    "Agora o altar reconhece você.",
+
+                    "Mas os materiais da oferenda já não são suficientes.",
+
+                    ...getDashMaterialLines()
+
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        unlockDashAtAltar();
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       TRIAL PRÓXIMO
+       ========================================================= */
+
+    function getNearbyTrial() {
+
+        if (
+            state.houseMode
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        for (
+            const trial of
+            state.world.trials
+        ) {
+
+            const d =
+                distance(
+
+                    state.player.x,
+                    state.player.y,
+
+                    trial.x,
+                    trial.y
+
+                );
+
+
+            if (
+                d <=
+                (
+                    trial.radius ||
+                    65
+                ) +
+                38 &&
+                d <
+                bestDistance
+            ) {
+
+                best =
+                    trial;
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    /* =========================================================
+       ROTA NORTE — INIMIGO CUSTOMIZADO
+       ========================================================= */
+
+    function spawnCustomEnemy(
+        rng,
+        config,
+        index,
+        options = {}
+    ) {
+
+        const radius =
+            config.radius ||
+            21;
+
+
+        const position =
+            findSafeSpawnPosition(
+
+                rng,
+
+                {
+
+                    radius:
+                        radius +
+                        18,
+
+                    minX:
+                        options.minX,
+
+                    maxX:
+                        options.maxX,
+
+                    minY:
+                        options.minY,
+
+                    maxY:
+                        options.maxY,
+
+                    avoidEntities:
+                        true
+
+                }
+
+            );
+
+
+        if (!position) {
+
+            return null;
+
+        }
+
+
+        return addEnemy({
+
+            id:
+
+                options.id ||
+
+                `${state.area}_${config.spriteType}_${index}`,
+
+            name:
+                config.name,
+
+            spriteType:
+                config.spriteType,
+
+            type:
+                options.type ||
+                "normal",
+
+            x:
+                position.x,
+
+            y:
+                position.y,
+
+            hp:
+                config.hp,
+
+            maxHp:
+                config.hp,
+
+            damage:
+                config.damage,
+
+            speed:
+                config.speed,
+
+            vision:
+                config.vision ||
+                300,
+
+            attackRange:
+                config.attackRange ||
+                65,
+
+            radius,
+
+            color:
+                config.color,
+
+            xp:
+                config.xp ||
+                0,
+
+            money:
+                config.money ||
+                0,
+
+            drop:
+                options.drop ||
+                config.drop ||
+                null,
+
+            dropAmount:
+                options.dropAmount ||
+                config.dropAmount ||
+                1,
+
+            dropChance:
+                options.dropChance ??
+                config.dropChance ??
+                0,
+
+            aggressive:
+                options.aggressive ||
+                false,
+
+            accepted:
+                true,
+
+            specialCooldown:
+                config.specialCooldown ||
+                2.5,
+
+            hellType:
+                options.hellType ||
+                null,
+
+            skyWave:
+                options.skyWave ||
+                null
+
+        });
+
+    }
+
+
+    /* =========================================================
+       SOMBRAS
+       ========================================================= */
+
+    const SHADOW_ENEMIES =
+        Object.freeze({
+
+            shade: {
+
+                name:
+                    "VIGIA SOMBRIO",
+
+                spriteType:
+                    "shadowHumanoid",
+
+                hp:
+                    235,
+
+                damage:
+                    31,
+
+                speed:
+                    106,
+
+                vision:
+                    330,
+
+                attackRange:
+                    72,
+
+                radius:
+                    21,
+
+                color:
+                    "#484357",
+
+                xp:
+                    56,
+
+                money:
+                    19,
+
+                specialCooldown:
+                    2.7
+
+            },
+
+
+            wraith: {
+
+                name:
+                    "ESPECTRO ESQUECIDO",
+
+                spriteType:
+                    "shadowWraith",
+
+                hp:
+                    195,
+
+                damage:
+                    34,
+
+                speed:
+                    96,
+
+                vision:
+                    360,
+
+                attackRange:
+                    150,
+
+                radius:
+                    20,
+
+                color:
+                    "#625a76",
+
+                xp:
+                    60,
+
+                money:
+                    21,
+
+                specialCooldown:
+                    2.5
+
+            }
+
+        });
+
+
+    function buildShadow() {
+
+        const rng =
+            getAreaRng(
+                "shadow",
+                "layout"
+            );
+
+
+        addPath(
+
+            "shadowTrail",
+
+            [
+
+                {
+                    x: 1600,
+                    y: 2140
+                },
+
+                {
+                    x: 1580,
+                    y: 1770
+                },
+
+                {
+                    x: 1330,
+                    y: 1530
+                },
+
+                {
+                    x: 1640,
+                    y: 1280
+                },
+
+                {
+                    x: 1370,
+                    y: 1020
+                },
+
+                {
+                    x: 1700,
+                    y: 750
+                },
+
+                {
+                    x: 1650,
+                    y: 230
+                }
+
+            ],
+
+            110
+
+        );
+
+
+        addPortal(
+
+            1510,
+            2100,
+
+            180,
+            90,
+
+            "village",
+
+            null,
+
+            "VILA DO CREPÚSCULO",
+
+            {
+
+                id:
+                    "shadow_to_village",
+
+                spawn: {
+
+                    x:
+                        1600,
+
+                    y:
+                        190,
+
+                    facing:
+                        "down"
+
+                }
+
+            }
+
+        );
+
+
+        for (
+            let i = 0;
+            i < 34;
+            i++
+        ) {
+
+            addGeneratedRock(
+
+                rng,
+
+                `shadow_rock_${i}`,
+
+                {
+
+                    type:
+                        "shadowRock",
+
+                    minX:
+                        160,
+
+                    maxX:
+                        3140,
+
+                    minY:
+                        150,
+
+                    maxY:
+                        2040,
+
+                    blocksLight:
+                        false
+
+                }
+
+            );
+
+        }
+
+
+        for (
+            let i = 0;
+            i < 7;
+            i++
+        ) {
+
+            spawnCustomEnemy(
+
+                rng,
+
+                SHADOW_ENEMIES.shade,
+
+                i,
+
+                {
+
+                    minX:
+                        350,
+
+                    maxX:
+                        2940,
+
+                    minY:
+                        350,
+
+                    maxY:
+                        1840,
+
+                    drop:
+                        "essencia",
+
+                    dropChance:
+                        0.34
+
+                }
+
+            );
+
+        }
+
+
+        for (
+            let i = 0;
+            i < 6;
+            i++
+        ) {
+
+            spawnCustomEnemy(
+
+                rng,
+
+                SHADOW_ENEMIES.wraith,
+
+                i,
+
+                {
+
+                    minX:
+                        390,
+
+                    maxX:
+                        2900,
+
+                    minY:
+                        320,
+
+                    maxY:
+                        1800,
+
+                    drop:
+                        "essencia",
+
+                    dropChance:
+                        0.4
+
+                }
+
+            );
+
+        }
+
+
+        if (
+            !hasDefeatedBoss(
+                "shadow_lord"
+            )
+        ) {
+
+            addProtectedZone(
+
+                1650,
+                390,
+
+                220,
+
+                "shadow_lord_arena"
+
+            );
+
+
+            spawnProgressionBoss({
+
+                id:
+                    "shadow_lord",
+
+                x:
+                    1650,
+
+                y:
+                    390,
+
+                hp:
+                    3350,
+
+                maxHp:
+                    3350,
+
+                damage:
+                    50,
+
+                speed:
+                    96,
+
+                vision:
+                    510,
+
+                attackRange:
+                    95,
+
+                radius:
+                    48,
+
+                color:
+                    "#55475e",
+
+                xp:
+                    900,
+
+                money:
+                    640,
+
+                bossPattern:
+                    "shadowDash",
+
+                specialCooldown:
+                    2.7,
+
+                unlock:
+                    "fairy"
+
+            });
+
+        }
+
+
+        addPortal(
+
+            1570,
+            105,
+
+            160,
+            95,
+
+            "fairy",
+
+            () =>
+                hasDefeatedBoss(
+                    "shadow_lord"
+                ),
+
+            "PASSAGEM FEÉRICA",
+
+            {
+
+                id:
+                    "shadow_to_fairy",
+
+                spawn: {
+
+                    x:
+                        190,
+
+                    y:
+                        1120,
+
+                    facing:
+                        "right"
+
+                }
+
+            }
+
+        );
+
+
+        addBiomeDetails(
+
+            rng,
+
+            130,
+
+            [
+
+                "shadowMist",
+                "darkGrass",
+                "oldRune",
+                "boneFragment",
+                "darkPebble"
+
+            ],
+
+            {
+
+                minSize:
+                    5,
+
+                maxSize:
+                    18
+
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       REINO DAS FADAS
+       ========================================================= */
+
+    const FAIRY_ENEMIES =
+        Object.freeze({
+
+            moth: {
+
+                name:
+                    "MARIPOSA FEÉRICA",
+
+                spriteType:
+                    "fairyMoth",
+
+                hp:
+                    220,
+
+                damage:
+                    30,
+
+                speed:
+                    116,
+
+                vision:
+                    360,
+
+                attackRange:
+                    145,
+
+                radius:
+                    19,
+
+                color:
+                    "#c98fbe",
+
+                xp:
+                    61,
+
+                money:
+                    21,
+
+                specialCooldown:
+                    2.4
+
+            },
+
+
+            guard: {
+
+                name:
+                    "GUARDA FEÉRICO",
+
+                spriteType:
+                    "fairyGuard",
+
+                hp:
+                    285,
+
+                damage:
+                    36,
+
+                speed:
+                    92,
+
+                vision:
+                    340,
+
+                attackRange:
+                    72,
+
+                radius:
+                    21,
+
+                color:
+                    "#8a74a0",
+
+                xp:
+                    67,
+
+                money:
+                    24,
+
+                specialCooldown:
+                    2.8
+
+            }
+
+        });
+
+
+    function buildFairy() {
+
+        const rng =
+            getAreaRng(
+                "fairy",
+                "layout"
+            );
+
+
+        addPath(
+
+            "fairyTrail",
+
+            [
+
+                {
+                    x: 95,
+                    y: 1120
+                },
+
+                {
+                    x: 460,
+                    y: 1040
+                },
+
+                {
+                    x: 820,
+                    y: 1280
+                },
+
+                {
+                    x: 1180,
+                    y: 960
+                },
+
+                {
+                    x: 1570,
+                    y: 1210
+                },
+
+                {
+                    x: 1980,
+                    y: 880
+                },
+
+                {
+                    x: 2400,
+                    y: 1110
+                },
+
+                {
+                    x: 2800,
+                    y: 850
+                },
+
+                {
+                    x: 3300,
+                    y: 1110
+                }
+
+            ],
+
+            110
+
+        );
+
+
+        addPortal(
+
+            60,
+            1010,
+
+            85,
+            215,
+
+            "shadow",
+
+            null,
+
+            "CAVERNA SOMBRIA",
+
+            {
+
+                id:
+                    "fairy_to_shadow",
+
+                spawn: {
+
+                    x:
+                        1650,
+
+                    y:
+                        260,
+
+                    facing:
+                        "down"
+
+                }
+
+            }
+
+        );
+
+
+        for (
+            let i = 0;
+            i < 36;
+            i++
+        ) {
+
+            addGeneratedTree(
+
+                rng,
+
+                `fairy_tree_${i}`,
+
+                {
+
+                    type:
+                        "fairyTree",
+
+                    minX:
+                        150,
+
+                    maxX:
+                        3260,
+
+                    minY:
+                        140,
+
+                    maxY:
+                        2100,
+
+                    safeRadius:
+                        48
+
+                }
+
+            );
+
+        }
+
+
+        for (
+            let i = 0;
+            i < 8;
+            i++
+        ) {
+
+            spawnCustomEnemy(
+
+                rng,
+
+                FAIRY_ENEMIES.moth,
+
+                i,
+
+                {
+
+                    minX:
+                        390,
+
+                    maxX:
+                        3000,
+
+                    minY:
+                        270,
+
+                    maxY:
+                        1960,
+
+                    drop:
+                        "essencia",
+
+                    dropChance:
+                        0.38
+
+                }
+
+            );
+
+        }
+
+
+        for (
+            let i = 0;
+            i < 7;
+            i++
+        ) {
+
+            spawnCustomEnemy(
+
+                rng,
+
+                FAIRY_ENEMIES.guard,
+
+                i,
+
+                {
+
+                    minX:
+                        420,
+
+                    maxX:
+                        2980,
+
+                    minY:
+                        300,
+
+                    maxY:
+                        1940
+
+                }
+
+            );
+
+        }
+
+
+        if (
+            !hasDefeatedBoss(
+                "fairy_guardian"
+            )
+        ) {
+
+            addProtectedZone(
+
+                2980,
+                1080,
+
+                215,
+
+                "fairy_guardian_arena"
+
+            );
+
+
+            spawnProgressionBoss({
+
+                id:
+                    "fairy_guardian",
+
+                x:
+                    2980,
+
+                y:
+                    1080,
+
+                hp:
+                    4050,
+
+                maxHp:
+                    4050,
+
+                damage:
+                    54,
+
+                speed:
+                    105,
+
+                vision:
+                    530,
+
+                attackRange:
+                    98,
+
+                radius:
+                    46,
+
+                color:
+                    "#bd80ae",
+
+                xp:
+                    1050,
+
+                money:
+                    740,
+
+                bossPattern:
+                    "fairyStorm",
+
+                specialCooldown:
+                    2.4,
+
+                unlock:
+                    "sky"
+
+            });
+
+        }
+
+
+        addPortal(
+
+            3280,
+            1010,
+
+            90,
+            215,
+
+            "sky",
+
+            () =>
+                hasDefeatedBoss(
+                    "fairy_guardian"
+                ),
+
+            "CAMINHO DO CÉU",
+
+            {
+
+                id:
+                    "fairy_to_sky",
+
+                spawn: {
+
+                    x:
+                        185,
+
+                    y:
+                        1120,
+
+                    facing:
+                        "right"
+
+                }
+
+            }
+
+        );
+
+
+        addBiomeDetails(
+
+            rng,
+
+            190,
+
+            [
+
+                "magicFlower",
+                "glowingGrass",
+                "fairyDust",
+                "flower",
+                "smallCrystal"
+
+            ],
+
+            {
+
+                minSize:
+                    4,
+
+                maxSize:
+                    17
+
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       CÉU — 5 HORDAS
+       ========================================================= */
+
+    const SKY_WAVE_ENEMIES =
+        Object.freeze({
+
+            windling: {
+
+                name:
+                    "FILHO DO VENTO",
+
+                spriteType:
+                    "windling",
+
+                hp:
+                    250,
+
+                damage:
+                    34,
+
+                speed:
+                    118,
+
+                vision:
+                    400,
+
+                attackRange:
+                    72,
+
+                radius:
+                    20,
+
+                color:
+                    "#b6cbd0",
+
+                xp:
+                    68,
+
+                money:
+                    23
+
+            },
+
+
+            skyKnight: {
+
+                name:
+                    "CAVALEIRO DO CÉU",
+
+                spriteType:
+                    "skyKnight",
+
+                hp:
+                    340,
+
+                damage:
+                    40,
+
+                speed:
+                    96,
+
+                vision:
+                    390,
+
+                attackRange:
+                    78,
+
+                radius:
+                    23,
+
+                color:
+                    "#9eabb4",
+
+                xp:
+                    78,
+
+                money:
+                    28
+
+            },
+
+
+            stormEye: {
+
+                name:
+                    "OLHO DA TEMPESTADE",
+
+                spriteType:
+                    "stormEye",
+
+                hp:
+                    285,
+
+                damage:
+                    42,
+
+                speed:
+                    82,
+
+                vision:
+                    450,
+
+                attackRange:
+                    155,
+
+                radius:
+                    21,
+
+                color:
+                    "#859ca9",
+
+                xp:
+                    82,
+
+                money:
+                    30
+
+            }
+
+        });
+
+
+    function resetSkyTrialRuntime() {
+
+        if (
+            !state.player
+                .skyTrial
+        ) {
+
+            state.player.skyTrial = {
+
+                started:
+                    false,
+
+                wave:
+                    0,
+
+                activeWave:
+                    0,
+
+                complete:
+                    false
+
+            };
+
+        }
+
+
+        if (
+            !state.player
+                .skyTrial
+                .complete
+        ) {
+
+            state.player
+                .skyTrial
+                .started =
+                false;
+
+
+            state.player
+                .skyTrial
+                .activeWave =
+                0;
+
+
+            state.skyWaveDelay =
+                null;
+
+        }
+
+    }
+
+
+    function buildSky() {
+
+        const rng =
+            getAreaRng(
+                "sky",
+                "layout"
+            );
+
+
+        resetSkyTrialRuntime();
+
+
+        addPath(
+
+            "skyPath",
+
+            [
+
+                {
+                    x: 90,
+                    y: 1120
+                },
+
+                {
+                    x: 520,
+                    y: 1110
+                },
+
+                {
+                    x: 900,
+                    y: 970
+                },
+
+                {
+                    x: 1320,
+                    y: 1120
+                },
+
+                {
+                    x: 1700,
+                    y: 980
+                },
+
+                {
+                    x: 2130,
+                    y: 1120
+                },
+
+                {
+                    x: 2550,
+                    y: 1000
+                },
+
+                {
+                    x: 3220,
+                    y: 1120
+                }
+
+            ],
+
+            130
+
+        );
+
+
+        addPortal(
+
+            60,
+            1015,
+
+            90,
+            210,
+
+            "fairy",
+
+            null,
+
+            "REINO DAS FADAS",
+
+            {
+
+                id:
+                    "sky_to_fairy",
+
+                spawn: {
+
+                    x:
+                        3170,
+
+                    y:
+                        1110,
+
+                    facing:
+                        "left"
+
+                }
+
+            }
+
+        );
+
+
+        addProtectedZone(
+
+            1720,
+            1110,
+
+            330,
+
+            "sky_trial_arena"
+
+        );
+
+
+        state.world.trials
+            .push({
+
+                id:
+                    "sky_trial",
+
+                x:
+                    1720,
+
+                y:
+                    1110,
+
+                radius:
+                    95,
+
+                title:
+                    "CÍRCULO DO CAMINHO",
+
+                skyTrial:
+                    true
+
+            });
+
+
+        addDecoration(
+
+            1720,
+            1110,
+
+            "skyTrialCircle",
+
+            {
+                radius:
+                    96
+            }
+
+        );
+
+
+        if (
+            state.player
+                .skyTrial
+                .complete &&
+            !hasDefeatedBoss(
+                "path_guardian"
+            )
+        ) {
+
+            spawnPathGuardian();
+
+        }
+
+
+        if (
+            state.player
+                .flutePlayed
+        ) {
+
+            addHellPortalToSky();
+
+        }
+
+
+        addBiomeDetails(
+
+            rng,
+
+            115,
+
+            [
+
+                "cloudPatch",
+                "windRune",
+                "skyFlower",
+                "smallStone"
+
+            ],
+
+            {
+
+                minSize:
+                    5,
+
+                maxSize:
+                    20
+
+            }
+
+        );
+
+    }
+
+
+    function spawnSkyWaveEnemy(
+        type,
+        index,
+        wave
+    ) {
+
+        const config =
+            SKY_WAVE_ENEMIES[
+                type
+            ];
+
+
+        if (!config) {
+
+            return null;
+
+        }
+
+
+        const angle =
+
+            (
+                index /
+                Math.max(
+                    1,
+                    8
+                )
+            ) *
+
+            Math.PI *
+            2 +
+
+            random(
+                -0.25,
+                0.25
+            );
+
+
+        const radius =
+            random(
+                210,
+                300
+            );
+
+
+        const x =
+
+            1720 +
+
+            Math.cos(
+                angle
+            ) *
+            radius;
+
+
+        const y =
+
+            1110 +
+
+            Math.sin(
+                angle
+            ) *
+            radius;
+
+
+        if (
+            circleHitsSolidObstacle(
+
+                x,
+                y,
+
+                config.radius
+
+            )
+        ) {
+
+            return null;
+
+        }
+
+
+        return addEnemy({
+
+            id:
+                `sky_wave_${wave}_${type}_${index}`,
+
+            name:
+                config.name,
+
+            spriteType:
+                config.spriteType,
+
+            type:
+                "normal",
+
+            x,
+            y,
+
+            hp:
+
+                config.hp +
+
+                wave *
+                28,
+
+            maxHp:
+
+                config.hp +
+
+                wave *
+                28,
+
+            damage:
+
+                config.damage +
+
+                wave *
+                2,
+
+            speed:
+                config.speed,
+
+            vision:
+                600,
+
+            attackRange:
+                config.attackRange,
+
+            radius:
+                config.radius,
+
+            color:
+                config.color,
+
+            xp:
+                config.xp,
+
+            money:
+                config.money,
+
+            aggressive:
+                true,
+
+            accepted:
+                true,
+
+            skyWave:
+                wave,
+
+            specialCooldown:
+                random(
+                    1.5,
+                    2.5
+                )
+
+        });
+
+    }
+
+
+    function spawnSkyWave(
+        wave
+    ) {
+
+        if (
+            state.area !==
+            "sky"
+        ) {
+
+            return false;
+
+        }
+
+
+        const trial =
+            state.player.skyTrial;
+
+
+        if (
+            !trial ||
+            trial.complete
+        ) {
+
+            return false;
+
+        }
+
+
+        const layouts = {
+
+            1: [
+                "windling",
+                "windling",
+                "windling",
+                "windling",
+                "windling"
+            ],
+
+            2: [
+                "windling",
+                "skyKnight",
+                "windling",
+                "skyKnight",
+                "windling",
+                "windling"
+            ],
+
+            3: [
+                "skyKnight",
+                "windling",
+                "stormEye",
+                "windling",
+                "skyKnight",
+                "windling",
+                "stormEye"
+            ],
+
+            4: [
+                "skyKnight",
+                "skyKnight",
+                "stormEye",
+                "windling",
+                "stormEye",
+                "skyKnight",
+                "windling",
+                "windling"
+            ],
+
+            5: [
+                "skyKnight",
+                "stormEye",
+                "skyKnight",
+                "stormEye",
+                "windling",
+                "skyKnight",
+                "stormEye",
+                "windling",
+                "skyKnight"
+            ]
+
+        };
+
+
+        const enemies =
+            layouts[
+                wave
+            ] ||
+            [];
+
+
+        trial.wave =
+            wave;
+
+
+        trial.activeWave =
+            wave;
+
+
+        enemies.forEach(
+            (
+                type,
+                index
+            ) => {
+
+                spawnSkyWaveEnemy(
+
+                    type,
+
+                    index,
+
+                    wave
+
+                );
+
+            }
+        );
+
+
+        createRingEffect({
+
+            x:
+                1720,
+
+            y:
+                1110,
+
+            radius:
+                50,
+
+            maxRadius:
+                270,
+
+            life:
+                0.75,
+
+            color:
+                "#e1eef2",
+
+            lineWidth:
+                5
+
+        });
+
+
+        showToast?.(
+            `Horda ${wave} / 5`
+        );
+
+
+        return true;
+
+    }
+
+
+    function startSkyTrial() {
+
+        const trial =
+            state.player
+                .skyTrial;
+
+
+        if (
+            !trial ||
+            trial.complete
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            trial.started
+        ) {
+
+            showToast?.(
+                `Horda ${trial.activeWave || trial.wave} em andamento.`
+            );
+
+
+            return false;
+
+        }
+
+
+        trial.started =
+            true;
+
+
+        trial.wave =
+            0;
+
+
+        trial.activeWave =
+            0;
+
+
+        state.skyWaveDelay =
+            null;
+
+
+        openDialogue(
+
+            "CÍRCULO DO CAMINHO",
+
+            [
+
+                "O vento deixa de se mover.",
+
+                "Cinco ondas de presença surgem além das nuvens.",
+
+                "Sobreviva às cinco hordas."
+
+            ],
+
+            {
+
+                onClose:
+                    () => {
+
+                        spawnSkyWave(
+                            1
+                        );
+
+                    }
+
+            }
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function getLivingSkyWaveEnemies() {
+
+        return state.world.enemies
+            .filter(
+                enemy =>
+
+                    !enemy.dead &&
+                    enemy.skyWave
+            );
+
+    }
+
+
+    function spawnPathGuardian() {
+
+        const existing =
+            state.world.enemies
+                .find(
+                    enemy =>
+                        enemy.id ===
+                        "path_guardian" &&
+                        !enemy.dead
+                );
+
+
+        if (existing) {
+
+            return existing;
+
+        }
+
+
+        addProtectedZone(
+
+            2860,
+            1110,
+
+            225,
+
+            "path_guardian_arena"
+
+        );
+
+
+        return spawnProgressionBoss({
+
+            id:
+                "path_guardian",
+
+            x:
+                2860,
+
+            y:
+                1110,
+
+            hp:
+                5200,
+
+            maxHp:
+                5200,
+
+            damage:
+                61,
+
+            speed:
+                108,
+
+            vision:
+                600,
+
+            attackRange:
+                105,
+
+            radius:
+                50,
+
+            color:
+                "#b7c7ca",
+
+            xp:
+                1400,
+
+            money:
+                980,
+
+            bossPattern:
+                "pathGuardian",
+
+            specialCooldown:
+                2.2,
+
+            unlock:
+                null
+
+        });
+
+    }
+
+
+    function finishSkyTrial() {
+
+        const trial =
+            state.player
+                .skyTrial;
+
+
+        if (
+            !trial ||
+            trial.complete
+        ) {
+
+            return;
+
+        }
+
+
+        trial.complete =
+            true;
+
+
+        trial.started =
+            false;
+
+
+        trial.activeWave =
+            0;
+
+
+        state.skyWaveDelay =
+            null;
+
+
+        createRingEffect({
+
+            x:
+                1720,
+
+            y:
+                1110,
+
+            radius:
+                35,
+
+            maxRadius:
+                330,
+
+            life:
+                1.1,
+
+            color:
+                "#f1f7f7",
+
+            lineWidth:
+                6
+
+        });
+
+
+        openDialogue(
+
+            "CÍRCULO DO CAMINHO",
+
+            [
+
+                "A quinta horda desaparece.",
+
+                "As nuvens à frente começam a se abrir.",
+
+                "Algo estava observando todas as batalhas.",
+
+                "O GUARDIÃO DO CAMINHO DESCE."
+
+            ],
+
+            {
+
+                onClose:
+                    () => {
+
+                        spawnPathGuardian();
+
+                    }
+
+            }
+
+        );
+
+    }
+
+
+    function updateSkyTrial(
+        dt
+    ) {
+
+        if (
+            state.area !==
+            "sky" ||
+            !state.player
+                ?.skyTrial
+        ) {
+
+            return;
+
+        }
+
+
+        const trial =
+            state.player
+                .skyTrial;
+
+
+        if (
+            !trial.started ||
+            trial.complete
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            getLivingSkyWaveEnemies()
+                .length >
+            0
+        ) {
+
+            state.skyWaveDelay =
+                null;
+
+
+            return;
+
+        }
+
+
+        if (
+            trial.activeWave <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            state.skyWaveDelay ===
+            null
+        ) {
+
+            state.skyWaveDelay =
+                1.35;
+
+
+            return;
+
+        }
+
+
+        state.skyWaveDelay -=
+            dt;
+
+
+        if (
+            state.skyWaveDelay >
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        state.skyWaveDelay =
+            null;
+
+
+        if (
+            trial.activeWave >=
+            5
+        ) {
+
+            finishSkyTrial();
+
+
+            return;
+
+        }
+
+
+        spawnSkyWave(
+
+            trial.activeWave +
+            1
+
+        );
+
+    }
+
+
+    /* =========================================================
+       FLAUTA DA MEMÓRIA
+       ========================================================= */
+
+    function addHellPortalToSky() {
+
+        if (
+            state.area !==
+            "sky"
+        ) {
+
+            return null;
+
+        }
+
+
+        const exists =
+            state.world.portals
+                .some(
+                    portal =>
+                        portal.id ===
+                        "sky_to_hell"
+                );
+
+
+        if (exists) {
+
+            return state.world.portals
+                .find(
+                    portal =>
+                        portal.id ===
+                        "sky_to_hell"
+                );
+
+        }
+
+
+        addDecoration(
+
+            3260,
+            560,
+
+            "memoryStairs",
+
+            {
+                large:
+                    true
+            }
+
+        );
+
+
+        addProtectedZone(
+
+            3260,
+            560,
+
+            170,
+
+            "hell_stairs"
+
+        );
+
+
+        return addPortal(
+
+            3190,
+            480,
+
+            145,
+            175,
+
+            "hell",
+
+            null,
+
+            "ESCADARIA ESQUECIDA",
+
+            {
+
+                id:
+                    "sky_to_hell",
+
+                spawn: {
+
+                    x:
+                        1850,
+
+                    y:
+                        2200,
+
+                    facing:
+                        "up"
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+    function playMemoryFlute() {
+
+        if (
+            !hasItem(
+                "flautaMemoria"
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !hasDefeatedBoss(
+                "path_guardian"
+            )
+        ) {
+
+            showToast?.(
+                "A melodia não encontra um caminho."
+            );
+
+
+            return false;
+
+        }
+
+
+        if (
+            state.area !==
+            "sky"
+        ) {
+
+            openDialogue(
+
+                "FLAUTA DA MEMÓRIA",
+
+                [
+
+                    "A nota se espalha pelo ar.",
+
+                    "Por um instante, parece procurar alguma coisa muito distante."
+
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            state.player
+                .flutePlayed
+        ) {
+
+            showToast?.(
+                "O caminho revelado ainda está aberto."
+            );
+
+
+            return true;
+
+        }
+
+
+        state.player
+            .flutePlayed =
+            true;
+
+
+        createBurst(
+
+            state.player.x,
+            state.player.y,
+
+            "#e7e5c1",
+
+            38,
+
+            {
+                speedMin:
+                    35,
+
+                speedMax:
+                    190,
+
+                shape:
+                    "star",
+
+                glow:
+                    6
+            }
+
+        );
+
+
+        createRingEffect({
+
+            x:
+                state.player.x,
+
+            y:
+                state.player.y,
+
+            radius:
+                20,
+
+            maxRadius:
+                280,
+
+            life:
+                1.2,
+
+            color:
+                "#e9e6c3",
+
+            lineWidth:
+                5
+
+        });
+
+
+        addHellPortalToSky();
+
+
+        openDialogue(
+
+            "FLAUTA DA MEMÓRIA",
+
+            [
+
+                "A primeira nota desaparece entre as nuvens.",
+
+                "A segunda parece voltar de um lugar muito abaixo.",
+
+                "Pedras que não existiam começam a lembrar que já estiveram ali.",
+
+                "Uma escadaria impossível se revela.",
+
+                "O caminho para o Inferno foi encontrado."
+
+            ]
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       WRAPPER DE USO DE ITEM
+       ========================================================= */
+
+    const useInventoryItemPart3 =
+        useInventoryItem;
+
+
+    useInventoryItem =
+        function (
+            id
+        ) {
+
+            if (
+                id ===
+                "flautaMemoria"
+            ) {
+
+                return playMemoryFlute();
+
+            }
+
+
+            return useInventoryItemPart3(
+                id
+            );
+
+        };
+
+
+    /* =========================================================
+       INFERNO — 5 TIPOS
+       ========================================================= */
+
+    const HELL_ENEMIES =
+        Object.freeze({
+
+            imp: {
+
+                name:
+                    "DIABRETE DE CINZAS",
+
+                spriteType:
+                    "hellImp",
+
+                hp:
+                    320,
+
+                damage:
+                    42,
+
+                speed:
+                    118,
+
+                vision:
+                    390,
+
+                attackRange:
+                    68,
+
+                radius:
+                    19,
+
+                color:
+                    "#8a3e31",
+
+                xp:
+                    85,
+
+                money:
+                    30
+
+            },
+
+
+            hound: {
+
+                name:
+                    "CÃO DO INFERNO",
+
+                spriteType:
+                    "hellHound",
+
+                hp:
+                    410,
+
+                damage:
+                    48,
+
+                speed:
+                    124,
+
+                vision:
+                    410,
+
+                attackRange:
+                    73,
+
+                radius:
+                    23,
+
+                color:
+                    "#6f3028",
+
+                xp:
+                    95,
+
+                money:
+                    33
+
+            },
+
+
+            mage: {
+
+                name:
+                    "BRUXO DAS BRASAS",
+
+                spriteType:
+                    "hellMage",
+
+                hp:
+                    350,
+
+                damage:
+                    52,
+
+                speed:
+                    84,
+
+                vision:
+                    480,
+
+                attackRange:
+                    165,
+
+                radius:
+                    21,
+
+                color:
+                    "#9c4934",
+
+                xp:
+                    105,
+
+                money:
+                    38,
+
+                specialCooldown:
+                    2.2
+
+            },
+
+
+            guard: {
+
+                name:
+                    "GUARDA DE OBSIDIANA",
+
+                spriteType:
+                    "hellGuard",
+
+                hp:
+                    540,
+
+                damage:
+                    56,
+
+                speed:
+                    86,
+
+                vision:
+                    390,
+
+                attackRange:
+                    82,
+
+                radius:
+                    25,
+
+                color:
+                    "#463537",
+
+                xp:
+                    115,
+
+                money:
+                    42
+
+            },
+
+
+            wraith: {
+
+                name:
+                    "ALMA INCINERADA",
+
+                spriteType:
+                    "hellWraith",
+
+                hp:
+                    385,
+
+                damage:
+                    50,
+
+                speed:
+                    106,
+
+                vision:
+                    440,
+
+                attackRange:
+                    150,
+
+                radius:
+                    21,
+
+                color:
+                    "#7b4137",
+
+                xp:
+                    110,
+
+                money:
+                    40
+
+            }
+
+        });
+
+
+    function buildHell() {
+
+        const rng =
+            getAreaRng(
+                "hell",
+                "layout"
+            );
+
+
+        addPath(
+
+            "hellRoad",
+
+            [
+
+                {
+                    x: 1850,
+                    y: 2380
+                },
+
+                {
+                    x: 1830,
+                    y: 2030
+                },
+
+                {
+                    x: 1550,
+                    y: 1740
+                },
+
+                {
+                    x: 1880,
+                    y: 1450
+                },
+
+                {
+                    x: 1560,
+                    y: 1120
+                },
+
+                {
+                    x: 1960,
+                    y: 820
+                },
+
+                {
+                    x: 1850,
+                    y: 220
+                }
+
+            ],
+
+            120
+
+        );
+
+
+        addPortal(
+
+            1770,
+            2320,
+
+            160,
+            95,
+
+            "sky",
+
+            null,
+
+            "ESCADARIA DA MEMÓRIA",
+
+            {
+
+                id:
+                    "hell_to_sky",
+
+                spawn: {
+
+                    x:
+                        3160,
+
+                    y:
+                        700,
+
+                    facing:
+                        "left"
+
+                }
+
+            }
+
+        );
+
+
+        for (
+            let i = 0;
+            i < 42;
+            i++
+        ) {
+
+            addGeneratedRock(
+
+                rng,
+
+                `hell_rock_${i}`,
+
+                {
+
+                    type:
+
+                        i % 4 ===
+                        0
+
+                            ? "obsidianPillar"
+
+                            : "hellRock",
+
+                    minX:
+                        150,
+
+                    maxX:
+                        3540,
+
+                    minY:
+                        150,
+
+                    maxY:
+                        2260
+
+                }
+
+            );
+
+        }
+
+
+        const definitions = [
+
+            [
+                "imp",
+                7
+            ],
+
+            [
+                "hound",
+                6
+            ],
+
+            [
+                "mage",
+                5
+            ],
+
+            [
+                "guard",
+                5
+            ],
+
+            [
+                "wraith",
+                6
+            ]
+
+        ];
+
+
+        for (
+            const [
+                type,
+                count
+            ] of
+            definitions
+        ) {
+
+            const config =
+                HELL_ENEMIES[
+                    type
+                ];
+
+
+            for (
+                let i = 0;
+                i < count;
+                i++
+            ) {
+
+                spawnCustomEnemy(
+
+                    rng,
+
+                    config,
+
+                    i,
+
+                    {
+
+                        id:
+                            `hell_${type}_${i}`,
+
+                        minX:
+                            320,
+
+                        maxX:
+                            3380,
+
+                        minY:
+                            350,
+
+                        maxY:
+                            2110,
+
+                        hellType:
+                            type,
+
+                        drop:
+                            i % 3 ===
+                            0
+
+                                ? "essencia"
+
+                                : null,
+
+                        dropChance:
+                            0.32
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        if (
+            !hasDefeatedBoss(
+                "hell_guardian"
+            )
+        ) {
+
+            addProtectedZone(
+
+                1850,
+                390,
+
+                245,
+
+                "hell_guardian_arena"
+
+            );
+
+
+            spawnProgressionBoss({
+
+                id:
+                    "hell_guardian",
+
+                x:
+                    1850,
+
+                y:
+                    390,
+
+                hp:
+                    7600,
+
+                maxHp:
+                    7600,
+
+                damage:
+                    70,
+
+                speed:
+                    104,
+
+                vision:
+                    650,
+
+                attackRange:
+                    112,
+
+                radius:
+                    57,
+
+                color:
+                    "#71352d",
+
+                xp:
+                    2100,
+
+                money:
+                    1600,
+
+                bossPattern:
+                    "hellGuardian",
+
+                specialCooldown:
+                    2,
+
+                unlock:
+                    "final"
+
+            });
+
+        }
+
+
+        addPortal(
+
+            1765,
+            110,
+
+            170,
+            100,
+
+            "final",
+
+            () =>
+                hasDefeatedBoss(
+                    "hell_guardian"
+                ),
+
+            "CÂMARA FINAL",
+
+            {
+
+                id:
+                    "hell_to_final",
+
+                spawn: {
+
+                    x:
+                        1100,
+
+                    y:
+                        1320,
+
+                    facing:
+                        "up"
+
+                }
+
+            }
+
+        );
+
+
+        addBiomeDetails(
+
+            rng,
+
+            150,
+
+            [
+
+                "ember",
+                "crack",
+                "boneFragment",
+                "ashPatch",
+                "smallStone"
+
+            ],
+
+            {
+
+                minSize:
+                    5,
+
+                maxSize:
+                    19
+
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       FINAL
+       ========================================================= */
+
+    function buildFinal() {
+
+        addPath(
+
+            "finalPath",
+
+            [
+
+                {
+                    x: 1100,
+                    y: 1500
+                },
+
+                {
+                    x: 1100,
+                    y: 1150
+                },
+
+                {
+                    x: 1100,
+                    y: 800
+                },
+
+                {
+                    x: 1100,
+                    y: 350
+                }
+
+            ],
+
+            160
+
+        );
+
+
+        addPortal(
+
+            1020,
+            1450,
+
+            160,
+            85,
+
+            "hell",
+
+            null,
+
+            "INFERNO",
+
+            {
+
+                id:
+                    "final_to_hell",
+
+                spawn: {
+
+                    x:
+                        1850,
+
+                    y:
+                        260,
+
+                    facing:
+                        "down"
+
+                }
+
+            }
+
+        );
+
+
+        addProtectedZone(
+
+            1100,
+            520,
+
+            280,
+
+            "final_arena"
+
+        );
+
+
+        if (
+            !state.player
+                .finalDefeated &&
+            state.player
+                .finalChoice !==
+            "join"
+        ) {
+
+            spawnProgressionBoss({
+
+                id:
+                    "other_self",
+
+                x:
+                    1100,
+
+                y:
+                    520,
+
+                hp:
+                    9800,
+
+                maxHp:
+                    9800,
+
+                damage:
+                    78,
+
+                speed:
+                    Math.max(
+
+                        110,
+
+                        state.player
+                            .baseSpeed *
+                        0.82
+
+                    ),
+
+                vision:
+                    760,
+
+                attackRange:
+                    112,
+
+                radius:
+                    43,
+
+                color:
+                    currentCharacter()
+                        .color,
+
+                xp:
+                    0,
+
+                money:
+                    0,
+
+                bossPattern:
+                    "mirrorSelf",
+
+                specialCooldown:
+                    1.8,
+
+                finalBoss:
+                    true,
+
+                unlock:
+                    null
+
+            });
+
+        }
+
+
+        addBiomeDetails(
+
+            getAreaRng(
+                "final",
+                "decor"
+            ),
+
+            55,
+
+            [
+
+                "memoryShard",
+                "oldRune",
+                "shadowMist"
+
+            ],
+
+            {
+
+                minSize:
+                    5,
+
+                maxSize:
+                    18
+
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       FINAL CHOICE
+       ========================================================= */
+
+    function openFinalChoice() {
+
+        if (
+            state.player
+                .finalChoice
+        ) {
+
+            return false;
+
+        }
+
+
+        state.finalChoiceShown =
+            true;
+
+
+        if (
+            typeof renderFinalChoice ===
+            "function"
+        ) {
+
+            renderFinalChoice();
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function chooseFinalPath(
+        choice
+    ) {
+
+        if (
+            ![
+                "join",
+                "fight"
+            ].includes(
+                choice
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        state.player
+            .finalChoice =
+            choice;
+
+
+        state.finalChoiceShown =
+            false;
+
+
+        if (
+            typeof hideFinalChoice ===
+            "function"
+        ) {
+
+            hideFinalChoice();
+
+        }
+
+
+        const enemy =
+            state.world.enemies
+                .find(
+                    item =>
+                        item.id ===
+                        "other_self" &&
+                        !item.dead
+                );
+
+
+        if (
+            choice ===
+            "join"
+        ) {
+
+            state.player
+                .finalDefeated =
+                true;
+
+
+            if (enemy) {
+
+                enemy.dead =
+                    true;
+
+            }
+
+
+            openDialogue(
+
+                "O OUTRO EU",
+
+                [
+
+                    "Você abaixa a arma.",
+
+                    "Por um instante, nenhuma das duas versões sabe qual delas fez a escolha.",
+
+                    "A Quietude recua.",
+
+                    "Não porque foi derrotada.",
+
+                    "Mas porque uma memória finalmente deixou de lutar contra si mesma."
+
+                ]
+
+            );
+
+
+            return true;
+
+        }
+
+
+        if (enemy) {
+
+            activateBoss(
+                enemy
+            );
+
+
+            openDialogue(
+
+                "O OUTRO EU",
+
+                [
+
+                    "Então você escolheu lutar.",
+
+                    "Mostre que suas memórias valem mais do que as minhas."
+
+                ]
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       BOSS SPECIALS DAS ÁREAS POSTERIORES
+       ========================================================= */
+
+    const runBossSpecialPart3 =
+        runBossSpecial;
+
+
+    runBossSpecial =
+        function (
+            enemy
+        ) {
+
+            if (
+                runBossSpecialPart3(
+                    enemy
+                )
+            ) {
+
+                return true;
+
+            }
+
+
+            switch (
+                enemy.bossPattern
+            ) {
+
+                case "shadowDash":
+
+                    if (
+                        Math.random() <
+                        0.6
+                    ) {
+
+                        startEnemyCharge(
+
+                            enemy,
+
+                            {
+
+                                telegraph:
+                                    0.72,
+
+                                speed:
+                                    470,
+
+                                duration:
+                                    0.52,
+
+                                damage:
+                                    enemy.damage *
+                                    1.2,
+
+                                color:
+                                    "#776484"
+
+                            }
+
+                        );
+
+                    }
+
+                    else {
+
+                        for (
+                            let i = -1;
+                            i <= 1;
+                            i++
+                        ) {
+
+                            const direction =
+                                normalize(
+
+                                    state.player.x -
+                                    enemy.x,
+
+                                    state.player.y -
+                                    enemy.y
+
+                                );
+
+
+                            const base =
+                                Math.atan2(
+
+                                    direction.y,
+
+                                    direction.x
+
+                                );
+
+
+                            const angle =
+                                base +
+                                i *
+                                0.19;
+
+
+                            fireEnemyProjectile(
+
+                                enemy,
+
+                                {
+
+                                    targetX:
+
+                                        enemy.x +
+
+                                        Math.cos(
+                                            angle
+                                        ) *
+                                        320,
+
+                                    targetY:
+
+                                        enemy.y +
+
+                                        Math.sin(
+                                            angle
+                                        ) *
+                                        320,
+
+                                    speed:
+                                        350,
+
+                                    radius:
+                                        9,
+
+                                    damage:
+                                        enemy.damage *
+                                        0.75,
+
+                                    color:
+                                        "#675378",
+
+                                    trailColor:
+                                        "#a284b5",
+
+                                    trailShape:
+                                        "smoke",
+
+                                    impactStyle:
+                                        "shadowBurst"
+
+                                }
+
+                            );
+
+                        }
+
+                    }
+
+
+                    enemy.specialCooldown =
+                        3.1;
+
+
+                    return true;
+
+
+                case "fairyStorm":
+
+                    for (
+                        let i = 0;
+                        i < 5;
+                        i++
+                    ) {
+
+                        spawnHazard({
+
+                            sourceId:
+                                enemy.id,
+
+                            type:
+                                "fairy",
+
+                            x:
+
+                                state.player.x +
+
+                                random(
+                                    -130,
+                                    130
+                                ),
+
+                            y:
+
+                                state.player.y +
+
+                                random(
+                                    -130,
+                                    130
+                                ),
+
+                            radius:
+                                47,
+
+                            damage:
+                                enemy.damage *
+                                0.72,
+
+                            telegraph:
+                                0.72 +
+                                i *
+                                0.11,
+
+                            activeTime:
+                                0.18,
+
+                            color:
+                                "#bd83b3",
+
+                            impactColor:
+                                "#efb4df"
+
+                        });
+
+                    }
+
+
+                    if (
+                        Math.random() <
+                        0.42
+                    ) {
+
+                        startEnemyCharge(
+
+                            enemy,
+
+                            {
+
+                                telegraph:
+                                    0.78,
+
+                                speed:
+                                    490,
+
+                                duration:
+                                    0.46,
+
+                                damage:
+                                    enemy.damage *
+                                    1.05,
+
+                                color:
+                                    "#d49dca"
+
+                            }
+
+                        );
+
+                    }
+
+
+                    enemy.specialCooldown =
+                        3.4;
+
+
+                    return true;
+
+
+                case "pathGuardian":
+
+                    if (
+                        Math.random() <
+                        0.48
+                    ) {
+
+                        startEnemyCharge(
+
+                            enemy,
+
+                            {
+
+                                telegraph:
+                                    0.65,
+
+                                speed:
+                                    520,
+
+                                duration:
+                                    0.5,
+
+                                damage:
+                                    enemy.damage *
+                                    1.18,
+
+                                color:
+                                    "#d7e3e5"
+
+                            }
+
+                        );
+
+                    }
+
+                    else {
+
+                        const toPlayer =
+                            normalize(
+
+                                state.player.x -
+                                enemy.x,
+
+                                state.player.y -
+                                enemy.y
+
+                            );
+
+
+                        const base =
+                            Math.atan2(
+
+                                toPlayer.y,
+
+                                toPlayer.x
+
+                            );
+
+
+                        for (
+                            let i = -2;
+                            i <= 2;
+                            i++
+                        ) {
+
+                            const angle =
+                                base +
+                                i *
+                                0.15;
+
+
+                            fireEnemyProjectile(
+
+                                enemy,
+
+                                {
+
+                                    targetX:
+
+                                        enemy.x +
+
+                                        Math.cos(
+                                            angle
+                                        ) *
+                                        400,
+
+                                    targetY:
+
+                                        enemy.y +
+
+                                        Math.sin(
+                                            angle
+                                        ) *
+                                        400,
+
+                                    speed:
+                                        390,
+
+                                    radius:
+                                        9,
+
+                                    damage:
+                                        enemy.damage *
+                                        0.7,
+
+                                    color:
+                                        "#dce8e9",
+
+                                    trailColor:
+                                        "#ffffff",
+
+                                    trailShape:
+                                        "spark"
+
+                                }
+
+                            );
+
+                        }
+
+                    }
+
+
+                    enemy.specialCooldown =
+                        2.8;
+
+
+                    return true;
+
+
+                case "hellGuardian":
+
+                    if (
+                        Math.random() <
+                        0.5
+                    ) {
+
+                        for (
+                            let i = 0;
+                            i < 6;
+                            i++
+                        ) {
+
+                            const angle =
+
+                                (
+                                    i /
+                                    6
+                                ) *
+
+                                Math.PI *
+                                2;
+
+
+                            spawnHazard({
+
+                                sourceId:
+                                    enemy.id,
+
+                                type:
+                                    "hellfire",
+
+                                x:
+
+                                    enemy.x +
+
+                                    Math.cos(
+                                        angle
+                                    ) *
+                                    135,
+
+                                y:
+
+                                    enemy.y +
+
+                                    Math.sin(
+                                        angle
+                                    ) *
+                                    135,
+
+                                radius:
+                                    58,
+
+                                damage:
+                                    enemy.damage *
+                                    0.8,
+
+                                telegraph:
+                                    0.8,
+
+                                activeTime:
+                                    0.2,
+
+                                color:
+                                    "#8b352b",
+
+                                impactColor:
+                                    "#d65c3d"
+
+                            });
+
+                        }
+
+                    }
+
+                    else {
+
+                        startEnemyCharge(
+
+                            enemy,
+
+                            {
+
+                                telegraph:
+                                    0.62,
+
+                                speed:
+                                    540,
+
+                                duration:
+                                    0.58,
+
+                                damage:
+                                    enemy.damage *
+                                    1.25,
+
+                                color:
+                                    "#b34736"
+
+                            }
+
+                        );
+
+                    }
+
+
+                    enemy.specialCooldown =
+                        2.85;
+
+
+                    return true;
+
+
+                case "mirrorSelf":
+
+                    /*
+                        O Outro Eu alterna
+                        entre ataque rápido,
+                        projéteis e AoE.
+                    */
+                    {
+                        const roll =
+                            Math.random();
+
+
+                        if (
+                            roll <
+                            0.34
+                        ) {
+
+                            startEnemyCharge(
+
+                                enemy,
+
+                                {
+
+                                    telegraph:
+                                        0.58,
+
+                                    speed:
+                                        565,
+
+                                    duration:
+                                        0.54,
+
+                                    damage:
+                                        enemy.damage *
+                                        1.18,
+
+                                    color:
+                                        currentCharacter()
+                                            .color
+
+                                }
+
+                            );
+
+                        }
+
+                        else if (
+                            roll <
+                            0.68
+                        ) {
+
+                            const direction =
+                                normalize(
+
+                                    state.player.x -
+                                    enemy.x,
+
+                                    state.player.y -
+                                    enemy.y
+
+                                );
+
+
+                            const base =
+                                Math.atan2(
+
+                                    direction.y,
+
+                                    direction.x
+
+                                );
+
+
+                            for (
+                                let i = -2;
+                                i <= 2;
+                                i++
+                            ) {
+
+                                const angle =
+                                    base +
+                                    i *
+                                    0.16;
+
+
+                                fireEnemyProjectile(
+
+                                    enemy,
+
+                                    {
+
+                                        targetX:
+
+                                            enemy.x +
+
+                                            Math.cos(
+                                                angle
+                                            ) *
+                                            420,
+
+                                        targetY:
+
+                                            enemy.y +
+
+                                            Math.sin(
+                                                angle
+                                            ) *
+                                            420,
+
+                                        speed:
+                                            410,
+
+                                        radius:
+                                            9,
+
+                                        damage:
+                                            enemy.damage *
+                                            0.68,
+
+                                        color:
+                                            currentCharacter()
+                                                .color,
+
+                                        trailColor:
+                                            "#e4dcf0",
+
+                                        trailShape:
+                                            "afterimage"
+
+                                    }
+
+                                );
+
+                            }
+
+                        }
+
+                        else {
+
+                            for (
+                                let i = 0;
+                                i < 4;
+                                i++
+                            ) {
+
+                                spawnHazard({
+
+                                    sourceId:
+                                        enemy.id,
+
+                                    type:
+                                        "memory",
+
+                                    x:
+
+                                        state.player.x +
+
+                                        random(
+                                            -110,
+                                            110
+                                        ),
+
+                                    y:
+
+                                        state.player.y +
+
+                                        random(
+                                            -110,
+                                            110
+                                        ),
+
+                                    radius:
+                                        58,
+
+                                    damage:
+                                        enemy.damage *
+                                        0.86,
+
+                                    telegraph:
+                                        0.68 +
+                                        i *
+                                        0.12,
+
+                                    activeTime:
+                                        0.16,
+
+                                    color:
+                                        currentCharacter()
+                                            .color,
+
+                                    impactColor:
+                                        "#e6d9f0"
+
+                                });
+
+                            }
+
+                        }
+
+
+                        enemy.specialCooldown =
+                            2.35;
+
+
+                        return true;
+
+                    }
+
+            }
+
+
+            return false;
+
+        };
+
+
+    /* =========================================================
+       INIMIGO NORMAL — ESPECIAIS NOVOS
+       ========================================================= */
+
+    const runNormalEnemySpecialPart3 =
+        runNormalEnemySpecial;
+
+
+    runNormalEnemySpecial =
+        function (
+            enemy
+        ) {
+
+            if (
+                runNormalEnemySpecialPart3(
+                    enemy
+                )
+            ) {
+
+                return true;
+
+            }
+
+
+            switch (
+                enemy.spriteType
+            ) {
+
+                case "shadowWraith":
+
+                    fireEnemyProjectile(
+
+                        enemy,
+
+                        {
+
+                            type:
+                                "shadowNeedle",
+
+                            speed:
+                                335,
+
+                            radius:
+                                8,
+
+                            damage:
+                                enemy.damage *
+                                0.76,
+
+                            color:
+                                "#665a78",
+
+                            trailColor:
+                                "#998aa9",
+
+                            trailShape:
+                                "smoke",
+
+                            impactStyle:
+                                "shadowBurst"
+
+                        }
+
+                    );
+
+
+                    enemy.specialCooldown =
+                        2.9;
+
+
+                    return true;
+
+
+                case "fairyMoth":
+
+                    fireEnemyProjectile(
+
+                        enemy,
+
+                        {
+
+                            type:
+                                "fairyDustShot",
+
+                            speed:
+                                360,
+
+                            radius:
+                                7,
+
+                            damage:
+                                enemy.damage *
+                                0.72,
+
+                            color:
+                                "#d793c8",
+
+                            trailColor:
+                                "#f1c7e7",
+
+                            trailShape:
+                                "star",
+
+                            impactStyle:
+                                "fairyBloom"
+
+                        }
+
+                    );
+
+
+                    enemy.specialCooldown =
+                        2.6;
+
+
+                    return true;
+
+
+                case "stormEye":
+
+                    for (
+                        let i = -1;
+                        i <= 1;
+                        i++
+                    ) {
+
+                        const direction =
+                            normalize(
+
+                                state.player.x -
+                                enemy.x,
+
+                                state.player.y -
+                                enemy.y
+
+                            );
+
+
+                        const base =
+                            Math.atan2(
+
+                                direction.y,
+
+                                direction.x
+
+                            );
+
+
+                        const angle =
+                            base +
+                            i *
+                            0.18;
+
+
+                        fireEnemyProjectile(
+
+                            enemy,
+
+                            {
+
+                                targetX:
+
+                                    enemy.x +
+
+                                    Math.cos(
+                                        angle
+                                    ) *
+                                    350,
+
+                                targetY:
+
+                                    enemy.y +
+
+                                    Math.sin(
+                                        angle
+                                    ) *
+                                    350,
+
+                                type:
+                                    "windShot",
+
+                                speed:
+                                    360,
+
+                                radius:
+                                    7,
+
+                                damage:
+                                    enemy.damage *
+                                    0.65,
+
+                                color:
+                                    "#c2d5d9",
+
+                                trailColor:
+                                    "#eef7f8",
+
+                                trailShape:
+                                    "spark"
+
+                            }
+
+                        );
+
+                    }
+
+
+                    enemy.specialCooldown =
+                        2.7;
+
+
+                    return true;
+
+
+                case "hellMage":
+
+                case "hellWraith":
+
+                    fireEnemyProjectile(
+
+                        enemy,
+
+                        {
+
+                            type:
+                                "hellOrb",
+
+                            speed:
+                                350,
+
+                            radius:
+                                9,
+
+                            damage:
+                                enemy.damage *
+                                0.78,
+
+                            color:
+                                "#bf4c37",
+
+                            trailColor:
+                                "#ea7350",
+
+                            trailShape:
+                                "spark"
+
+                        }
+
+                    );
+
+
+                    enemy.specialCooldown =
+                        2.45;
+
+
+                    return true;
+
+
+                case "hellHound":
+
+                    startEnemyCharge(
+
+                        enemy,
+
+                        {
+
+                            telegraph:
+                                0.52,
+
+                            speed:
+                                465,
+
+                            duration:
+                                0.38,
+
+                            damage:
+                                enemy.damage *
+                                1.05,
+
+                            color:
+                                "#a74434"
+
+                        }
+
+                    );
+
+
+                    enemy.specialCooldown =
+                        3.2;
+
+
+                    return true;
+
+            }
+
+
+            return false;
+
+        };
+
+
+    /* =========================================================
+       TRACK DOS 5 TIPOS DO INFERNO
+       ========================================================= */
+
+    const killEnemyPart3 =
+        killEnemy;
+
+
+    killEnemy =
+        function (
+            enemy,
+            options = {}
+        ) {
+
+            if (
+                !enemy ||
+                enemy.dead
+            ) {
+
+                return;
+
+            }
+
+
+            const hellType =
+                enemy.hellType;
+
+
+            killEnemyPart3(
+                enemy,
+                options
+            );
+
+
+            if (
+                hellType &&
+                enemy.dead
+            ) {
+
+                state.player
+                    .hellTypesDefeated =
+                    state.player
+                        .hellTypesDefeated ||
+                    {};
+
+
+                state.player
+                    .hellTypesDefeated[
+                        hellType
+                    ] =
+                    true;
+
+            }
+
+        };
+
+
+    /* =========================================================
+       DERROTA DE BOSS DE PROGRESSÃO
+       ========================================================= */
+
+    function unlockArea(
+        area
+    ) {
+
+        if (
+            !area ||
+            !REGIONS[
+                area
+            ]
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            !state.player
+                .unlockedAreas
+                .includes(
+                    area
+                )
+        ) {
+
+            state.player
+                .unlockedAreas
+                .push(
+                    area
+                );
+
+        }
+
+    }
+
+
+    function handleProgressionBossDefeat(
+        enemy
+    ) {
+
+        if (!enemy) {
+
+            return;
+
+        }
+
+
+        if (
+            enemy.unlock
+        ) {
+
+            unlockArea(
+                enemy.unlock
+            );
+
+        }
+
+
+        switch (
+            enemy.id
+        ) {
+
+            case "road_guardian":
+
+                showToast?.(
+                    "O caminho para a Floresta foi liberado."
+                );
+
+                break;
+
+
+            case "forest_warden":
+
+                showToast?.(
+                    "O Bosque Antigo foi liberado."
+                );
+
+                break;
+
+
+            case "grove_heart":
+
+                showToast?.(
+                    "O caminho das Montanhas foi liberado."
+                );
+
+                break;
+
+
+            case "mountain_titan":
+
+                showToast?.(
+                    "A Caverna de Ferro foi liberada."
+                );
+
+                break;
+
+
+            case "iron_colossus":
+
+                showToast?.(
+                    "As Terras de Rubi foram liberadas."
+                );
+
+                break;
+
+
+            case "ruby_chimera":
+
+                showToast?.(
+                    "Uma caverna surgiu no canto superior direito."
+                );
+
+                break;
+
+
+            case "monarch":
+
+                state.player
+                    .monarchDefeated =
+                    true;
+
+
+                openDialogue(
+
+                    "O MONARCA",
+
+                    [
+
+                        "O corpo imóvel finalmente cede.",
+
+                        "As sombras ao redor do altar se desfazem.",
+
+                        "O poder ainda não é seu.",
+
+                        "Retorne ao altar."
+
+                    ]
+
+                );
+
+                break;
+
+
+            case "shadow_lord":
+
+                unlockArea(
+                    "fairy"
+                );
+
+
+                showToast?.(
+                    "A passagem feérica respondeu."
+                );
+
+                break;
+
+
+            case "fairy_guardian":
+
+                unlockArea(
+                    "sky"
+                );
+
+
+                showToast?.(
+                    "O caminho para o Céu se abriu."
+                );
+
+                break;
+
+
+            case "path_guardian":
+
+                if (
+                    !state.player
+                        .fluteRewardGranted
+                ) {
+
+                    addItem(
+
+                        "flautaMemoria",
+
+                        1,
+
+                        {
+                            ignoreWeight:
+                                true,
+
+                            notify:
+                                false
+                        }
+
+                    );
+
+
+                    state.player
+                        .fluteRewardGranted =
+                        true;
+
+
+                    openDialogue(
+
+                        "GUARDIÃO DO CAMINHO",
+
+                        [
+
+                            "O Guardião se desfaz em partículas claras.",
+
+                            "Algo metálico cai onde ele estava.",
+
+                            "Você recebeu a Flauta da Memória.",
+
+                            "Talvez certas coisas só precisem ser lembradas para voltar a existir."
+
+                        ]
+
+                    );
+
+                }
+
+
+                break;
+
+
+            case "hell_guardian":
+
+                unlockArea(
+                    "final"
+                );
+
+
+                openDialogue(
+
+                    "GUARDIÃO SUPREMO",
+
+                    [
+
+                        "O último guardião cai.",
+
+                        "Uma porta sem maçaneta se abre sozinha.",
+
+                        "Do outro lado existe alguém que já conhece todos os seus movimentos."
+
+                    ]
+
+                );
+
+                break;
+
+
+            case "other_self":
+
+                state.player
+                    .finalDefeated =
+                    true;
+
+
+                openDialogue(
+
+                    "O OUTRO EU",
+
+                    [
+
+                        "O outro corpo cai.",
+
+                        "Mas nenhuma memória desaparece com ele.",
+
+                        "Pela primeira vez, a Quietude parece hesitar.",
+
+                        "Você venceu aquilo que poderia ter sido."
+
+                    ]
+
+                );
+
+                break;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       FINAL — BOSS INTERACTION
+       ========================================================= */
+
+    function interactProgressionBoss(
+        enemy
+    ) {
+
+        if (
+            enemy.id ===
+            "other_self" &&
+            !state.player
+                .finalChoice
+        ) {
+
+            openFinalChoice();
+
+
+            return true;
+
+        }
+
+
+        return openBattleChallenge(
+            enemy
+        );
+
+    }
+
+
+    /* =========================================================
+       NPC INTERACTION
+       ========================================================= */
+
+    function handleNPCInteraction(
+        npc
+    ) {
+
+        if (!npc) {
+
+            return false;
+
+        }
+
+
+        if (
+            npc.id ===
+            "miguel"
+        ) {
+
+            openDialogue(
+
+                "MIGUEL",
+
+                getMiguelDialogue(
+                    npc
+                )
+
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            npc.id ===
+            "doran" ||
+            npc.merchant
+        ) {
+
+            openShop(
+                npc,
+                "buy"
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            npc.id ===
+            "bran"
+        ) {
+
+            openQuestForNPC(
+                npc
+            );
+
+
+            return true;
+
+        }
+
+
+        if (
+            npc.id ===
+            "borin" ||
+            npc.blacksmith
+        ) {
+
+            const quest =
+                getQuestData(
+                    "coal"
+                );
+
+
+            /*
+                Mantém a quest, mas não bloqueia
+                a forja para sempre.
+
+                Primeira conversa apresenta a tarefa.
+                Depois a forja pode ser utilizada.
+            */
+            if (
+                quest &&
+                quest.state ===
+                "none"
+            ) {
+
+                openQuestForNPC(
+                    npc
+                );
+
+
+                return true;
+
+            }
+
+
+            refreshQuestState(
+                "coal"
+            );
+
+
+            if (
+                quest?.state ===
+                "ready"
+            ) {
+
+                openQuestForNPC(
+                    npc
+                );
+
+
+                return true;
+
+            }
+
+
+            openShop(
+                npc,
+                "forge"
+            );
+
+
+            return true;
+
+        }
+
+
+        openDialogue(
+
+            npc.name,
+
+            npc.lines?.length
+
+                ? npc.lines
+
+                : [
+                    "..."
+                ]
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       TRIAL INTERACTION
+       ========================================================= */
+
+    function handleTrialInteraction(
+        trial
+    ) {
+
+        if (!trial) {
+
+            return false;
+
+        }
+
+
+        if (
+            trial.dashAltar
+        ) {
+
+            return interactDashAltar();
+
+        }
+
+
+        if (
+            trial.skyTrial
+        ) {
+
+            if (
+                state.player
+                    .skyTrial
+                    .complete
+            ) {
+
+                openDialogue(
+
+                    trial.title,
+
+                    [
+
+                        "As cinco marcas do círculo continuam acesas.",
+
+                        "O teste já foi concluído."
+
+                    ]
+
+                );
+
+
+                return true;
+
+            }
+
+
+            return startSkyTrial();
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       HOLD E
+       ========================================================= */
+
+    function cancelHoldAction() {
+
+        state.holdAction =
+            null;
+
+    }
+
+
+    function startHoldAction(
+        type,
+        target,
+        requiredTime
+    ) {
+
+        if (
+            !target
+        ) {
+
+            return false;
+
+        }
+
+
+        state.holdAction = {
+
+            type,
+
+            targetId:
+                target.id,
+
+            elapsed:
+                0,
+
+            required:
+                Math.max(
+                    0.2,
+                    requiredTime
+                )
+
+        };
+
+
+        return true;
+
+    }
+
+
+    function getHoldActionTarget() {
+
+        const hold =
+            state.holdAction;
+
+
+        if (!hold) {
+
+            return null;
+
+        }
+
+
+        if (
+            hold.type ===
+            "tree"
+        ) {
+
+            return state.world.trees
+                .find(
+                    tree =>
+                        tree.id ===
+                        hold.targetId
+                ) ||
+                null;
+
+        }
+
+
+        if (
+            hold.type ===
+            "resource"
+        ) {
+
+            return state.world.resources
+                .find(
+                    resource =>
+                        resource.id ===
+                        hold.targetId
+                ) ||
+                null;
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function updateHoldAction(
+        dt
+    ) {
+
+        const hold =
+            state.holdAction;
+
+
+        if (!hold) {
+
+            return;
+
+        }
+
+
+        /*
+            Soltou E = cancela imediatamente.
+        */
+        if (
+            !state.keys.has(
+                "KeyE"
+            )
+        ) {
+
+            cancelHoldAction();
+
+
+            return;
+
+        }
+
+
+        const target =
+            getHoldActionTarget();
+
+
+        if (
+            !target ||
+            target.alive ===
+            false
+        ) {
+
+            cancelHoldAction();
+
+
+            return;
+
+        }
+
+
+        const d =
+            distance(
+
+                state.player.x,
+                state.player.y,
+
+                target.x,
+                target.y
+
+            );
+
+
+        if (
+            d >
+            78
+        ) {
+
+            cancelHoldAction();
+
+
+            return;
+
+        }
+
+
+        hold.elapsed +=
+            dt;
+
+
+        if (
+            hold.elapsed <
+            hold.required
+        ) {
+
+            return;
+
+        }
+
+
+        let success =
+            false;
+
+
+        if (
+            hold.type ===
+            "tree"
+        ) {
+
+            success =
+                harvestTree(
+                    target
+                );
+
+        }
+
+        else if (
+            hold.type ===
+            "resource"
+        ) {
+
+            success =
+                collectResource(
+                    target
+                );
+
+        }
+
+
+        cancelHoldAction();
+
+
+        if (!success) {
+
+            return;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       INTERAÇÃO PRINCIPAL — E
+       ========================================================= */
+
+    function handleInteractionPressed() {
+
+        if (
+            !state.player ||
+            state.player.dead ||
+            state.transition ||
+            state.paused
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.dialogue
+        ) {
+
+            advanceDialogue();
+
+
+            return true;
+
+        }
+
+
+        if (
+            state.travel ||
+            state.battle
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+            Drop tem prioridade.
+        */
+        const drop =
+            getNearestDrop();
+
+
+        if (drop) {
+
+            return pickupDrop(
+                drop
+            );
+
+        }
+
+
+        const food =
+            getNearestFood();
+
+
+        if (food) {
+
+            return collectFood(
+                food
+            );
+
+        }
+
+
+        /*
+            Interior.
+        */
+        if (
+            state.houseMode
+        ) {
+
+            const npc =
+                getNearbyInteriorNPC();
+
+
+            if (npc) {
+
+                return handleNPCInteraction(
+                    npc
+                );
+
+            }
+
+
+            const furniture =
+                getNearbyFurniture();
+
+
+            if (
+                furniture?.sleep
+            ) {
+
+                sleepPlayer();
+
+
+                return true;
+
+            }
+
+
+            if (
+                furniture?.forge
+            ) {
+
+                const borin =
+                    getHouseInteriorNPCs()
+                        .find(
+                            item =>
+                                item.id ===
+                                "borin"
+                        );
+
+
+                if (borin) {
+
+                    openShop(
+                        borin,
+                        "forge"
+                    );
+
+
+                    return true;
+
+                }
+
+            }
+
+
+            return false;
+
+        }
+
+
+        const npc =
+            getNearbyExteriorNPC();
+
+
+        if (npc) {
+
+            return handleNPCInteraction(
+                npc
+            );
+
+        }
+
+
+        const boss =
+            getNearestUnacceptedBoss();
+
+
+        if (boss) {
+
+            return interactProgressionBoss(
+                boss
+            );
+
+        }
+
+
+        const trial =
+            getNearbyTrial();
+
+
+        if (trial) {
+
+            return handleTrialInteraction(
+                trial
+            );
+
+        }
+
+
+        const gate =
+            getNearbyGate();
+
+
+        if (gate) {
+
+            return interactGate(
+                gate
+            );
+
+        }
+
+
+        /*
+            Madeira:
+            precisa SEGURAR E.
+        */
+        const tree =
+            getNearestTree();
+
+
+        if (tree) {
+
+            return startHoldAction(
+
+                "tree",
+
+                tree,
+
+                GAME_CONFIG
+                    .treeHoldSeconds
+
+            );
+
+        }
+
+
+        /*
+            Minério:
+            também segura E.
+        */
+        const resource =
+            getNearestResource();
+
+
+        if (resource) {
+
+            return startHoldAction(
+
+                "resource",
+
+                resource,
+
+                resource.collectTime ||
+                GAME_CONFIG
+                    .resourceHoldSeconds
+
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function handleInteractionReleased() {
+
+        cancelHoldAction();
+
+    }
+
+
+    /* =========================================================
+       HINT DA INTERAÇÃO
+       ========================================================= */
+
+    function getCurrentInteractionHint() {
+
+        if (
+            !state.player ||
+            state.player.dead ||
+            state.transition
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            state.dialogue
+        ) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    "Continuar"
+
+            };
+
+        }
+
+
+        if (
+            state.houseMode
+        ) {
+
+            const npc =
+                getNearbyInteriorNPC();
+
+
+            if (npc) {
+
+                return {
+
+                    key:
+                        "E",
+
+                    text:
+                        `Falar com ${npc.name}`
+
+                };
+
+            }
+
+
+            const furniture =
+                getNearbyFurniture();
+
+
+            if (
+                furniture?.sleep
+            ) {
+
+                return {
+
+                    key:
+                        "E",
+
+                    text:
+                        "Descansar"
+
+                };
+
+            }
+
+
+            if (
+                furniture?.forge
+            ) {
+
+                return {
+
+                    key:
+                        "E",
+
+                    text:
+                        "Usar forja"
+
+                };
+
+            }
+
+
+            if (
+                isNearInteriorExit()
+            ) {
+
+                return {
+
+                    key:
+                        "Z",
+
+                    text:
+                        "Sair"
+
+                };
+
+            }
+
+
+            return null;
+
+        }
+
+
+        const door =
+            getNearbyExteriorDoor();
+
+
+        if (door) {
+
+            return {
+
+                key:
+                    "Z",
+
+                text:
+                    "Abrir porta"
+
+            };
+
+        }
+
+
+        const drop =
+            getNearestDrop();
+
+
+        if (drop) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    "Pegar item"
+
+            };
+
+        }
+
+
+        const food =
+            getNearestFood();
+
+
+        if (food) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    "Pegar comida"
+
+            };
+
+        }
+
+
+        const npc =
+            getNearbyExteriorNPC();
+
+
+        if (npc) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    `Falar com ${npc.name}`
+
+            };
+
+        }
+
+
+        const boss =
+            getNearestUnacceptedBoss();
+
+
+        if (boss) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    boss.id ===
+                    "other_self"
+
+                        ? "Encarar"
+
+                        : "Desafiar"
+
+            };
+
+        }
+
+
+        const trial =
+            getNearbyTrial();
+
+
+        if (trial) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    trial.dashAltar
+
+                        ? "Examinar altar"
+
+                        : "Examinar círculo"
+
+            };
+
+        }
+
+
+        const gate =
+            getNearbyGate();
+
+
+        if (gate) {
+
+            return {
+
+                key:
+                    "E",
+
+                text:
+                    "Examinar portão"
+
+            };
+
+        }
+
+
+        const tree =
+            getNearestTree();
+
+
+        if (tree) {
+
+            return {
+
+                key:
+                    "SEGURE E",
+
+                text:
+                    "Coletar madeira"
+
+            };
+
+        }
+
+
+        const resource =
+            getNearestResource();
+
+
+        if (resource) {
+
+            return {
+
+                key:
+                    "SEGURE E",
+
+                text:
+                    `Coletar ${ITEMS[resource.type]?.name || "recurso"}`
+
+            };
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* =========================================================
+       PROGRESSO DO HOLD
+       ========================================================= */
+
+    function getHoldProgress() {
+
+        if (
+            !state.holdAction
+        ) {
+
+            return 0;
+
+        }
+
+
+        return clamp(
+
+            state.holdAction.elapsed /
+            state.holdAction.required,
+
+            0,
+            1
+
+        );
+
+    }
+
+
+    /* =========================================================
+       UPDATE DAS INTERAÇÕES
+       ========================================================= */
+
+    function updateInteractionSystems(
+        dt
+    ) {
+
+        updateDoors(
+            dt
+        );
+
+
+        if (
+            state.paused ||
+            state.transition
+        ) {
+
+            return;
+
+        }
+
+
+        updateHoldAction(
+            dt
+        );
+
+
+        updatePortalInteractions(
+            dt
+        );
+
+    }
+
+
+    /* =========================================================
+       WRAPPER DO UPDATE DA PARTE 3
+       ========================================================= */
+
+    const updateGameplaySystemsPart3 =
+        updateGameplaySystems;
+
+
+    updateGameplaySystems =
+        function (
+            dt
+        ) {
+
+            updateGameplaySystemsPart3(
+                dt
+            );
+
+
+            updateInteractionSystems(
+                dt
+            );
+
+
+            updateSkyTrial(
+                dt
+            );
+
+        };
+
+
+    /* =========================================================
+       MONARCA — GARANTIA AO RECONSTRUIR MAPA
+       ========================================================= */
+
+    const buildMonarchMazePart2 =
+        buildMonarchMaze;
+
+
+    buildMonarchMaze =
+        function () {
+
+            buildMonarchMazePart2();
+
+
+            /*
+                Se saiu da caverna durante o combate
+                e voltou, o Monarca reaparece,
+                desde que ainda não tenha sido derrotado.
+            */
+            if (
+                state.player
+                    .monarchAwakened &&
+                !state.player
+                    .monarchDefeated
+            ) {
+
+                spawnMonarch();
+
+            }
+
+        };
+
+
+    /* =========================================================
+       SALVAMENTO DE PROGRESSÃO DE ARMADURA ANTIGA
+
+       Não força saves antigos a voltar para Folha.
+       ========================================================= */
+
+    function repairArmorProgressionFromLegacySave() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        state.player.inventory =
+            state.player.inventory ||
+            createEmptyInventory();
+
+
+        for (
+            const id of
+            ARMOR_PROGRESSION
+        ) {
+
+            if (
+                !Number.isFinite(
+                    Number(
+                        state.player
+                            .inventory[
+                                id
+                            ]
+                    )
+                )
+            ) {
+
+                state.player
+                    .inventory[
+                        id
+                    ] =
+                    0;
+
+            }
+
+        }
+
+
+        const equipped =
+            state.player
+                .equipment
+                ?.armor;
+
+
+        if (
+            equipped &&
+            ARMOR_PROGRESSION
+                .includes(
+                    equipped
+                )
+        ) {
+
+            /*
+                Equipamento antigo continua reconhecido
+                mesmo se o contador do inventário vier 0.
+            */
+            const currentTier =
+                getArmorTier(
+                    equipped
+                );
+
+
+            const highest =
+                getHighestOwnedArmorTier();
+
+
+            if (
+                currentTier >
+                highest
+            ) {
+
+                state.player
+                    .inventory[
+                        equipped
+                    ] =
+                    Math.max(
+
+                        1,
+
+                        getItemCount(
+                            equipped
+                        )
+
+                    );
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       REPARO DOS FLAGS NOVOS
+       ========================================================= */
+
+    function repairV20ProgressionFlags() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        state.player.abilities =
+            state.player.abilities ||
+            {};
+
+
+        state.player.abilities.dash =
+            Boolean(
+                state.player
+                    .abilities
+                    .dash
+            );
+
+
+        state.player.gateUnlocks =
+            state.player.gateUnlocks ||
+            {};
+
+
+        state.player
+            .gateUnlocks
+            .north =
+            Boolean(
+                state.player
+                    .gateUnlocks
+                    .north
+            );
+
+
+        state.player
+            .gateUnlocks
+            .west =
+            Boolean(
+                state.player
+                    .gateUnlocks
+                    .west
+            );
+
+
+        state.player
+            .gateUnlocks
+            .south =
+            Boolean(
+                state.player
+                    .gateUnlocks
+                    .south
+            );
+
+
+        state.player
+            .monarchAwakened =
+            Boolean(
+                state.player
+                    .monarchAwakened
+            );
+
+
+        state.player
+            .monarchDefeated =
+            Boolean(
+                state.player
+                    .monarchDefeated
+            );
+
+
+        state.player
+            .dashPurchased =
+            Boolean(
+                state.player
+                    .dashPurchased
+            );
+
+
+        state.player
+            .flutePlayed =
+            Boolean(
+                state.player
+                    .flutePlayed
+            );
+
+
+        state.player
+            .fluteRewardGranted =
+            Boolean(
+                state.player
+                    .fluteRewardGranted
+            );
+
+
+        state.player
+            .minimapOwned =
+            Boolean(
+
+                state.player
+                    .minimapOwned ||
+
+                getItemCount(
+                    "minimapa"
+                ) >
+                0
+
+            );
+
+
+        state.player
+            .lanternOwned =
+            Boolean(
+
+                state.player
+                    .lanternOwned ||
+
+                getItemCount(
+                    "lanterna"
+                ) >
+                0
+
+            );
+
+
+        state.player.skyTrial =
+            state.player.skyTrial ||
+            {
+
+                started:
+                    false,
+
+                wave:
+                    0,
+
+                activeWave:
+                    0,
+
+                complete:
+                    false
+
+            };
+
+
+        state.player
+            .hellTypesDefeated =
+            state.player
+                .hellTypesDefeated ||
+            {};
+
+
+        repairArmorProgressionFromLegacySave();
+
+    }
+
+
+    /* =========================================================
+       FIM DA PARTE 4/5
+
+       A PARTE 5/5 FECHA O JOGO E TERÁ:
+
+       - renderização completa Canvas
+       - casas menores CENTRALIZADAS na tela
+       - chão e ambientes
+       - fonte central animada
+       - árvores
+       - NPCs
+       - MIGUEL visual
+       - bonequinhos
+       - bosses com visual/imagem especial
+       - barra grande APENAS para boss de avanço
+       - barra pequena do Cervo Ancestral
+       - desenho dos ataques e partículas
+       - sangue/vermelho da tela
+       - iluminação/lanterna bloqueada pelas paredes
+       - HUD
+       - seleção com HP/Magia/Energia/Dano/Defesa/Velocidade
+       - Como Jogar
+       - inventário
+       - loja/forja
+       - mapa/minimapa/livro
+       - status
+       - save/load e migração
+       - mouse/teclado
+       - clique = um ataque
+       - E segurado
+       - Z portas
+       - Q/R/F
+       - ESPAÇO Dash
+       - gameLoop
+       - initialize()
+       - })();
+
+       NÃO COLOQUE })(); AINDA.
+       ========================================================= */
