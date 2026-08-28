@@ -17028,3 +17028,11582 @@
        - dano/morte;
        - partículas e sangue.
        ========================================================= */
+    /* =========================================================
+       VEYRA: A QUIETUDE — V25
+       SCRIPT.JS — PARTE 3/4
+
+       GAMEPLAY
+       MOVIMENTO
+       LEVEL / STATUS
+       SOBREVIVÊNCIA
+       INVENTÁRIO / POÇÕES
+       COLETA SEGURANDO E
+       ATAQUES
+       Q / R / F
+       DASH
+       IA DOS INIMIGOS
+       HABILIDADES DE ESPÉCIES
+       BOSSES
+       DANO
+       MORTE
+       PARTÍCULAS / SANGUE
+
+       CONTINUA DIRETAMENTE DA PARTE 2/4.
+       NÃO FECHA O IIFE.
+       ========================================================= */
+
+
+    /* =========================================================
+       CONFIGURAÇÕES DE COMBATE
+       ========================================================= */
+
+    const PLAYER_COMBAT_CONFIG =
+        Object.freeze({
+
+            basicAttackEnergy:
+                Object.freeze({
+
+                    kaelion:
+                        4,
+
+                    theron:
+                        5,
+
+                    grumgar:
+                        6,
+
+                    lirael:
+                        4,
+
+                    zephyr:
+                        5
+
+                }),
+
+
+            hungerPerAttack:
+                0.025,
+
+            fatiguePerAttack:
+                0.045,
+
+
+            damageReductionPerDefense:
+                0.34,
+
+
+            minimumDamage:
+                1,
+
+
+            enemyHitInvincibility:
+                0.55,
+
+
+            universalDashEnergyCost:
+                12,
+
+            universalDashCooldown:
+                0.72,
+
+            universalDashDuration:
+                0.18,
+
+            universalDashSpeed:
+                565
+
+        });
+
+
+    /* =========================================================
+       SOBREVIVÊNCIA
+
+       Mantido no ritmo antigo aprovado.
+       ========================================================= */
+
+    const SURVIVAL_CONFIG =
+        Object.freeze({
+
+            hungerDrainPerSecond:
+                0.25,
+
+            fatigueDrainPerSecond:
+                0.20,
+
+
+            magicRegenPerSecond:
+                1.7,
+
+            energyRegenPerSecond:
+                3,
+
+
+            lowHungerThreshold:
+                20,
+
+            lowFatigueThreshold:
+                20,
+
+
+            lowResourceMoveMultiplier:
+                0.72,
+
+
+            emptyNeedHpDrainPerSecond:
+                0.12
+
+        });
+
+
+    /* =========================================================
+       COLETA
+       ========================================================= */
+
+    const COLLECTION_CONFIG =
+        Object.freeze({
+
+            madeira:
+                Object.freeze({
+
+                    magicCost:
+                        4,
+
+                    energyCost:
+                        2,
+
+                    hungerCost:
+                        0.4,
+
+                    fatigueCost:
+                        0.6,
+
+                    xp:
+                        5,
+
+                    amountMin:
+                        1,
+
+                    amountMax:
+                        3,
+
+                    respawn:
+                        30
+
+                }),
+
+
+            carvao:
+                Object.freeze({
+
+                    magicCost:
+                        7,
+
+                    energyCost:
+                        3,
+
+                    hungerCost:
+                        0.5,
+
+                    fatigueCost:
+                        0.8,
+
+                    xp:
+                        8,
+
+                    respawn:
+                        38
+
+                }),
+
+
+            ferro:
+                Object.freeze({
+
+                    magicCost:
+                        12,
+
+                    energyCost:
+                        5,
+
+                    hungerCost:
+                        0.6,
+
+                    fatigueCost:
+                        1,
+
+                    xp:
+                        12,
+
+                    respawn:
+                        45
+
+                }),
+
+
+            ouro:
+                Object.freeze({
+
+                    magicCost:
+                        20,
+
+                    energyCost:
+                        7,
+
+                    hungerCost:
+                        0.8,
+
+                    fatigueCost:
+                        1.2,
+
+                    xp:
+                        18,
+
+                    respawn:
+                        55
+
+                }),
+
+
+            diamante:
+                Object.freeze({
+
+                    magicCost:
+                        30,
+
+                    energyCost:
+                        9,
+
+                    hungerCost:
+                        1,
+
+                    fatigueCost:
+                        1.5,
+
+                    xp:
+                        25,
+
+                    respawn:
+                        65
+
+                }),
+
+
+            rubi:
+                Object.freeze({
+
+                    magicCost:
+                        38,
+
+                    energyCost:
+                        11,
+
+                    hungerCost:
+                        1.2,
+
+                    fatigueCost:
+                        1.8,
+
+                    xp:
+                        32,
+
+                    respawn:
+                        70
+
+                }),
+
+
+            cristal:
+                Object.freeze({
+
+                    magicCost:
+                        25,
+
+                    energyCost:
+                        8,
+
+                    hungerCost:
+                        0.9,
+
+                    fatigueCost:
+                        1.3,
+
+                    xp:
+                        21,
+
+                    respawn:
+                        60
+
+                }),
+
+
+            fragmento:
+                Object.freeze({
+
+                    magicCost:
+                        18,
+
+                    energyCost:
+                        6,
+
+                    hungerCost:
+                        0.7,
+
+                    fatigueCost:
+                        1.1,
+
+                    xp:
+                        18,
+
+                    respawn:
+                        55
+
+                })
+
+        });
+
+
+    /* =========================================================
+       DIREÇÃO
+       ========================================================= */
+
+    function facingVector(
+        facing =
+            state.player
+                ?.facing
+    ) {
+
+        switch (
+            facing
+        ) {
+
+            case "up":
+
+                return {
+
+                    x:
+                        0,
+
+                    y:
+                        -1
+
+                };
+
+
+            case "down":
+
+                return {
+
+                    x:
+                        0,
+
+                    y:
+                        1
+
+                };
+
+
+            case "left":
+
+                return {
+
+                    x:
+                        -1,
+
+                    y:
+                        0
+
+                };
+
+
+            case "right":
+
+                return {
+
+                    x:
+                        1,
+
+                    y:
+                        0
+
+                };
+
+
+            default:
+
+                return {
+
+                    x:
+                        0,
+
+                    y:
+                        1
+
+                };
+
+        }
+
+    }
+
+
+    function updatePlayerFacing(
+        x,
+        y
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        if (
+            Math.abs(
+                x
+            ) >
+            Math.abs(
+                y
+            )
+        ) {
+
+            if (
+                Math.abs(
+                    x
+                ) >
+                0.01
+            ) {
+
+                player.facing =
+                    x >
+                    0
+                        ? "right"
+                        : "left";
+
+            }
+
+        }
+
+        else {
+
+            if (
+                Math.abs(
+                    y
+                ) >
+                0.01
+            ) {
+
+                player.facing =
+                    y >
+                    0
+                        ? "down"
+                        : "up";
+
+            }
+
+        }
+
+    }
+
+
+    function pointerDirectionFromPlayer() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return {
+
+                x:
+                    0,
+
+                y:
+                    1,
+
+                length:
+                    1
+
+            };
+
+        }
+
+
+        const direction =
+            normalize(
+
+                state.pointer
+                    .worldX -
+                player.x,
+
+                state.pointer
+                    .worldY -
+                player.y
+
+            );
+
+
+        if (
+            direction.length >
+            0.001
+        ) {
+
+            return direction;
+
+        }
+
+
+        const facing =
+            facingVector();
+
+
+        return {
+
+            x:
+                facing.x,
+
+            y:
+                facing.y,
+
+            length:
+                1
+
+        };
+
+    }
+
+
+    function getMovementDirection() {
+
+        let x =
+            0;
+
+
+        let y =
+            0;
+
+
+        if (
+            state.keys.has(
+                "KeyW"
+            ) ||
+            state.keys.has(
+                "ArrowUp"
+            )
+        ) {
+
+            y--;
+
+        }
+
+
+        if (
+            state.keys.has(
+                "KeyS"
+            ) ||
+            state.keys.has(
+                "ArrowDown"
+            )
+        ) {
+
+            y++;
+
+        }
+
+
+        if (
+            state.keys.has(
+                "KeyA"
+            ) ||
+            state.keys.has(
+                "ArrowLeft"
+            )
+        ) {
+
+            x--;
+
+        }
+
+
+        if (
+            state.keys.has(
+                "KeyD"
+            ) ||
+            state.keys.has(
+                "ArrowRight"
+            )
+        ) {
+
+            x++;
+
+        }
+
+
+        return normalize(
+            x,
+            y
+        );
+
+    }
+
+
+    /* =========================================================
+       LEVEL / XP
+       ========================================================= */
+
+    function gainXP(
+        amount
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.level >=
+                MAX_LEVEL
+        ) {
+
+            return;
+
+        }
+
+
+        const gained =
+            Math.max(
+                0,
+                Math.floor(
+                    finiteNumber(
+                        amount,
+                        0
+                    )
+                )
+            );
+
+
+        if (
+            gained <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        player.xp +=
+            gained;
+
+
+        checkLevelUp();
+
+    }
+
+
+    function checkLevelUp() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        let leveled =
+            false;
+
+
+        let totalPoints =
+            0;
+
+
+        while (
+            player.level <
+                MAX_LEVEL &&
+            player.xp >=
+                player.xpToNext
+        ) {
+
+            player.xp -=
+                player.xpToNext;
+
+
+            player.level++;
+
+
+            const points =
+                getStatusPointsForLevel(
+                    player.level
+                );
+
+
+            player.statPoints +=
+                points;
+
+
+            totalPoints +=
+                points;
+
+
+            player.xpToNext =
+
+                player.level >=
+                MAX_LEVEL
+
+                    ? Infinity
+
+                    : calculateXpToNext(
+                        player.level
+                    );
+
+
+            leveled =
+                true;
+
+        }
+
+
+        if (
+            player.level >=
+            MAX_LEVEL
+        ) {
+
+            player.xp =
+                0;
+
+
+            player.xpToNext =
+                Infinity;
+
+        }
+
+
+        if (!leveled) {
+
+            return;
+
+        }
+
+
+        /*
+            IMPORTANTE:
+
+            Subir de nível NÃO aumenta
+            nenhum atributo automaticamente.
+
+            O jogador recebeu pontos e
+            escolhe onde gastar.
+        */
+
+        player.hp =
+            Math.min(
+                player.maxHp,
+                player.hp +
+                player.maxHp *
+                0.12
+            );
+
+
+        player.magic =
+            Math.min(
+                player.maxMagic,
+                player.magic +
+                player.maxMagic *
+                0.18
+            );
+
+
+        player.energy =
+            Math.min(
+                player.maxEnergy,
+                player.energy +
+                player.maxEnergy *
+                0.18
+            );
+
+
+        spawnFloatingText(
+
+            player.x,
+
+            player.y -
+            52,
+
+            `NÍVEL ${player.level}`,
+
+            "#f3d98b",
+
+            1.3
+
+        );
+
+
+        spawnRadialParticles(
+
+            player.x,
+
+            player.y,
+
+            "#f2d287",
+
+            22,
+
+            140
+
+        );
+
+
+        if (
+            typeof showToast ===
+            "function"
+        ) {
+
+            showToast(
+
+                `Nível ${player.level}! +${totalPoints} ponto${totalPoints === 1 ? "" : "s"} de status.`
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       STATUS
+       ========================================================= */
+
+    function canAllocateStat(
+        statId
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.statPoints <=
+                0
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !STAT_CONFIG[
+                statId
+            ]
+        ) {
+
+            return false;
+
+        }
+
+
+        return (
+
+            finiteNumber(
+                player.stats[
+                    statId
+                ],
+                0
+            ) <
+
+            STAT_CAP
+
+        );
+
+    }
+
+
+    function allocateStatPoint(
+        statId
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !canAllocateStat(
+                statId
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        player.stats[
+            statId
+        ] =
+
+            finiteNumber(
+                player.stats[
+                    statId
+                ],
+                0
+            ) +
+
+            1;
+
+
+        player.statPoints--;
+
+
+        recalculatePlayerStats();
+
+
+        if (
+            typeof updateHUD ===
+            "function"
+        ) {
+
+            updateHUD();
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       RECURSOS DO PLAYER
+       ========================================================= */
+
+    function canSpendPlayerResource(
+        type,
+        amount
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return false;
+
+        }
+
+
+        if (
+            type ===
+            "magic"
+        ) {
+
+            if (
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteMagic
+            ) {
+
+                return true;
+
+            }
+
+
+            return (
+                player.magic >=
+                amount
+            );
+
+        }
+
+
+        if (
+            type ===
+            "energy"
+        ) {
+
+            if (
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteEnergy
+            ) {
+
+                return true;
+
+            }
+
+
+            return (
+                player.energy >=
+                amount
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function spendPlayerResource(
+        type,
+        amount
+    ) {
+
+        if (
+            !canSpendPlayerResource(
+                type,
+                amount
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            type ===
+            "magic"
+        ) {
+
+            if (
+                !(
+                    state.dev
+                        ?.unlocked &&
+                    state.dev
+                        .infiniteMagic
+                )
+            ) {
+
+                state.player.magic =
+                    Math.max(
+                        0,
+                        state.player.magic -
+                        amount
+                    );
+
+            }
+
+
+            return true;
+
+        }
+
+
+        if (
+            type ===
+            "energy"
+        ) {
+
+            if (
+                !(
+                    state.dev
+                        ?.unlocked &&
+                    state.dev
+                        .infiniteEnergy
+                )
+            ) {
+
+                state.player.energy =
+                    Math.max(
+                        0,
+                        state.player.energy -
+                        amount
+                    );
+
+            }
+
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function getPlayerAttackPower() {
+
+        return devModifyOutgoingDamage(
+
+            Math.max(
+                1,
+                finiteNumber(
+                    state.player
+                        ?.damage,
+                    1
+                )
+            )
+
+        );
+
+    }
+
+
+    function getPlayerDefense() {
+
+        return Math.max(
+            0,
+            finiteNumber(
+                state.player
+                    ?.defense,
+                0
+            )
+        );
+
+    }
+
+
+    /* =========================================================
+       EQUIPAMENTO
+       ========================================================= */
+
+    function isEquippedItem(
+        id
+    ) {
+
+        const equipment =
+            state.player
+                ?.equipment;
+
+
+        if (!equipment) {
+
+            return false;
+
+        }
+
+
+        return (
+
+            equipment.weapon ===
+                id ||
+
+            equipment.armor ===
+                id ||
+
+            equipment.tool ===
+                id
+
+        );
+
+    }
+
+
+    function equipInventoryItem(
+        id
+    ) {
+
+        const player =
+            state.player;
+
+
+        const item =
+            ITEMS[id];
+
+
+        if (
+            !player ||
+            !item ||
+            getRealItemCount(
+                id
+            ) <=
+                0
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            item.category ===
+            "weapons"
+        ) {
+
+            player.equipment.weapon =
+                id;
+
+
+            recalculatePlayerStats();
+
+
+            return true;
+
+        }
+
+
+        if (
+            item.category ===
+            "armor"
+        ) {
+
+            const tier =
+                getArmorTier(
+                    id
+                );
+
+
+            if (
+                tier <=
+                0
+            ) {
+
+                return false;
+
+            }
+
+
+            /*
+                Evita voltar para armadura
+                antiga depois de a progressão
+                já ter avançado.
+            */
+            if (
+                tier <
+                getHighestOwnedArmorTier()
+            ) {
+
+                if (
+                    typeof showToast ===
+                    "function"
+                ) {
+
+                    showToast(
+                        "Você já possui uma armadura de nível superior."
+                    );
+
+                }
+
+
+                return false;
+
+            }
+
+
+            player.equipment.armor =
+                id;
+
+
+            player.armorHighestTierEver =
+                Math.max(
+
+                    finiteNumber(
+                        player.armorHighestTierEver,
+                        0
+                    ),
+
+                    tier
+
+                );
+
+
+            recalculatePlayerStats();
+
+
+            return true;
+
+        }
+
+
+        if (
+            item.category ===
+            "tools"
+        ) {
+
+            player.equipment.tool =
+                id;
+
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       POÇÕES / COMIDA
+       ========================================================= */
+
+    function getPotionBuffCount() {
+
+        return (
+            state.player
+                ?.activePotionBuffs
+                ?.length ||
+            0
+        );
+
+    }
+
+
+    function canUsePotionBuff(
+        type
+    ) {
+
+        const buffs =
+            state.player
+                ?.activePotionBuffs ||
+            [];
+
+
+        if (
+            buffs.some(
+                buff =>
+                    buff.type ===
+                    type
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        return (
+            buffs.length <
+            MAX_ACTIVE_POTION_BUFFS
+        );
+
+    }
+
+
+    function activatePotionBuff(
+        item
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !item.buff
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !canUsePotionBuff(
+                item.buff
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Você já possui dois efeitos de poção ativos ou esse efeito já está ativo."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        player.activePotionBuffs.push({
+
+            type:
+                item.buff,
+
+            timer:
+                item.duration,
+
+            duration:
+                item.duration,
+
+            multiplier:
+                item.multiplier ||
+                1,
+
+            speedMultiplier:
+                item.speedMultiplier ||
+                1,
+
+            defenseBonus:
+                item.defenseBonus ||
+                0
+
+        });
+
+
+        recalculatePlayerStats();
+
+
+        return true;
+
+    }
+
+
+    function activateInventoryItem(
+        id
+    ) {
+
+        const player =
+            state.player;
+
+
+        const item =
+            ITEMS[id];
+
+
+        if (
+            !player ||
+            !item ||
+            getRealItemCount(
+                id
+            ) <=
+                0
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            item.category ===
+            "food"
+        ) {
+
+            if (
+                player.hunger >=
+                    player.maxHunger &&
+                (
+                    !item.fatigue ||
+                    player.fatigue >=
+                        player.maxFatigue
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                !removeItem(
+                    id,
+                    1
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            player.hunger =
+                Math.min(
+
+                    player.maxHunger,
+
+                    player.hunger +
+                    finiteNumber(
+                        item.hunger,
+                        0
+                    )
+
+                );
+
+
+            player.fatigue =
+                Math.min(
+
+                    player.maxFatigue,
+
+                    player.fatigue +
+                    finiteNumber(
+                        item.fatigue,
+                        0
+                    )
+
+                );
+
+
+            return true;
+
+        }
+
+
+        if (
+            item.category ===
+            "potions"
+        ) {
+
+            if (
+                item.buff
+            ) {
+
+                if (
+                    !activatePotionBuff(
+                        item
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+
+                return removeItem(
+                    id,
+                    1
+                );
+
+            }
+
+
+            let useful =
+                false;
+
+
+            if (
+                item.heal &&
+                player.hp <
+                    player.maxHp
+            ) {
+
+                player.hp =
+                    Math.min(
+
+                        player.maxHp,
+
+                        player.hp +
+                        item.heal
+
+                    );
+
+
+                useful =
+                    true;
+
+            }
+
+
+            if (
+                item.energy &&
+                player.energy <
+                    player.maxEnergy
+            ) {
+
+                player.energy =
+                    Math.min(
+
+                        player.maxEnergy,
+
+                        player.energy +
+                        item.energy
+
+                    );
+
+
+                useful =
+                    true;
+
+            }
+
+
+            if (!useful) {
+
+                return false;
+
+            }
+
+
+            return removeItem(
+                id,
+                1
+            );
+
+        }
+
+
+        if (
+            item.category ===
+                "weapons" ||
+            item.category ===
+                "armor" ||
+            item.category ===
+                "tools"
+        ) {
+
+            return equipInventoryItem(
+                id
+            );
+
+        }
+
+
+        if (
+            id ===
+            "flautaMemoria"
+        ) {
+
+            if (
+                typeof playMemoryFlute ===
+                "function"
+            ) {
+
+                return playMemoryFlute();
+
+            }
+
+
+            return false;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function inventoryPrimaryAction(
+        id
+    ) {
+
+        return activateInventoryItem(
+            id
+        );
+
+    }
+
+
+    function updatePotionBuffs(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !Array.isArray(
+                player.activePotionBuffs
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        let changed =
+            false;
+
+
+        for (
+            const buff of
+            player.activePotionBuffs
+        ) {
+
+            buff.timer -=
+                dt;
+
+        }
+
+
+        const previousLength =
+            player.activePotionBuffs
+                .length;
+
+
+        player.activePotionBuffs =
+            player.activePotionBuffs
+                .filter(
+                    buff =>
+                        buff.timer >
+                        0
+                );
+
+
+        if (
+            player.activePotionBuffs
+                .length !==
+            previousLength
+        ) {
+
+            changed =
+                true;
+
+        }
+
+
+        if (changed) {
+
+            recalculatePlayerStats();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       BUFFS DAS CLASSES
+       ========================================================= */
+
+    function updateClassBuffs(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        if (
+            player.ironGuard
+        ) {
+
+            player.ironGuard.timer -=
+                dt;
+
+
+            if (
+                player.ironGuard.timer <=
+                0
+            ) {
+
+                player.ironGuard =
+                    null;
+
+            }
+
+        }
+
+
+        if (
+            player.adaptiveBuff
+        ) {
+
+            player.adaptiveBuff.timer -=
+                dt;
+
+
+            if (
+                player.adaptiveBuff.timer <=
+                0
+            ) {
+
+                player.adaptiveBuff =
+                    null;
+
+
+                recalculatePlayerStats();
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       MOVIMENTO
+       ========================================================= */
+
+    function isGateBlockingPosition(
+        x,
+        y,
+        radius
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return false;
+
+        }
+
+
+        for (
+            const gate of
+            state.world.gates
+        ) {
+
+            if (
+                gate.opened ||
+                gate.animation >=
+                    0.82
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                circleRectCollision(
+                    x,
+                    y,
+                    radius,
+                    gate
+                )
+            ) {
+
+                return true;
+
+            }
+
+        }
+
+
+        return false;
+
+    }
+
+
+    function getBlockingDarknessBarrier(
+        x,
+        y,
+        radius
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        for (
+            const barrier of
+            state.world
+                .darknessBarriers
+        ) {
+
+            if (
+                barrier.requiresLantern &&
+                state.player
+                    ?.lanternOwned
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                circleRectCollision(
+                    x,
+                    y,
+                    radius,
+                    barrier
+                )
+            ) {
+
+                return barrier;
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function canPlayerMoveTo(
+        x,
+        y,
+        radius =
+            state.player
+                ?.radius ||
+            18
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.houseMode
+        ) {
+
+            return !isInteriorPositionBlocked(
+                x,
+                y,
+                radius
+            );
+
+        }
+
+
+        const barrier =
+            getBlockingDarknessBarrier(
+                x,
+                y,
+                radius
+            );
+
+
+        if (barrier) {
+
+            const now =
+                performance.now();
+
+
+            if (
+                now -
+                finiteNumber(
+                    state.darknessWarningAt,
+                    0
+                ) >
+                1800
+            ) {
+
+                state.darknessWarningAt =
+                    now;
+
+
+                if (
+                    typeof showToast ===
+                    "function"
+                ) {
+
+                    showToast(
+                        barrier.message ||
+                        GAME_CONFIG
+                            .darknessBarrierMessage
+                    );
+
+                }
+
+            }
+
+
+            return false;
+
+        }
+
+
+        if (
+            isGateBlockingPosition(
+                x,
+                y,
+                radius
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        return !isCircleBlockedByWorld(
+
+            x,
+            y,
+            radius,
+
+            {
+                ignoreDarknessBarrier:
+                    true
+            }
+
+        );
+
+    }
+
+
+    function getPlayerMoveSpeed() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return 0;
+
+        }
+
+
+        let speed =
+
+            state.houseMode
+
+                ? Math.min(
+                    player.speed,
+                    145
+                )
+
+                : player.speed;
+
+
+        if (
+            player.movementSlowTimer >
+            0
+        ) {
+
+            speed *=
+                clamp(
+                    player.movementSlowMultiplier,
+                    0.3,
+                    1
+                );
+
+        }
+
+
+        /*
+            Mantém a penalidade antiga
+            abaixo de 20 de fome/cansaço.
+        */
+
+        if (
+            !state.houseMode &&
+            player.hunger <=
+                SURVIVAL_CONFIG
+                    .lowHungerThreshold
+        ) {
+
+            speed *=
+                SURVIVAL_CONFIG
+                    .lowResourceMoveMultiplier;
+
+        }
+
+
+        if (
+            !state.houseMode &&
+            player.fatigue <=
+                SURVIVAL_CONFIG
+                    .lowFatigueThreshold
+        ) {
+
+            speed *=
+                SURVIVAL_CONFIG
+                    .lowResourceMoveMultiplier;
+
+        }
+
+
+        return Math.max(
+            20,
+            speed
+        );
+
+    }
+
+
+    function movePlayerBy(
+        dx,
+        dy
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return false;
+
+        }
+
+
+        let moved =
+            false;
+
+
+        const nextX =
+            player.x +
+            dx;
+
+
+        if (
+            canPlayerMoveTo(
+                nextX,
+                player.y,
+                player.radius
+            )
+        ) {
+
+            player.x =
+                nextX;
+
+
+            moved =
+                true;
+
+        }
+
+
+        const nextY =
+            player.y +
+            dy;
+
+
+        if (
+            canPlayerMoveTo(
+                player.x,
+                nextY,
+                player.radius
+            )
+        ) {
+
+            player.y =
+                nextY;
+
+
+            moved =
+                true;
+
+        }
+
+
+        return moved;
+
+    }
+
+
+    function updatePlayerMovement(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead ||
+            player.resting
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            Dash / rush controlam movimento
+            separadamente.
+        */
+
+        if (
+            player.playerDash
+                ?.active ||
+            player.zephyrDash
+                ?.active ||
+            player.guardianRush
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        const direction =
+            getMovementDirection();
+
+
+        if (
+            direction.length <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        updatePlayerFacing(
+            direction.x,
+            direction.y
+        );
+
+
+        const speed =
+            getPlayerMoveSpeed();
+
+
+        const moved =
+            movePlayerBy(
+
+                direction.x *
+                speed *
+                dt,
+
+                direction.y *
+                speed *
+                dt
+
+            );
+
+
+        if (moved) {
+
+            player.walkTime +=
+
+                dt *
+
+                GAME_CONFIG
+                    .walkAnimationSpeed;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DESCANSO
+       ========================================================= */
+
+    function canPlayerRest() {
+
+        return Boolean(
+
+            state.player &&
+
+            state.houseMode &&
+
+            state.currentHouse
+                ?.id ===
+                "home" &&
+
+            !state.player
+                .dead
+
+        );
+
+    }
+
+
+    function startPlayerRest() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !canPlayerRest() ||
+            player.resting
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        player.resting = {
+
+            active:
+                true,
+
+            timer:
+                GAME_CONFIG
+                    .restAnimationSeconds,
+
+            duration:
+                GAME_CONFIG
+                    .restAnimationSeconds
+
+        };
+
+
+        state.world
+            ?.effects
+            ?.push({
+
+                id:
+                    uid(
+                        "rest"
+                    ),
+
+                type:
+                    "rest",
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                timer:
+                    GAME_CONFIG
+                        .restAnimationSeconds,
+
+                duration:
+                    GAME_CONFIG
+                        .restAnimationSeconds
+
+            });
+
+
+        return true;
+
+    }
+
+
+    function updatePlayerRest(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+                ?.resting
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        player.resting.timer -=
+            dt;
+
+
+        if (
+            player.resting.timer >
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        player.resting.active =
+            false;
+
+
+        player.hp =
+            player.maxHp;
+
+
+        player.magic =
+            player.maxMagic;
+
+
+        player.energy =
+            player.maxEnergy;
+
+
+        player.hunger =
+            player.maxHunger;
+
+
+        player.fatigue =
+            player.maxFatigue;
+
+
+        if (
+            typeof showToast ===
+            "function"
+        ) {
+
+            showToast(
+                "Você descansou."
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SOBREVIVÊNCIA
+       ========================================================= */
+
+    function updateSurvival(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead ||
+            state.houseMode ||
+            player.resting
+                ?.active
+        ) {
+
+            maintainDevInfiniteResources();
+
+            return;
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteHunger
+            )
+        ) {
+
+            player.hunger =
+                clamp(
+
+                    player.hunger -
+
+                    SURVIVAL_CONFIG
+                        .hungerDrainPerSecond *
+                    dt,
+
+                    0,
+
+                    player.maxHunger
+
+                );
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteFatigue
+            )
+        ) {
+
+            player.fatigue =
+                clamp(
+
+                    player.fatigue -
+
+                    SURVIVAL_CONFIG
+                        .fatigueDrainPerSecond *
+                    dt,
+
+                    0,
+
+                    player.maxFatigue
+
+                );
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteMagic
+            )
+        ) {
+
+            player.magic =
+                clamp(
+
+                    player.magic +
+
+                    SURVIVAL_CONFIG
+                        .magicRegenPerSecond *
+                    dt,
+
+                    0,
+
+                    player.maxMagic
+
+                );
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteEnergy
+            )
+        ) {
+
+            player.energy =
+                clamp(
+
+                    player.energy +
+
+                    SURVIVAL_CONFIG
+                        .energyRegenPerSecond *
+                    dt,
+
+                    0,
+
+                    player.maxEnergy
+
+                );
+
+        }
+
+
+        /*
+            Mantém a antiga perda lenta
+            quando fome/cansaço chegam a zero.
+
+            Não mata diretamente:
+            para em 1 HP.
+        */
+
+        if (
+            (
+                player.hunger <=
+                    0 ||
+                player.fatigue <=
+                    0
+            ) &&
+            !devShouldIgnorePlayerDamage()
+        ) {
+
+            player.hp =
+                clamp(
+
+                    player.hp -
+
+                    SURVIVAL_CONFIG
+                        .emptyNeedHpDrainPerSecond *
+                    dt,
+
+                    1,
+
+                    player.maxHp
+
+                );
+
+        }
+
+
+        const now =
+            performance.now();
+
+
+        if (
+            now -
+            finiteNumber(
+                state.warnedNeedAt,
+                0
+            ) >
+            7000
+        ) {
+
+            if (
+                player.hunger <
+                18
+            ) {
+
+                state.warnedNeedAt =
+                    now;
+
+
+                if (
+                    typeof showToast ===
+                    "function"
+                ) {
+
+                    showToast(
+                        "Você está ficando com fome."
+                    );
+
+                }
+
+            }
+
+            else if (
+                player.fatigue <
+                18
+            ) {
+
+                state.warnedNeedAt =
+                    now;
+
+
+                if (
+                    typeof showToast ===
+                    "function"
+                ) {
+
+                    showToast(
+                        "Você está cansado."
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        maintainDevInfiniteResources();
+
+    }
+
+
+    /* =========================================================
+       HOLD E — COLETA
+       ========================================================= */
+
+    function getNearestCollectible() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !state.world ||
+            state.houseMode
+        ) {
+
+            return null;
+
+        }
+
+
+        let best =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        /*
+            ÁRVORES
+        */
+
+        for (
+            const tree of
+            state.world.trees
+        ) {
+
+            if (
+                !tree.alive
+            ) {
+
+                continue;
+
+            }
+
+
+            const d =
+                distance(
+
+                    player.x,
+                    player.y,
+
+                    tree.x,
+                    tree.y
+
+                );
+
+
+            if (
+                d <=
+                    GAME_CONFIG
+                        .pickupDistance &&
+                d <
+                    bestDistance
+            ) {
+
+                best = {
+
+                    type:
+                        "tree",
+
+                    id:
+                        tree.id,
+
+                    target:
+                        tree,
+
+                    itemId:
+                        "madeira",
+
+                    duration:
+                        GAME_CONFIG
+                            .treeHoldSeconds
+
+                };
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        /*
+            MINÉRIOS
+        */
+
+        for (
+            const resource of
+            state.world.resources
+        ) {
+
+            if (
+                !resource.alive
+            ) {
+
+                continue;
+
+            }
+
+
+            const d =
+                distance(
+
+                    player.x,
+                    player.y,
+
+                    resource.x,
+                    resource.y
+
+                );
+
+
+            if (
+                d <=
+                    GAME_CONFIG
+                        .pickupDistance &&
+                d <
+                    bestDistance
+            ) {
+
+                best = {
+
+                    type:
+                        "resource",
+
+                    id:
+                        resource.id,
+
+                    target:
+                        resource,
+
+                    itemId:
+                        resource.type,
+
+                    duration:
+                        GAME_CONFIG
+                            .resourceHoldSeconds
+
+                };
+
+
+                bestDistance =
+                    d;
+
+            }
+
+        }
+
+
+        return best;
+
+    }
+
+
+    function startHoldCollect(
+        collectible =
+            null
+    ) {
+
+        const target =
+            collectible ||
+            getNearestCollectible();
+
+
+        if (
+            !target ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const config =
+            COLLECTION_CONFIG[
+                target.itemId
+            ];
+
+
+        if (!config) {
+
+            return false;
+
+        }
+
+
+        if (
+            !canSpendPlayerResource(
+                "magic",
+                config.magicCost
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Magia insuficiente para coletar."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        if (
+            !canSpendPlayerResource(
+                "energy",
+                config.energyCost
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Energia insuficiente para coletar."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        state.holdAction = {
+
+            type:
+                target.type,
+
+            targetId:
+                target.id,
+
+            itemId:
+                target.itemId,
+
+            timer:
+                0,
+
+            duration:
+                target.duration
+
+        };
+
+
+        return true;
+
+    }
+
+
+    function cancelHoldCollect() {
+
+        state.holdAction =
+            null;
+
+    }
+
+
+    function findHoldTarget() {
+
+        if (
+            !state.holdAction ||
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        if (
+            state.holdAction.type ===
+            "tree"
+        ) {
+
+            return (
+
+                state.world.trees
+                    .find(
+                        tree =>
+                            tree.id ===
+                            state.holdAction
+                                .targetId
+                    ) ||
+
+                null
+
+            );
+
+        }
+
+
+        return (
+
+            state.world.resources
+                .find(
+                    resource =>
+                        resource.id ===
+                        state.holdAction
+                            .targetId
+                ) ||
+
+            null
+
+        );
+
+    }
+
+
+    function completeHoldCollection() {
+
+        const action =
+            state.holdAction;
+
+
+        const player =
+            state.player;
+
+
+        const target =
+            findHoldTarget();
+
+
+        if (
+            !action ||
+            !player ||
+            !target ||
+            !target.alive
+        ) {
+
+            cancelHoldCollect();
+
+            return false;
+
+        }
+
+
+        const config =
+            COLLECTION_CONFIG[
+                action.itemId
+            ];
+
+
+        if (!config) {
+
+            cancelHoldCollect();
+
+            return false;
+
+        }
+
+
+        if (
+            !canSpendPlayerResource(
+                "magic",
+                config.magicCost
+            ) ||
+            !canSpendPlayerResource(
+                "energy",
+                config.energyCost
+            )
+        ) {
+
+            cancelHoldCollect();
+
+            return false;
+
+        }
+
+
+        const amount =
+
+            action.type ===
+            "tree"
+
+                ? randomInt(
+                    config.amountMin,
+                    config.amountMax
+                )
+
+                : randomInt(
+                    target.amountMin,
+                    target.amountMax
+                );
+
+
+        if (
+            !canCarryItem(
+                action.itemId,
+                amount
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Seu inventário está cheio."
+                );
+
+            }
+
+
+            cancelHoldCollect();
+
+            return false;
+
+        }
+
+
+        spendPlayerResource(
+            "magic",
+            config.magicCost
+        );
+
+
+        spendPlayerResource(
+            "energy",
+            config.energyCost
+        );
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteHunger
+            )
+        ) {
+
+            player.hunger =
+                Math.max(
+                    0,
+                    player.hunger -
+                    config.hungerCost
+                );
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteFatigue
+            )
+        ) {
+
+            player.fatigue =
+                Math.max(
+                    0,
+                    player.fatigue -
+                    config.fatigueCost
+                );
+
+        }
+
+
+        addItem(
+            action.itemId,
+            amount,
+            {
+                silent:
+                    true
+            }
+        );
+
+
+        target.alive =
+            false;
+
+
+        target.respawnTimer =
+            config.respawn;
+
+
+        gainXP(
+            config.xp
+        );
+
+
+        spawnRadialParticles(
+
+            target.x,
+
+            target.y,
+
+            action.type ===
+                "tree"
+                    ? "#a78354"
+                    : getResourceColor(
+                        action.itemId
+                    ),
+
+            12,
+
+            85
+
+        );
+
+
+        if (
+            typeof showToast ===
+            "function"
+        ) {
+
+            showToast(
+
+                `+${amount} ${ITEMS[action.itemId]?.name || action.itemId}`
+
+            );
+
+        }
+
+
+        cancelHoldCollect();
+
+
+        return true;
+
+    }
+
+
+    function updateHoldCollection(
+        dt
+    ) {
+
+        const action =
+            state.holdAction;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            !action ||
+            !player
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            SOLTOU E = PARA.
+        */
+
+        if (
+            !state.keys.has(
+                "KeyE"
+            )
+        ) {
+
+            cancelHoldCollect();
+
+            return;
+
+        }
+
+
+        const target =
+            findHoldTarget();
+
+
+        if (
+            !target ||
+            !target.alive
+        ) {
+
+            cancelHoldCollect();
+
+            return;
+
+        }
+
+
+        const d =
+            distance(
+
+                player.x,
+                player.y,
+
+                target.x,
+                target.y
+
+            );
+
+
+        if (
+            d >
+            GAME_CONFIG
+                .pickupDistance +
+                18
+        ) {
+
+            cancelHoldCollect();
+
+            return;
+
+        }
+
+
+        action.timer +=
+            dt;
+
+
+        if (
+            action.timer >=
+            action.duration
+        ) {
+
+            completeHoldCollection();
+
+        }
+
+    }
+
+
+    function updateResources(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const tree of
+            state.world.trees
+        ) {
+
+            if (
+                tree.alive
+            ) {
+
+                continue;
+
+            }
+
+
+            tree.respawnTimer -=
+                dt;
+
+
+            if (
+                tree.respawnTimer <=
+                0
+            ) {
+
+                tree.alive =
+                    true;
+
+
+                tree.respawnTimer =
+                    0;
+
+            }
+
+        }
+
+
+        for (
+            const resource of
+            state.world.resources
+        ) {
+
+            if (
+                resource.alive
+            ) {
+
+                continue;
+
+            }
+
+
+            resource.respawnTimer -=
+                dt;
+
+
+            if (
+                resource.respawnTimer <=
+                0
+            ) {
+
+                resource.alive =
+                    true;
+
+
+                resource.respawnTimer =
+                    0;
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       PARTÍCULAS / EFEITOS
+       ========================================================= */
+
+    function spawnParticle(
+        config
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        state.world.particles.push({
+
+            id:
+                uid(
+                    "particle"
+                ),
+
+            x:
+                config.x,
+
+            y:
+                config.y,
+
+            vx:
+                config.vx ||
+                0,
+
+            vy:
+                config.vy ||
+                0,
+
+            gravity:
+                config.gravity ||
+                0,
+
+            color:
+                config.color ||
+                "#ffffff",
+
+            radius:
+                config.radius ||
+                2,
+
+            life:
+                config.life ||
+                0.6,
+
+            maxLife:
+                config.life ||
+                0.6
+
+        });
+
+    }
+
+
+    function spawnRadialParticles(
+        x,
+        y,
+        color,
+        count =
+            10,
+        speed =
+            90
+    ) {
+
+        for (
+            let index = 0;
+            index < count;
+            index++
+        ) {
+
+            const angle =
+                random(
+                    0,
+                    Math.PI *
+                    2
+                );
+
+
+            const velocity =
+                random(
+                    speed *
+                    0.35,
+                    speed
+                );
+
+
+            spawnParticle({
+
+                x:
+                    x +
+                    random(
+                        -4,
+                        4
+                    ),
+
+                y:
+                    y +
+                    random(
+                        -4,
+                        4
+                    ),
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    velocity,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    velocity,
+
+                gravity:
+                    random(
+                        0,
+                        25
+                    ),
+
+                color,
+
+                radius:
+                    random(
+                        1.5,
+                        3.8
+                    ),
+
+                life:
+                    random(
+                        0.25,
+                        0.75
+                    )
+
+            });
+
+        }
+
+    }
+
+
+    function spawnFloatingText(
+        x,
+        y,
+        text,
+        color =
+            "#ffffff",
+        duration =
+            1
+    ) {
+
+        state.world
+            ?.effects
+            ?.push({
+
+                id:
+                    uid(
+                        "floating"
+                    ),
+
+                type:
+                    "floatingText",
+
+                x,
+                y,
+
+                text,
+
+                color,
+
+                timer:
+                    duration,
+
+                duration
+
+            });
+
+    }
+
+
+    function spawnAttackFlash(
+        x,
+        y,
+        color,
+        radius =
+            20
+    ) {
+
+        state.world
+            ?.effects
+            ?.push({
+
+                id:
+                    uid(
+                        "attack_flash"
+                    ),
+
+                type:
+                    "attackFlash",
+
+                x,
+                y,
+
+                color,
+
+                radius,
+
+                timer:
+                    0.18,
+
+                duration:
+                    0.18
+
+            });
+
+    }
+
+
+    function spawnGroundRing(
+        x,
+        y,
+        radius,
+        color,
+        duration =
+            0.4
+    ) {
+
+        state.world
+            ?.effects
+            ?.push({
+
+                id:
+                    uid(
+                        "ground_ring"
+                    ),
+
+                type:
+                    "groundRing",
+
+                x,
+                y,
+
+                radius,
+
+                color,
+
+                timer:
+                    duration,
+
+                duration
+
+            });
+
+    }
+
+
+    function spawnSlashEffect(
+        config
+    ) {
+
+        state.world
+            ?.effects
+            ?.push({
+
+                id:
+                    uid(
+                        "slash"
+                    ),
+
+                type:
+                    config.type ||
+                    "arc",
+
+                x:
+                    config.x,
+
+                y:
+                    config.y,
+
+                directionX:
+                    config.directionX,
+
+                directionY:
+                    config.directionY,
+
+                range:
+                    config.range,
+
+                arc:
+                    config.arc,
+
+                offset:
+                    config.offset ||
+                    0,
+
+                color:
+                    config.color,
+
+                timer:
+                    config.duration ||
+                    0.24,
+
+                duration:
+                    config.duration ||
+                    0.24
+
+            });
+
+    }
+
+
+    function updateParticles(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const particle of
+            state.world.particles
+        ) {
+
+            particle.life -=
+                dt;
+
+
+            particle.vy +=
+                particle.gravity *
+                dt;
+
+
+            particle.x +=
+                particle.vx *
+                dt;
+
+
+            particle.y +=
+                particle.vy *
+                dt;
+
+
+            particle.vx *=
+                Math.pow(
+                    0.08,
+                    dt
+                );
+
+        }
+
+
+        state.world.particles =
+            state.world.particles
+                .filter(
+                    particle =>
+                        particle.life >
+                        0
+                );
+
+    }
+
+
+    function updateGameplayEffects(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const effect of
+            state.world.effects
+        ) {
+
+            if (
+                effect.logicalArea
+            ) {
+
+                continue;
+
+            }
+
+
+            effect.timer -=
+                dt;
+
+        }
+
+
+        state.world.effects =
+            state.world.effects
+                .filter(
+                    effect =>
+                        effect.logicalArea ||
+                        effect.timer >
+                            0
+                );
+
+    }
+
+
+    /* =========================================================
+       SANGUE
+       ========================================================= */
+
+    function createBloodMark(
+        x,
+        y,
+        intensity =
+            1
+    ) {
+
+        while (
+            state.bloodMarks.length >=
+            MAX_BLOOD_MARKS
+        ) {
+
+            state.bloodMarks.shift();
+
+        }
+
+
+        const life =
+            random(
+
+                VISUAL_CONFIG
+                    .blood
+                    .markLifeMin,
+
+                VISUAL_CONFIG
+                    .blood
+                    .markLifeMax
+
+            );
+
+
+        state.bloodMarks.push({
+
+            x:
+                x +
+                random(
+                    -12,
+                    12
+                ),
+
+            y:
+                y +
+                random(
+                    -8,
+                    8
+                ),
+
+            radius:
+                random(
+
+                    VISUAL_CONFIG
+                        .blood
+                        .markMin,
+
+                    VISUAL_CONFIG
+                        .blood
+                        .markMax
+
+                ) *
+                intensity,
+
+            stretch:
+                random(
+                    1,
+                    2.3
+                ),
+
+            angle:
+                random(
+                    0,
+                    Math.PI *
+                    2
+                ),
+
+            life,
+
+            maxLife:
+                life
+
+        });
+
+    }
+
+
+    function updateBloodEffects(
+        dt
+    ) {
+
+        for (
+            const mark of
+            state.bloodMarks
+        ) {
+
+            mark.life -=
+                dt;
+
+        }
+
+
+        state.bloodMarks =
+            state.bloodMarks
+                .filter(
+                    mark =>
+                        mark.life >
+                        0
+                );
+
+
+        state.damageFlash =
+            Math.max(
+                0,
+                state.damageFlash -
+                dt *
+                1.7
+            );
+
+    }
+
+
+    /* =========================================================
+       BUSCA DE INIMIGOS
+       ========================================================= */
+
+    function getLivingEnemies() {
+
+        return (
+            state.world
+                ?.enemies
+                ?.filter(
+                    enemy =>
+                        !enemy.dead
+                ) ||
+            []
+        );
+
+    }
+
+
+    function getEnemiesInRadius(
+        x,
+        y,
+        radius
+    ) {
+
+        return getLivingEnemies()
+            .filter(
+                enemy =>
+
+                    distance(
+                        x,
+                        y,
+                        enemy.x,
+                        enemy.y
+                    ) <=
+
+                    radius +
+                    enemy.radius
+            );
+
+    }
+
+
+    function getEnemiesInArc(
+        x,
+        y,
+        directionX,
+        directionY,
+        range,
+        arc
+    ) {
+
+        const directionAngle =
+            Math.atan2(
+                directionY,
+                directionX
+            );
+
+
+        return getLivingEnemies()
+            .filter(
+                enemy => {
+
+                    const dx =
+                        enemy.x -
+                        x;
+
+
+                    const dy =
+                        enemy.y -
+                        y;
+
+
+                    const d =
+                        Math.hypot(
+                            dx,
+                            dy
+                        );
+
+
+                    if (
+                        d >
+                        range +
+                        enemy.radius
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    const angle =
+                        Math.atan2(
+                            dy,
+                            dx
+                        );
+
+
+                    let difference =
+                        angle -
+                        directionAngle;
+
+
+                    while (
+                        difference >
+                        Math.PI
+                    ) {
+
+                        difference -=
+                            Math.PI *
+                            2;
+
+                    }
+
+
+                    while (
+                        difference <
+                        -Math.PI
+                    ) {
+
+                        difference +=
+                            Math.PI *
+                            2;
+
+                    }
+
+
+                    return (
+
+                        Math.abs(
+                            difference
+                        ) <=
+                        arc /
+                        2
+
+                    );
+
+                }
+            );
+
+    }
+
+
+    function findEnemiesAtArea(
+        x,
+        y,
+        radius,
+        exclude =
+            null
+    ) {
+
+        return getLivingEnemies()
+            .filter(
+                enemy => {
+
+                    if (
+                        exclude &&
+                        exclude.has(
+                            enemy.id
+                        )
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    return circleCircleCollision(
+
+                        x,
+                        y,
+                        radius,
+
+                        enemy.x,
+                        enemy.y,
+                        enemy.radius
+
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       PROGRESSÃO BOSS — NÃO TOMAR DANO ANTES DE ACEITAR
+       ========================================================= */
+
+    function ensureBossAcceptedBeforeDamage(
+        enemy
+    ) {
+
+        if (
+            !enemy ||
+            enemy.type !==
+                "progression" ||
+            enemy.accepted
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            typeof openBattleConfirmation ===
+            "function"
+        ) {
+
+            openBattleConfirmation(
+                enemy
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       DANO NO INIMIGO
+       ========================================================= */
+
+    function damageEnemy(
+        enemy,
+        rawDamage,
+        options = {}
+    ) {
+
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !ensureBossAcceptedBeforeDamage(
+                enemy
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        const poweredDamage =
+
+            options.ignoreDev
+
+                ? rawDamage
+
+                : devModifyOutgoingDamage(
+                    rawDamage
+                );
+
+
+        const defense =
+            Math.max(
+                0,
+                finiteNumber(
+                    enemy.defense,
+                    0
+                )
+            );
+
+
+        const damage =
+            Math.max(
+
+                PLAYER_COMBAT_CONFIG
+                    .minimumDamage,
+
+                poweredDamage -
+
+                defense *
+                PLAYER_COMBAT_CONFIG
+                    .damageReductionPerDefense
+
+            );
+
+
+        enemy.hp =
+            Math.max(
+                0,
+                enemy.hp -
+                damage
+            );
+
+
+        enemy.hitFlash =
+            0.16;
+
+
+        enemy.aggressive =
+            true;
+
+
+        if (
+            enemy.type ===
+            "progression"
+        ) {
+
+            enemy.accepted =
+                true;
+
+        }
+
+
+        spawnRadialParticles(
+
+            enemy.x,
+
+            enemy.y,
+
+            enemy.color ||
+            "#9f3138",
+
+            7,
+
+            75
+
+        );
+
+
+        createBloodMark(
+            enemy.x,
+            enemy.y,
+            enemy.type ===
+                "progression"
+                    ? 1.25
+                    : 0.8
+        );
+
+
+        if (
+            enemy.hp <=
+            0
+        ) {
+
+            defeatEnemy(
+                enemy
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       DERROTA DE INIMIGO
+       ========================================================= */
+
+    function defeatEnemy(
+        enemy
+    ) {
+
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+
+            return;
+
+        }
+
+
+        enemy.dead =
+            true;
+
+
+        enemy.hp =
+            0;
+
+
+        enemy.aggressive =
+            false;
+
+
+        enemy.charge =
+            null;
+
+
+        enemy.telegraph =
+            null;
+
+
+        gainXP(
+            enemy.xp ||
+            0
+        );
+
+
+        addMoney(
+            enemy.money ||
+            0
+        );
+
+
+        if (
+            enemy.drop &&
+            enemy.dropAmount >
+                0
+        ) {
+
+            addItem(
+
+                enemy.drop,
+
+                enemy.dropAmount,
+
+                {
+                    silent:
+                        true
+                }
+
+            );
+
+        }
+
+
+        spawnRadialParticles(
+
+            enemy.x,
+
+            enemy.y,
+
+            enemy.aura ||
+            enemy.color ||
+            "#ffffff",
+
+            enemy.type ===
+                "progression"
+                    ? 28
+                    : 14,
+
+            enemy.type ===
+                "progression"
+                    ? 180
+                    : 110
+
+        );
+
+
+        if (
+            enemy.type ===
+            "progression"
+        ) {
+
+            if (
+                !state.player
+                    .defeatedBosses
+                    .includes(
+                        enemy.id
+                    )
+            ) {
+
+                state.player
+                    .defeatedBosses
+                    .push(
+                        enemy.id
+                    );
+
+            }
+
+
+            if (
+                enemy.id ===
+                "monarch"
+            ) {
+
+                state.player.monarchDefeated =
+                    true;
+
+            }
+
+
+            if (
+                enemy.unlock &&
+                !state.player
+                    .unlockedAreas
+                    .includes(
+                        enemy.unlock
+                    )
+            ) {
+
+                state.player
+                    .unlockedAreas
+                    .push(
+                        enemy.unlock
+                    );
+
+            }
+
+
+            if (
+                typeof handleProgressionBossDefeat ===
+                "function"
+            ) {
+
+                handleProgressionBossDefeat(
+                    enemy
+                );
+
+            }
+
+        }
+
+
+        if (
+            enemy.bossType ===
+            "resourceBoss"
+        ) {
+
+            enemy.respawnTimer =
+                120;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ATAQUE BÁSICO
+
+       1 CLICK = 1 ATAQUE.
+
+       O mouse segurado NÃO chama esta função
+       novamente sozinho.
+       ========================================================= */
+
+    function performBasicAttack() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead ||
+            state.paused ||
+            state.dialogue ||
+            state.travel ||
+            state.battle ||
+            player.resting
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.attackCooldown >
+            0
+        ) {
+
+            return false;
+
+        }
+
+
+        const character =
+            currentCharacter();
+
+
+        const attack =
+            character.basicAttack;
+
+
+        const energyCost =
+
+            PLAYER_COMBAT_CONFIG
+                .basicAttackEnergy[
+                    character.id
+                ] ||
+            5;
+
+
+        if (
+            !spendPlayerResource(
+                "energy",
+                energyCost
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Energia insuficiente."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        player.attackCooldown =
+            GAME_CONFIG
+                .baseAttackCooldown;
+
+
+        drainAttackSurvival();
+
+
+        const direction =
+            pointerDirectionFromPlayer();
+
+
+        updatePlayerFacing(
+            direction.x,
+            direction.y
+        );
+
+
+        switch (
+            attack.type
+        ) {
+
+            case "projectile":
+
+                spawnPlayerProjectile({
+
+                    x:
+                        player.x +
+                        direction.x *
+                        24,
+
+                    y:
+                        player.y +
+                        direction.y *
+                        24,
+
+                    vx:
+                        direction.x *
+                        attack.speed,
+
+                    vy:
+                        direction.y *
+                        attack.speed,
+
+                    radius:
+                        attack.radius,
+
+                    hitRadius:
+                        attack.hitRadius,
+
+                    range:
+                        attack.range,
+
+                    damage:
+                        getPlayerAttackPower() *
+                        attack.damageMultiplier,
+
+                    color:
+                        attack.color,
+
+                    secondaryColor:
+                        attack.secondaryColor
+
+                });
+
+
+                spawnAttackFlash(
+
+                    player.x +
+                    direction.x *
+                    24,
+
+                    player.y +
+                    direction.y *
+                    24,
+
+                    attack.color,
+
+                    24
+
+                );
+
+                break;
+
+
+            case "arc":
+
+                performPlayerArcAttack(
+                    direction,
+                    attack
+                );
+
+                break;
+
+
+            case "smash":
+
+                performPlayerSmash(
+                    direction,
+                    attack
+                );
+
+                break;
+
+
+            case "doubleSlash":
+
+                performPlayerDoubleSlash(
+                    direction,
+                    attack
+                );
+
+                break;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function drainAttackSurvival() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteHunger
+            )
+        ) {
+
+            player.hunger =
+                Math.max(
+
+                    0,
+
+                    player.hunger -
+                    PLAYER_COMBAT_CONFIG
+                        .hungerPerAttack
+
+                );
+
+        }
+
+
+        if (
+            !(
+                state.dev
+                    ?.unlocked &&
+                state.dev
+                    .infiniteFatigue
+            )
+        ) {
+
+            player.fatigue =
+                Math.max(
+
+                    0,
+
+                    player.fatigue -
+                    PLAYER_COMBAT_CONFIG
+                        .fatiguePerAttack
+
+                );
+
+        }
+
+    }
+
+
+    function performPlayerArcAttack(
+        direction,
+        attack
+    ) {
+
+        const player =
+            state.player;
+
+
+        spawnSlashEffect({
+
+            type:
+                "arc",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            range:
+                attack.range,
+
+            arc:
+                attack.arc,
+
+            color:
+                attack.color,
+
+            duration:
+                0.22
+
+        });
+
+
+        const enemies =
+            getEnemiesInArc(
+
+                player.x,
+                player.y,
+
+                direction.x,
+                direction.y,
+
+                attack.range +
+                attack.hitRadius,
+
+                attack.arc
+
+            );
+
+
+        for (
+            const enemy of
+            enemies
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                attack.damageMultiplier
+
+            );
+
+        }
+
+    }
+
+
+    function performPlayerSmash(
+        direction,
+        attack
+    ) {
+
+        const player =
+            state.player;
+
+
+        const impactX =
+
+            player.x +
+
+            direction.x *
+            attack.range *
+            0.55;
+
+
+        const impactY =
+
+            player.y +
+
+            direction.y *
+            attack.range *
+            0.55;
+
+
+        spawnGroundRing(
+
+            impactX,
+            impactY,
+
+            attack.hitRadius,
+
+            attack.color,
+
+            0.34
+
+        );
+
+
+        spawnRadialParticles(
+
+            impactX,
+            impactY,
+
+            attack.secondaryColor,
+
+            18,
+
+            125
+
+        );
+
+
+        state.screenShake =
+            0.16;
+
+
+        state.screenShakePower =
+            5;
+
+
+        for (
+            const enemy of
+            getEnemiesInRadius(
+                impactX,
+                impactY,
+                attack.hitRadius
+            )
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                attack.damageMultiplier
+
+            );
+
+        }
+
+    }
+
+
+    function performPlayerDoubleSlash(
+        direction,
+        attack
+    ) {
+
+        const player =
+            state.player;
+
+
+        for (
+            let index = 0;
+            index < 2;
+            index++
+        ) {
+
+            spawnSlashEffect({
+
+                type:
+                    "riftSlash",
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                directionX:
+                    direction.x,
+
+                directionY:
+                    direction.y,
+
+                range:
+                    attack.range,
+
+                arc:
+                    attack.arc,
+
+                offset:
+                    index ===
+                        0
+                            ? -9
+                            : 9,
+
+                color:
+                    attack.color,
+
+                duration:
+                    0.25 +
+                    index *
+                    0.03
+
+            });
+
+        }
+
+
+        for (
+            const enemy of
+            getEnemiesInArc(
+
+                player.x,
+                player.y,
+
+                direction.x,
+                direction.y,
+
+                attack.range +
+                attack.hitRadius,
+
+                attack.arc
+
+            )
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                attack.damageMultiplier
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       PROJÉTEIS DO PLAYER
+       ========================================================= */
+
+    function spawnPlayerProjectile(
+        config
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        const projectile = {
+
+            id:
+                uid(
+                    "player_projectile"
+                ),
+
+            x:
+                config.x,
+
+            y:
+                config.y,
+
+            startX:
+                config.x,
+
+            startY:
+                config.y,
+
+            vx:
+                config.vx,
+
+            vy:
+                config.vy,
+
+            radius:
+                config.radius ||
+                7,
+
+            hitRadius:
+                config.hitRadius ||
+                config.radius ||
+                7,
+
+            range:
+                config.range ||
+                300,
+
+            damage:
+                config.damage ||
+                1,
+
+            color:
+                config.color ||
+                "#ffffff",
+
+            secondaryColor:
+                config.secondaryColor ||
+                "#ffffff",
+
+            dead:
+                false,
+
+            hitIds:
+                new Set(),
+
+            life:
+                config.life ||
+                2
+
+        };
+
+
+        state.world
+            .projectiles
+            .push(
+                projectile
+            );
+
+
+        return projectile;
+
+    }
+
+
+    function updatePlayerProjectiles(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const projectile of
+            state.world.projectiles
+        ) {
+
+            if (
+                projectile.dead
+            ) {
+
+                continue;
+
+            }
+
+
+            projectile.life -=
+                dt;
+
+
+            const movement =
+
+                Math.hypot(
+                    projectile.vx,
+                    projectile.vy
+                ) *
+
+                dt;
+
+
+            const steps =
+                Math.max(
+
+                    1,
+
+                    Math.ceil(
+                        movement /
+                        8
+                    )
+
+                );
+
+
+            const stepX =
+
+                projectile.vx *
+                dt /
+                steps;
+
+
+            const stepY =
+
+                projectile.vy *
+                dt /
+                steps;
+
+
+            for (
+                let step = 0;
+                step < steps;
+                step++
+            ) {
+
+                projectile.x +=
+                    stepX;
+
+
+                projectile.y +=
+                    stepY;
+
+
+                if (
+                    isCircleBlockedByWorld(
+
+                        projectile.x,
+                        projectile.y,
+
+                        projectile.radius,
+
+                        {
+                            ignoreDarknessBarrier:
+                                true
+                        }
+
+                    )
+                ) {
+
+                    projectile.dead =
+                        true;
+
+
+                    spawnRadialParticles(
+
+                        projectile.x,
+                        projectile.y,
+
+                        projectile.color,
+
+                        6,
+
+                        55
+
+                    );
+
+
+                    break;
+
+                }
+
+
+                const targets =
+                    findEnemiesAtArea(
+
+                        projectile.x,
+                        projectile.y,
+
+                        projectile.hitRadius,
+
+                        projectile.hitIds
+
+                    );
+
+
+                if (
+                    targets.length >
+                    0
+                ) {
+
+                    const target =
+                        targets[0];
+
+
+                    if (
+                        !ensureBossAcceptedBeforeDamage(
+                            target
+                        )
+                    ) {
+
+                        projectile.dead =
+                            true;
+
+                        break;
+
+                    }
+
+
+                    projectile.hitIds.add(
+                        target.id
+                    );
+
+
+                    damageEnemy(
+                        target,
+                        projectile.damage
+                    );
+
+
+                    spawnRadialParticles(
+
+                        projectile.x,
+                        projectile.y,
+
+                        projectile.secondaryColor,
+
+                        8,
+
+                        85
+
+                    );
+
+
+                    projectile.dead =
+                        true;
+
+
+                    break;
+
+                }
+
+            }
+
+
+            if (
+                distance(
+
+                    projectile.startX,
+                    projectile.startY,
+
+                    projectile.x,
+                    projectile.y
+
+                ) >=
+                projectile.range
+            ) {
+
+                projectile.dead =
+                    true;
+
+            }
+
+
+            if (
+                projectile.life <=
+                0
+            ) {
+
+                projectile.dead =
+                    true;
+
+            }
+
+        }
+
+
+        state.world.projectiles =
+            state.world.projectiles
+                .filter(
+                    projectile =>
+                        !projectile.dead
+                );
+
+    }
+
+
+    /* =========================================================
+       ÁREAS ATRASADAS
+       ========================================================= */
+
+    function spawnDelayedAreaAttack(
+        config
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        const playerSource =
+            config.source ===
+            "player";
+
+
+        state.world.effects.push({
+
+            id:
+                uid(
+                    "delayed_area"
+                ),
+
+            type:
+                playerSource
+                    ? "delayedPlayerArea"
+                    : "delayedEnemyArea",
+
+            logicalArea:
+                true,
+
+            x:
+                config.x,
+
+            y:
+                config.y,
+
+            radius:
+                config.radius,
+
+            innerRadius:
+                config.innerRadius ||
+                0,
+
+            delay:
+                config.delay,
+
+            damage:
+                config.damage,
+
+            color:
+                config.color,
+
+            source:
+                config.source,
+
+            status:
+                config.status ||
+                null,
+
+            triggered:
+                false,
+
+            timer:
+                config.delay,
+
+            duration:
+                config.delay
+
+        });
+
+    }
+
+
+    function triggerDelayedArea(
+        effect
+    ) {
+
+        if (
+            effect.source ===
+            "player"
+        ) {
+
+            for (
+                const enemy of
+                getEnemiesInRadius(
+
+                    effect.x,
+                    effect.y,
+                    effect.radius
+
+                )
+            ) {
+
+                const d =
+                    distance(
+
+                        effect.x,
+                        effect.y,
+
+                        enemy.x,
+                        enemy.y
+
+                    );
+
+
+                if (
+                    effect.innerRadius >
+                        0 &&
+                    d <
+                        effect.innerRadius
+                ) {
+
+                    continue;
+
+                }
+
+
+                damageEnemy(
+                    enemy,
+                    effect.damage
+                );
+
+            }
+
+        }
+
+        else {
+
+            const player =
+                state.player;
+
+
+            if (
+                player &&
+                !player.dead
+            ) {
+
+                const d =
+                    distance(
+
+                        effect.x,
+                        effect.y,
+
+                        player.x,
+                        player.y
+
+                    );
+
+
+                if (
+                    d <=
+                        effect.radius +
+                        player.radius &&
+                    (
+                        effect.innerRadius <=
+                            0 ||
+                        d >=
+                            effect.innerRadius
+                    )
+                ) {
+
+                    damagePlayer(
+                        effect.damage,
+                        {
+                            source:
+                                effect.source
+                        }
+                    );
+
+
+                    applyPlayerStatusFromEnemy(
+                        effect.status
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        spawnGroundRing(
+
+            effect.x,
+            effect.y,
+
+            effect.radius,
+
+            effect.color,
+
+            0.28
+
+        );
+
+
+        spawnRadialParticles(
+
+            effect.x,
+            effect.y,
+
+            effect.color,
+
+            16,
+
+            120
+
+        );
+
+
+        effect.logicalArea =
+            false;
+
+
+        effect.triggered =
+            true;
+
+
+        effect.timer =
+            0.28;
+
+
+        effect.duration =
+            0.28;
+
+    }
+
+
+    function updateDelayedAreas(
+        dt
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const effect of
+            state.world.effects
+        ) {
+
+            if (
+                !effect.logicalArea
+            ) {
+
+                continue;
+
+            }
+
+
+            effect.delay -=
+                dt;
+
+
+            effect.timer =
+                Math.max(
+                    0,
+                    effect.delay
+                );
+
+
+            if (
+                effect.delay <=
+                0
+            ) {
+
+                triggerDelayedArea(
+                    effect
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SKILLS
+       ========================================================= */
+
+    function useClassSkill(
+        slot
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead ||
+            state.paused ||
+            state.dialogue ||
+            state.travel ||
+            state.battle ||
+            player.resting
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        const character =
+            currentCharacter();
+
+
+        const skill =
+            CLASS_SKILLS[
+                character.id
+            ]?.[
+                slot
+            ];
+
+
+        if (!skill) {
+
+            return false;
+
+        }
+
+
+        if (
+            finiteNumber(
+                player.skillCooldowns[
+                    slot
+                ],
+                0
+            ) >
+            0
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !canSpendPlayerResource(
+                skill.costType,
+                skill.cost
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+
+                    skill.costType ===
+                    "magic"
+
+                        ? "Magia insuficiente."
+
+                        : "Energia insuficiente."
+
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        const direction =
+            pointerDirectionFromPlayer();
+
+
+        updatePlayerFacing(
+            direction.x,
+            direction.y
+        );
+
+
+        let success =
+            false;
+
+
+        switch (
+            skill.id
+        ) {
+
+            case "memoryRay":
+
+                success =
+                    skillMemoryRay(
+                        direction
+                    );
+
+                break;
+
+
+            case "arcaneCircle":
+
+                success =
+                    skillArcaneCircle();
+
+                break;
+
+
+            case "memoryExplosion":
+
+                success =
+                    skillMemoryExplosion(
+                        direction
+                    );
+
+                break;
+
+
+            case "guardianStrike":
+
+                success =
+                    skillGuardianStrike(
+                        direction
+                    );
+
+                break;
+
+
+            case "ironGuard":
+
+                success =
+                    skillIronGuard();
+
+                break;
+
+
+            case "guardianRush":
+
+                success =
+                    skillGuardianRush(
+                        direction
+                    );
+
+                break;
+
+
+            case "crushingBlow":
+
+                success =
+                    skillCrushingBlow(
+                        direction
+                    );
+
+                break;
+
+
+            case "stoneRoar":
+
+                success =
+                    skillStoneRoar();
+
+                break;
+
+
+            case "earthBreaker":
+
+                success =
+                    skillEarthBreaker();
+
+                break;
+
+
+            case "vitalLight":
+
+                success =
+                    skillVitalLight();
+
+                break;
+
+
+            case "fairyBurst":
+
+                success =
+                    skillFairyBurst(
+                        direction
+                    );
+
+                break;
+
+
+            case "starRain":
+
+                success =
+                    skillStarRain();
+
+                break;
+
+
+            case "adaptiveCut":
+
+                success =
+                    skillAdaptiveCut(
+                        direction
+                    );
+
+                break;
+
+
+            case "adaptiveForm":
+
+                success =
+                    skillAdaptiveForm();
+
+                break;
+
+
+            case "riftStep":
+
+                success =
+                    skillRiftStep(
+                        direction
+                    );
+
+                break;
+
+        }
+
+
+        if (!success) {
+
+            return false;
+
+        }
+
+
+        spendPlayerResource(
+            skill.costType,
+            skill.cost
+        );
+
+
+        player.skillCooldowns[
+            slot
+        ] =
+            skill.cooldown;
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       KAELION
+       ========================================================= */
+
+    function skillMemoryRay(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        for (
+            let index = -1;
+            index <= 1;
+            index++
+        ) {
+
+            const angle =
+
+                Math.atan2(
+                    direction.y,
+                    direction.x
+                ) +
+
+                index *
+                0.075;
+
+
+            spawnPlayerProjectile({
+
+                x:
+                    player.x +
+                    Math.cos(
+                        angle
+                    ) *
+                    24,
+
+                y:
+                    player.y +
+                    Math.sin(
+                        angle
+                    ) *
+                    24,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    590,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    590,
+
+                radius:
+                    7,
+
+                hitRadius:
+                    17,
+
+                range:
+                    460,
+
+                damage:
+                    getPlayerAttackPower() *
+                    0.66,
+
+                color:
+                    "#ef9545",
+
+                secondaryColor:
+                    "#ffd7a7"
+
+            });
+
+        }
+
+
+        spawnRadialParticles(
+            player.x,
+            player.y,
+            "#f0a35d",
+            12,
+            95
+        );
+
+
+        return true;
+
+    }
+
+
+    function skillArcaneCircle() {
+
+        const player =
+            state.player;
+
+
+        const radius =
+            125;
+
+
+        spawnGroundRing(
+
+            player.x,
+            player.y,
+
+            radius,
+
+            "#ee984f",
+
+            0.65
+
+        );
+
+
+        for (
+            const enemy of
+            getEnemiesInRadius(
+                player.x,
+                player.y,
+                radius
+            )
+        ) {
+
+            if (
+                !ensureBossAcceptedBeforeDamage(
+                    enemy
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                1.12
+
+            );
+
+
+            enemy.slow =
+                Math.max(
+                    finiteNumber(
+                        enemy.slow,
+                        0
+                    ),
+                    1.1
+                );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function skillMemoryExplosion(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        spawnDelayedAreaAttack({
+
+            x:
+                player.x +
+                direction.x *
+                150,
+
+            y:
+                player.y +
+                direction.y *
+                150,
+
+            radius:
+                105,
+
+            delay:
+                0.55,
+
+            damage:
+                getPlayerAttackPower() *
+                1.65,
+
+            color:
+                "#f3a55b",
+
+            source:
+                "player"
+
+        });
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       THERON
+       ========================================================= */
+
+    function skillGuardianStrike(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        spawnSlashEffect({
+
+            type:
+                "heavyArc",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            range:
+                118,
+
+            arc:
+                Math.PI *
+                0.95,
+
+            color:
+                "#e8ecee",
+
+            duration:
+                0.3
+
+        });
+
+
+        for (
+            const enemy of
+            getEnemiesInArc(
+
+                player.x,
+                player.y,
+
+                direction.x,
+                direction.y,
+
+                118,
+
+                Math.PI *
+                0.95
+
+            )
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                1.35
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function skillIronGuard() {
+
+        const player =
+            state.player;
+
+
+        player.ironGuard = {
+
+            timer:
+                4.5,
+
+            damageReduction:
+                0.45
+
+        };
+
+
+        spawnGroundRing(
+
+            player.x,
+            player.y,
+
+            55,
+
+            "#d7dcdf",
+
+            0.55
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function skillGuardianRush(
+        direction
+    ) {
+
+        state.player.guardianRush = {
+
+            active:
+                true,
+
+            x:
+                direction.x,
+
+            y:
+                direction.y,
+
+            timer:
+                0.34,
+
+            speed:
+                470,
+
+            damage:
+                getPlayerAttackPower() *
+                1.42,
+
+            hitIds:
+                new Set()
+
+        };
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       GRUMGAR
+       ========================================================= */
+
+    function skillCrushingBlow(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        const impactX =
+            player.x +
+            direction.x *
+            55;
+
+
+        const impactY =
+            player.y +
+            direction.y *
+            55;
+
+
+        spawnGroundRing(
+
+            impactX,
+            impactY,
+
+            80,
+
+            "#8f8465",
+
+            0.45
+
+        );
+
+
+        for (
+            const enemy of
+            getEnemiesInRadius(
+                impactX,
+                impactY,
+                80
+            )
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                1.55
+
+            );
+
+        }
+
+
+        state.screenShake =
+            0.2;
+
+
+        state.screenShakePower =
+            7;
+
+
+        return true;
+
+    }
+
+
+    function skillStoneRoar() {
+
+        const player =
+            state.player;
+
+
+        const radius =
+            140;
+
+
+        spawnGroundRing(
+
+            player.x,
+            player.y,
+
+            radius,
+
+            "#91a373",
+
+            0.7
+
+        );
+
+
+        for (
+            const enemy of
+            getEnemiesInRadius(
+                player.x,
+                player.y,
+                radius
+            )
+        ) {
+
+            if (
+                !ensureBossAcceptedBeforeDamage(
+                    enemy
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            enemy.stun =
+                Math.max(
+
+                    finiteNumber(
+                        enemy.stun,
+                        0
+                    ),
+
+                    enemy.type ===
+                        "progression"
+
+                        ? 0.35
+
+                        : 1
+
+                );
+
+
+            const away =
+                normalize(
+
+                    enemy.x -
+                    player.x,
+
+                    enemy.y -
+                    player.y
+
+                );
+
+
+            pushEnemy(
+
+                enemy,
+
+                away.x *
+                28,
+
+                away.y *
+                28
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function skillEarthBreaker() {
+
+        const player =
+            state.player;
+
+
+        for (
+            let ring = 1;
+            ring <= 3;
+            ring++
+        ) {
+
+            spawnDelayedAreaAttack({
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                radius:
+                    65 +
+                    ring *
+                    48,
+
+                innerRadius:
+
+                    ring ===
+                    1
+
+                        ? 0
+
+                        : 65 +
+                          (
+                              ring -
+                              1
+                          ) *
+                          48,
+
+                delay:
+                    0.16 *
+                    ring,
+
+                damage:
+                    getPlayerAttackPower() *
+                    0.72,
+
+                color:
+                    "#8d8265",
+
+                source:
+                    "player"
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       LIRAEL
+       ========================================================= */
+
+    function skillVitalLight() {
+
+        const player =
+            state.player;
+
+
+        if (
+            player.hp >=
+            player.maxHp
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Sua vida já está cheia."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        player.hp =
+            Math.min(
+
+                player.maxHp,
+
+                player.hp +
+
+                Math.max(
+                    38,
+                    player.maxHp *
+                    0.3
+                )
+
+            );
+
+
+        spawnRadialParticles(
+
+            player.x,
+            player.y,
+
+            "#f5b6e3",
+
+            24,
+
+            115
+
+        );
+
+
+        state.world.effects.push({
+
+            id:
+                uid(
+                    "vital_light"
+                ),
+
+            type:
+                "vitalLight",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            timer:
+                0.9,
+
+            duration:
+                0.9
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function skillFairyBurst(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        for (
+            let index = -2;
+            index <= 2;
+            index++
+        ) {
+
+            const angle =
+
+                Math.atan2(
+                    direction.y,
+                    direction.x
+                ) +
+
+                index *
+                0.11;
+
+
+            spawnPlayerProjectile({
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    520,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    520,
+
+                radius:
+                    6,
+
+                hitRadius:
+                    15,
+
+                range:
+                    350,
+
+                damage:
+                    getPlayerAttackPower() *
+                    0.43,
+
+                color:
+                    "#f3a8df",
+
+                secondaryColor:
+                    "#ffe1f5"
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function skillStarRain() {
+
+        const player =
+            state.player;
+
+
+        const enemies =
+            getLivingEnemies();
+
+
+        const center =
+
+            enemies.length >
+            0
+
+                ? enemies
+                    .slice()
+                    .sort(
+                        (a, b) =>
+
+                            distance(
+                                player.x,
+                                player.y,
+                                a.x,
+                                a.y
+                            ) -
+
+                            distance(
+                                player.x,
+                                player.y,
+                                b.x,
+                                b.y
+                            )
+                    )[0]
+
+                : player;
+
+
+        for (
+            let index = 0;
+            index < 7;
+            index++
+        ) {
+
+            const angle =
+                random(
+                    0,
+                    Math.PI *
+                    2
+                );
+
+
+            const radius =
+                random(
+                    0,
+                    120
+                );
+
+
+            spawnDelayedAreaAttack({
+
+                x:
+                    center.x +
+                    Math.cos(
+                        angle
+                    ) *
+                    radius,
+
+                y:
+                    center.y +
+                    Math.sin(
+                        angle
+                    ) *
+                    radius,
+
+                radius:
+                    46,
+
+                delay:
+                    0.28 +
+                    index *
+                    0.12,
+
+                damage:
+                    getPlayerAttackPower() *
+                    0.58,
+
+                color:
+                    "#f0a9dd",
+
+                source:
+                    "player"
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       ZEPHYR
+       ========================================================= */
+
+    function skillAdaptiveCut(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        spawnSlashEffect({
+
+            type:
+                "riftSlash",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            range:
+                125,
+
+            arc:
+                Math.PI *
+                0.75,
+
+            color:
+                "#ad83df",
+
+            duration:
+                0.28
+
+        });
+
+
+        for (
+            const enemy of
+            getEnemiesInArc(
+
+                player.x,
+                player.y,
+
+                direction.x,
+                direction.y,
+
+                125,
+
+                Math.PI *
+                0.75
+
+            )
+        ) {
+
+            damageEnemy(
+
+                enemy,
+
+                getPlayerAttackPower() *
+                1.28
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function skillAdaptiveForm() {
+
+        const player =
+            state.player;
+
+
+        if (
+            player.adaptiveBuff
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+            Temporário.
+            Não cria atributo permanente de velocidade.
+        */
+
+        player.adaptiveBuff = {
+
+            timer:
+                6.5,
+
+            damageMultiplier:
+                1.18,
+
+            speedMultiplier:
+                1.12
+
+        };
+
+
+        recalculatePlayerStats();
+
+
+        /*
+            Aplica os multiplicadores após recálculo.
+        */
+
+        player.damage *=
+            player.adaptiveBuff
+                .damageMultiplier;
+
+
+        player.speed *=
+            player.adaptiveBuff
+                .speedMultiplier;
+
+
+        spawnGroundRing(
+
+            player.x,
+            player.y,
+
+            62,
+
+            "#a97bdd",
+
+            0.65
+
+        );
+
+
+        return true;
+
+    }
+
+
+    function skillRiftStep(
+        direction
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            player.zephyrDash
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        player.zephyrDash = {
+
+            active:
+                true,
+
+            x:
+                direction.x,
+
+            y:
+                direction.y,
+
+            timer:
+                0.19,
+
+            speed:
+                610
+
+        };
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       DASH UNIVERSAL
+       ========================================================= */
+
+    function attemptUniversalDash() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead ||
+            state.paused ||
+            !player.abilities
+                ?.dash
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.universalDashCooldown >
+            0 ||
+            player.playerDash
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !spendPlayerResource(
+
+                "energy",
+
+                PLAYER_COMBAT_CONFIG
+                    .universalDashEnergyCost
+
+            )
+        ) {
+
+            if (
+                typeof showToast ===
+                "function"
+            ) {
+
+                showToast(
+                    "Energia insuficiente para usar o Dash."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+
+        let direction =
+            getMovementDirection();
+
+
+        if (
+            direction.length <=
+            0
+        ) {
+
+            direction =
+                pointerDirectionFromPlayer();
+
+        }
+
+
+        player.playerDash = {
+
+            active:
+                true,
+
+            x:
+                direction.x,
+
+            y:
+                direction.y,
+
+            timer:
+                PLAYER_COMBAT_CONFIG
+                    .universalDashDuration,
+
+            speed:
+                PLAYER_COMBAT_CONFIG
+                    .universalDashSpeed
+
+        };
+
+
+        player.universalDashCooldown =
+            PLAYER_COMBAT_CONFIG
+                .universalDashCooldown;
+
+
+        updatePlayerFacing(
+            direction.x,
+            direction.y
+        );
+
+
+        return true;
+
+    }
+
+
+    function updateDashMovement(
+        dash,
+        dt,
+        afterimageColor
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !dash
+                ?.active
+        ) {
+
+            return false;
+
+        }
+
+
+        const movement =
+            dash.speed *
+            dt;
+
+
+        const steps =
+            Math.max(
+                1,
+                Math.ceil(
+                    movement /
+                    9
+                )
+            );
+
+
+        const stepX =
+            dash.x *
+            movement /
+            steps;
+
+
+        const stepY =
+            dash.y *
+            movement /
+            steps;
+
+
+        for (
+            let index = 0;
+            index < steps;
+            index++
+        ) {
+
+            const previousX =
+                player.x;
+
+
+            const previousY =
+                player.y;
+
+
+            if (
+                !movePlayerBy(
+                    stepX,
+                    stepY
+                )
+            ) {
+
+                dash.active =
+                    false;
+
+                break;
+
+            }
+
+
+            if (
+                index %
+                2 ===
+                0
+            ) {
+
+                state.world
+                    ?.effects
+                    ?.push({
+
+                        id:
+                            uid(
+                                "afterimage"
+                            ),
+
+                        type:
+                            "afterimage",
+
+                        x:
+                            previousX,
+
+                        y:
+                            previousY,
+
+                        color:
+                            afterimageColor,
+
+                        timer:
+                            0.22,
+
+                        duration:
+                            0.22
+
+                    });
+
+            }
+
+        }
+
+
+        dash.timer -=
+            dt;
+
+
+        if (
+            dash.timer <=
+            0
+        ) {
+
+            dash.active =
+                false;
+
+        }
+
+
+        return dash.active;
+
+    }
+
+
+    function updateUniversalDash(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        player.universalDashCooldown =
+            Math.max(
+
+                0,
+
+                finiteNumber(
+                    player.universalDashCooldown,
+                    0
+                ) -
+                dt
+
+            );
+
+
+        if (
+            player.playerDash
+                ?.active
+        ) {
+
+            updateDashMovement(
+
+                player.playerDash,
+
+                dt,
+
+                "#d8cce8"
+
+            );
+
+        }
+
+    }
+
+
+    function updateZephyrCombatDash(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+                ?.zephyrDash
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        updateDashMovement(
+
+            player.zephyrDash,
+
+            dt,
+
+            "#a277d1"
+
+        );
+
+    }
+
+
+    /* =========================================================
+       INVESTIDA DE THERON
+       ========================================================= */
+
+    function updateGuardianRush(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        const rush =
+            player
+                ?.guardianRush;
+
+
+        if (
+            !rush
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        const movement =
+            rush.speed *
+            dt;
+
+
+        const steps =
+            Math.max(
+                1,
+                Math.ceil(
+                    movement /
+                    8
+                )
+            );
+
+
+        const stepX =
+            rush.x *
+            movement /
+            steps;
+
+
+        const stepY =
+            rush.y *
+            movement /
+            steps;
+
+
+        for (
+            let index = 0;
+            index < steps;
+            index++
+        ) {
+
+            if (
+                !movePlayerBy(
+                    stepX,
+                    stepY
+                )
+            ) {
+
+                rush.active =
+                    false;
+
+                break;
+
+            }
+
+
+            for (
+                const enemy of
+                findEnemiesAtArea(
+
+                    player.x,
+                    player.y,
+
+                    player.radius +
+                    20,
+
+                    rush.hitIds
+
+                )
+            ) {
+
+                if (
+                    !ensureBossAcceptedBeforeDamage(
+                        enemy
+                    )
+                ) {
+
+                    continue;
+
+                }
+
+
+                rush.hitIds.add(
+                    enemy.id
+                );
+
+
+                damageEnemy(
+                    enemy,
+                    rush.damage
+                );
+
+            }
+
+        }
+
+
+        rush.timer -=
+            dt;
+
+
+        if (
+            rush.timer <=
+            0
+        ) {
+
+            rush.active =
+                false;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       COOLDOWNS
+       ========================================================= */
+
+    function updateCombatCooldowns(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return;
+
+        }
+
+
+        player.attackCooldown =
+            Math.max(
+                0,
+                finiteNumber(
+                    player.attackCooldown,
+                    0
+                ) -
+                dt
+            );
+
+
+        for (
+            const slot of
+            [
+                "q",
+                "r",
+                "f"
+            ]
+        ) {
+
+            player.skillCooldowns[
+                slot
+            ] =
+                Math.max(
+
+                    0,
+
+                    finiteNumber(
+                        player.skillCooldowns[
+                            slot
+                        ],
+                        0
+                    ) -
+                    dt
+
+                );
+
+        }
+
+
+        player.invincible =
+            Math.max(
+                0,
+                finiteNumber(
+                    player.invincible,
+                    0
+                ) -
+                dt
+            );
+
+
+        player.hurtAnim =
+            Math.max(
+                0,
+                finiteNumber(
+                    player.hurtAnim,
+                    0
+                ) -
+                dt
+            );
+
+
+        player.movementSlowTimer =
+            Math.max(
+                0,
+                finiteNumber(
+                    player.movementSlowTimer,
+                    0
+                ) -
+                dt
+            );
+
+
+        if (
+            player.movementSlowTimer <=
+            0
+        ) {
+
+            player.movementSlowMultiplier =
+                1;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ENEMY PROJECTILES
+       ========================================================= */
+
+    function spawnEnemyProjectile(
+        config
+    ) {
+
+        if (
+            !state.world
+        ) {
+
+            return null;
+
+        }
+
+
+        const projectile = {
+
+            id:
+                uid(
+                    "enemy_projectile"
+                ),
+
+            x:
+                config.x,
+
+            y:
+                config.y,
+
+            vx:
+                config.vx,
+
+            vy:
+                config.vy,
+
+            radius:
+                config.radius ||
+                7,
+
+            damage:
+                config.damage ||
+                10,
+
+            color:
+                config.color ||
+                "#cb6970",
+
+            life:
+                config.life ||
+                2.4,
+
+            dead:
+                false,
+
+            status:
+                config.status ||
+                null,
+
+            source:
+                config.source ||
+                "enemy"
+
+        };
+
+
+        state.world
+            .enemyProjectiles
+            .push(
+                projectile
+            );
+
+
+        return projectile;
+
+    }
+
+
+    function updateEnemyProjectiles(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !state.world ||
+            !player
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const projectile of
+            state.world
+                .enemyProjectiles
+        ) {
+
+            if (
+                projectile.dead
+            ) {
+
+                continue;
+
+            }
+
+
+            projectile.life -=
+                dt;
+
+
+            const movement =
+                Math.hypot(
+                    projectile.vx,
+                    projectile.vy
+                ) *
+                dt;
+
+
+            const steps =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        movement /
+                        8
+                    )
+                );
+
+
+            for (
+                let index = 0;
+                index < steps;
+                index++
+            ) {
+
+                projectile.x +=
+                    projectile.vx *
+                    dt /
+                    steps;
+
+
+                projectile.y +=
+                    projectile.vy *
+                    dt /
+                    steps;
+
+
+                if (
+                    isCircleBlockedByWorld(
+
+                        projectile.x,
+                        projectile.y,
+
+                        projectile.radius,
+
+                        {
+                            ignoreDarknessBarrier:
+                                true
+                        }
+
+                    )
+                ) {
+
+                    projectile.dead =
+                        true;
+
+                    break;
+
+                }
+
+
+                if (
+                    circleCircleCollision(
+
+                        projectile.x,
+                        projectile.y,
+                        projectile.radius,
+
+                        player.x,
+                        player.y,
+                        player.radius
+
+                    )
+                ) {
+
+                    damagePlayer(
+
+                        projectile.damage,
+
+                        {
+                            source:
+                                projectile.source
+                        }
+
+                    );
+
+
+                    applyPlayerStatusFromEnemy(
+                        projectile.status
+                    );
+
+
+                    projectile.dead =
+                        true;
+
+
+                    break;
+
+                }
+
+            }
+
+
+            if (
+                projectile.life <=
+                0
+            ) {
+
+                projectile.dead =
+                    true;
+
+            }
+
+        }
+
+
+        state.world.enemyProjectiles =
+            state.world
+                .enemyProjectiles
+                .filter(
+                    projectile =>
+                        !projectile.dead
+                );
+
+    }
+
+
+    /* =========================================================
+       STATUS NEGATIVOS
+       ========================================================= */
+
+    function applyPlayerStatusFromEnemy(
+        status
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !status
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            status.type ===
+            "slow"
+        ) {
+
+            player.movementSlowTimer =
+                Math.max(
+
+                    player.movementSlowTimer,
+
+                    status.duration ||
+                    2.2
+
+                );
+
+
+            player.movementSlowMultiplier =
+                Math.min(
+
+                    player.movementSlowMultiplier,
+
+                    status.multiplier ||
+                    0.55
+
+                );
+
+        }
+
+
+        if (
+            status.type ===
+            "root"
+        ) {
+
+            player.movementSlowTimer =
+                Math.max(
+
+                    player.movementSlowTimer,
+
+                    status.duration ||
+                    1.2
+
+                );
+
+
+            player.movementSlowMultiplier =
+                0.25;
+
+        }
+
+
+        if (
+            status.type ===
+            "poison"
+        ) {
+
+            player.poisonEffect = {
+
+                timer:
+                    status.duration ||
+                    5,
+
+                tickTimer:
+                    0.65,
+
+                damage:
+                    status.damage ||
+                    3
+
+            };
+
+        }
+
+    }
+
+
+    function updatePlayerStatusEffects(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            player.poisonEffect
+        ) {
+
+            player.poisonEffect.timer -=
+                dt;
+
+
+            player.poisonEffect.tickTimer -=
+                dt;
+
+
+            if (
+                player.poisonEffect.tickTimer <=
+                0
+            ) {
+
+                player.poisonEffect.tickTimer =
+                    0.65;
+
+
+                damagePlayer(
+
+                    player.poisonEffect
+                        .damage,
+
+                    {
+                        source:
+                            "poison",
+
+                        ignoreInvincible:
+                            true
+
+                    }
+
+                );
+
+            }
+
+
+            if (
+                player.poisonEffect.timer <=
+                0
+            ) {
+
+                player.poisonEffect =
+                    null;
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       MOVIMENTO DOS INIMIGOS
+       ========================================================= */
+
+    function tryMoveEnemy(
+        enemy,
+        dx,
+        dy
+    ) {
+
+        if (
+            !enemy ||
+            !state.world
+        ) {
+
+            return false;
+
+        }
+
+
+        let moved =
+            false;
+
+
+        const nextX =
+            enemy.x +
+            dx;
+
+
+        if (
+            !isCircleBlockedByWorld(
+
+                nextX,
+                enemy.y,
+
+                enemy.radius,
+
+                {
+                    ignoreDarknessBarrier:
+                        true
+                }
+
+            ) &&
+            !isGateBlockingPosition(
+                nextX,
+                enemy.y,
+                enemy.radius
+            )
+        ) {
+
+            enemy.x =
+                nextX;
+
+
+            moved =
+                true;
+
+        }
+
+
+        const nextY =
+            enemy.y +
+            dy;
+
+
+        if (
+            !isCircleBlockedByWorld(
+
+                enemy.x,
+                nextY,
+
+                enemy.radius,
+
+                {
+                    ignoreDarknessBarrier:
+                        true
+                }
+
+            ) &&
+            !isGateBlockingPosition(
+                enemy.x,
+                nextY,
+                enemy.radius
+            )
+        ) {
+
+            enemy.y =
+                nextY;
+
+
+            moved =
+                true;
+
+        }
+
+
+        return moved;
+
+    }
+
+
+    function moveEnemyToward(
+        enemy,
+        targetX,
+        targetY,
+        dt,
+        speedMultiplier =
+            1
+    ) {
+
+        const direction =
+            normalize(
+
+                targetX -
+                enemy.x,
+
+                targetY -
+                enemy.y
+
+            );
+
+
+        if (
+            direction.length <=
+            0.001
+        ) {
+
+            return false;
+
+        }
+
+
+        enemy.facingX =
+            direction.x;
+
+
+        enemy.facingY =
+            direction.y;
+
+
+        let speed =
+
+            enemy.speed *
+            speedMultiplier;
+
+
+        if (
+            finiteNumber(
+                enemy.slow,
+                0
+            ) >
+            0
+        ) {
+
+            speed *=
+                0.62;
+
+        }
+
+
+        return tryMoveEnemy(
+
+            enemy,
+
+            direction.x *
+            speed *
+            dt,
+
+            direction.y *
+            speed *
+            dt
+
+        );
+
+    }
+
+
+    function pushEnemy(
+        enemy,
+        dx,
+        dy
+    ) {
+
+        if (!enemy) {
+
+            return;
+
+        }
+
+
+        tryMoveEnemy(
+            enemy,
+            dx,
+            dy
+        );
+
+    }
+
+
+    /* =========================================================
+       ATAQUE NORMAL DO INIMIGO
+       ========================================================= */
+
+    function attemptEnemyBasicAttack(
+        enemy
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !enemy ||
+            !player ||
+            player.dead ||
+            enemy.attackCooldown >
+            0
+        ) {
+
+            return false;
+
+        }
+
+
+        const d =
+            distance(
+
+                enemy.x,
+                enemy.y,
+
+                player.x,
+                player.y
+
+            );
+
+
+        if (
+            d >
+            enemy.attackRange +
+            player.radius
+        ) {
+
+            return false;
+
+        }
+
+
+        enemy.attackCooldown =
+
+            enemy.type ===
+            "progression"
+
+                ? 0.9
+
+                : 1.15;
+
+
+        const direction =
+            normalize(
+
+                player.x -
+                enemy.x,
+
+                player.y -
+                enemy.y
+
+            );
+
+
+        damagePlayer(
+
+            enemy.damage,
+
+            {
+                source:
+                    enemy.id,
+
+                direction
+
+            }
+
+        );
+
+
+        spawnAttackFlash(
+
+            player.x,
+
+            player.y,
+
+            enemy.color ||
+            "#d15c61",
+
+            22
+
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       CHARGE — LOBO / JAVALI / RUBI
+
+       TELEGRAPH
+       ↓
+       MOVIMENTO REAL CONTÍNUO
+       ↓
+       COLISÃO
+
+       SEM TELEPORTE.
+       ========================================================= */
+
+    function startEnemyChargeTelegraph(
+        enemy
+    ) {
+
+        const ability =
+            enemy.ability;
+
+
+        if (
+            !ability ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        const direction =
+            normalize(
+
+                state.player.x -
+                enemy.x,
+
+                state.player.y -
+                enemy.y
+
+            );
+
+
+        enemy.telegraph = {
+
+            type:
+                "charge",
+
+            timer:
+                ability.telegraph ||
+                0.52,
+
+            duration:
+                ability.telegraph ||
+                0.52,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y
+
+        };
+
+
+        /*
+            CD começa aqui.
+
+            Lobo = exatamente 2 segundos
+            conforme configuração da Parte 2.
+        */
+
+        enemy.abilityCooldown =
+            ability.cooldown ||
+            2;
+
+
+        state.world.effects.push({
+
+            id:
+                uid(
+                    "charge_warning"
+                ),
+
+            type:
+                "chargeTelegraph",
+
+            x:
+                enemy.x,
+
+            y:
+                enemy.y,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            length:
+                Math.min(
+                    330,
+                    direction.length
+                ),
+
+            color:
+                enemy.color,
+
+            timer:
+                enemy.telegraph
+                    .timer,
+
+            duration:
+                enemy.telegraph
+                    .duration
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function updateEnemyTelegraph(
+        enemy,
+        dt
+    ) {
+
+        if (
+            !enemy.telegraph
+        ) {
+
+            return;
+
+        }
+
+
+        enemy.telegraph.timer -=
+            dt;
+
+
+        if (
+            enemy.telegraph.timer >
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        const directionX =
+            enemy.telegraph
+                .directionX;
+
+
+        const directionY =
+            enemy.telegraph
+                .directionY;
+
+
+        const ability =
+            enemy.ability ||
+            {};
+
+
+        enemy.telegraph =
+            null;
+
+
+        enemy.charge = {
+
+            active:
+                true,
+
+            directionX,
+
+            directionY,
+
+            speed:
+                ability.speed ||
+                350,
+
+            timer:
+                ability.duration ||
+                0.42,
+
+            hitPlayer:
+                false
+
+        };
+
+    }
+
+
+    function updateEnemyCharge(
+        enemy,
+        dt
+    ) {
+
+        const charge =
+            enemy.charge;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            !charge
+                ?.active ||
+            !player
+        ) {
+
+            return;
+
+        }
+
+
+        const movement =
+            charge.speed *
+            dt;
+
+
+        /*
+            Pequenos passos para evitar
+            atravessar parede.
+        */
+        const steps =
+            Math.max(
+
+                1,
+
+                Math.ceil(
+
+                    movement /
+
+                    GAME_CONFIG
+                        .enemyChargeStep
+
+                )
+
+            );
+
+
+        const stepX =
+
+            charge.directionX *
+            movement /
+            steps;
+
+
+        const stepY =
+
+            charge.directionY *
+            movement /
+            steps;
+
+
+        for (
+            let index = 0;
+            index < steps;
+            index++
+        ) {
+
+            const moved =
+                tryMoveEnemy(
+
+                    enemy,
+
+                    stepX,
+
+                    stepY
+
+                );
+
+
+            if (!moved) {
+
+                charge.active =
+                    false;
+
+                break;
+
+            }
+
+
+            if (
+                !charge.hitPlayer &&
+                circleCircleCollision(
+
+                    enemy.x,
+                    enemy.y,
+                    enemy.radius,
+
+                    player.x,
+                    player.y,
+                    player.radius
+
+                )
+            ) {
+
+                charge.hitPlayer =
+                    true;
+
+
+                damagePlayer(
+
+                    enemy.damage *
+
+                    finiteNumber(
+                        enemy.ability
+                            ?.damageMultiplier,
+                        1.22
+                    ),
+
+                    {
+                        source:
+                            enemy.id,
+
+                        direction:
+                            {
+
+                                x:
+                                    charge.directionX,
+
+                                y:
+                                    charge.directionY
+
+                            }
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+        charge.timer -=
+            dt;
+
+
+        if (
+            charge.timer <=
+            0
+        ) {
+
+            charge.active =
+                false;
+
+        }
+
+
+        if (
+            !charge.active
+        ) {
+
+            /*
+                SEM recovery obrigatório.
+
+                Pode voltar imediatamente
+                para IA normal.
+            */
+            enemy.charge =
+                null;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       HABILIDADES DE INIMIGO
+       ========================================================= */
+
+    function canEnemyUseAbility(
+        enemy,
+        playerDistance
+    ) {
+
+        const ability =
+            enemy.ability;
+
+
+        if (!ability) {
+
+            return false;
+
+        }
+
+
+        switch (
+            ability.type
+        ) {
+
+            case "charge":
+            case "heavyCharge":
+            case "burningCharge":
+
+                return (
+
+                    playerDistance >=
+                        80 &&
+
+                    playerDistance <=
+                        330
+
+                );
+
+
+            case "dive":
+
+                return (
+
+                    playerDistance >=
+                        80 &&
+
+                    playerDistance <=
+                        300
+
+                );
+
+
+            case "webSlow":
+            case "rootProjectile":
+
+                return (
+                    playerDistance <=
+                    320
+                );
+
+
+            case "poison":
+
+                return (
+                    playerDistance <=
+                    92
+                );
+
+
+            case "groundSlam":
+
+                return (
+                    playerDistance <=
+                    150
+                );
+
+
+            case "oreBurst":
+
+                return (
+                    playerDistance <=
+                    310
+                );
+
+
+            default:
+
+                return (
+                    playerDistance <=
+                    Math.max(
+                        enemy.vision,
+                        330
+                    )
+                );
+
+        }
+
+    }
+
+
+    function useEnemyAbility(
+        enemy
+    ) {
+
+        const ability =
+            enemy.ability;
+
+
+        if (
+            !ability ||
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        switch (
+            ability.type
+        ) {
+
+            case "charge":
+            case "heavyCharge":
+            case "burningCharge":
+
+                return startEnemyChargeTelegraph(
+                    enemy
+                );
+
+
+            case "dive":
+
+                return startEnemyDive(
+                    enemy
+                );
+
+
+            case "webSlow":
+
+                return enemyShootWeb(
+                    enemy
+                );
+
+
+            case "rootProjectile":
+
+                return enemyRootShot(
+                    enemy
+                );
+
+
+            case "poison":
+
+                return enemyPoisonSting(
+                    enemy
+                );
+
+
+            case "groundSlam":
+
+                return enemyGroundSlam(
+                    enemy
+                );
+
+
+            case "oreBurst":
+
+                return enemyOreBurst(
+                    enemy
+                );
+
+
+            case "bossRoots":
+
+                return forestBossAbility(
+                    enemy
+                );
+
+
+            case "bossSlam":
+
+                return bossGroundSlam(
+                    enemy
+                );
+
+
+            case "monarch":
+
+                return monarchAbility(
+                    enemy
+                );
+
+
+            case "shadowBoss":
+
+                return shadowBossAbility(
+                    enemy
+                );
+
+
+            case "fairyBoss":
+
+                return fairyBossAbility(
+                    enemy
+                );
+
+
+            case "hellBoss":
+
+                return hellBossAbility(
+                    enemy
+                );
+
+
+            case "mirrorBoss":
+
+                return mirrorBossAbility(
+                    enemy
+                );
+
+        }
+
+
+        enemy.abilityCooldown =
+            ability.cooldown ||
+            3;
+
+
+        return false;
+
+    }
+
+
+    function shootEnemyProjectileTowardPlayer(
+        enemy,
+        config =
+            {}
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !enemy ||
+            !player
+        ) {
+
+            return false;
+
+        }
+
+
+        const direction =
+            normalize(
+
+                player.x -
+                enemy.x,
+
+                player.y -
+                enemy.y
+
+            );
+
+
+        spawnEnemyProjectile({
+
+            x:
+                enemy.x +
+                direction.x *
+                (
+                    enemy.radius +
+                    5
+                ),
+
+            y:
+                enemy.y +
+                direction.y *
+                (
+                    enemy.radius +
+                    5
+                ),
+
+            vx:
+                direction.x *
+                (
+                    config.speed ||
+                    310
+                ),
+
+            vy:
+                direction.y *
+                (
+                    config.speed ||
+                    310
+                ),
+
+            radius:
+                config.radius ||
+                7,
+
+            damage:
+                config.damage ||
+                enemy.damage *
+                0.8,
+
+            color:
+                config.color ||
+                enemy.color,
+
+            status:
+                config.status ||
+                null,
+
+            source:
+                enemy.id,
+
+            life:
+                config.life ||
+                2.4
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function enemyShootWeb(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.8;
+
+
+        return shootEnemyProjectileTowardPlayer(
+
+            enemy,
+
+            {
+                speed:
+                    270,
+
+                color:
+                    "#b8a6c0",
+
+                damage:
+                    enemy.damage *
+                    0.55,
+
+                status: {
+
+                    type:
+                        "slow",
+
+                    duration:
+                        2.6,
+
+                    multiplier:
+                        0.52
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+    function enemyRootShot(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.7;
+
+
+        return shootEnemyProjectileTowardPlayer(
+
+            enemy,
+
+            {
+                speed:
+                    285,
+
+                color:
+                    "#799b62",
+
+                damage:
+                    enemy.damage *
+                    0.7,
+
+                status: {
+
+                    type:
+                        "root",
+
+                    duration:
+                        1.2
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+    function enemyPoisonSting(
+        enemy
+    ) {
+
+        const player =
+            state.player;
+
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            3.1;
+
+
+        const d =
+            distance(
+
+                enemy.x,
+                enemy.y,
+
+                player.x,
+                player.y
+
+            );
+
+
+        if (
+            d >
+            95
+        ) {
+
+            return false;
+
+        }
+
+
+        damagePlayer(
+
+            enemy.damage *
+            0.75,
+
+            {
+                source:
+                    enemy.id
+            }
+
+        );
+
+
+        applyPlayerStatusFromEnemy({
+
+            type:
+                "poison",
+
+            duration:
+                5,
+
+            damage:
+                Math.max(
+                    2,
+                    enemy.damage *
+                    0.1
+                )
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function enemyGroundSlam(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            3.2;
+
+
+        spawnDelayedAreaAttack({
+
+            x:
+                enemy.x,
+
+            y:
+                enemy.y,
+
+            radius:
+                115,
+
+            delay:
+                0.55,
+
+            damage:
+                enemy.damage *
+                1.2,
+
+            color:
+                enemy.color,
+
+            source:
+                enemy.id
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function enemyOreBurst(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            3.5;
+
+
+        for (
+            let index = 0;
+            index < 8;
+            index++
+        ) {
+
+            const angle =
+
+                index /
+                8 *
+
+                Math.PI *
+                2;
+
+
+            spawnEnemyProjectile({
+
+                x:
+                    enemy.x,
+
+                y:
+                    enemy.y,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    270,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    270,
+
+                radius:
+                    7,
+
+                damage:
+                    enemy.damage *
+                    0.72,
+
+                color:
+                    enemy.color,
+
+                source:
+                    enemy.id,
+
+                life:
+                    1.8
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function startEnemyDive(
+        enemy
+    ) {
+
+        const player =
+            state.player;
+
+
+        const direction =
+            normalize(
+
+                player.x -
+                enemy.x,
+
+                player.y -
+                enemy.y
+
+            );
+
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.5;
+
+
+        enemy.telegraph = {
+
+            type:
+                "charge",
+
+            timer:
+                0.32,
+
+            duration:
+                0.32,
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y
+
+        };
+
+
+        /*
+            Cria parâmetros de charge
+            temporários para o mergulho.
+        */
+
+        enemy.ability = {
+
+            ...enemy.ability,
+
+            speed:
+                480,
+
+            duration:
+                0.32,
+
+            damageMultiplier:
+                1.1
+
+        };
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       BOSSES — HABILIDADES
+
+       NENHUM BOSS PRÉ-DASH usa Dash.
+       ========================================================= */
+
+    function forestBossAbility(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.8;
+
+
+        const player =
+            state.player;
+
+
+        spawnDelayedAreaAttack({
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            radius:
+                70,
+
+            delay:
+                0.7,
+
+            damage:
+                enemy.damage *
+                1.05,
+
+            color:
+                enemy.aura,
+
+            source:
+                enemy.id,
+
+            status: {
+
+                type:
+                    "root",
+
+                duration:
+                    0.8
+
+            }
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function bossGroundSlam(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            3;
+
+
+        spawnDelayedAreaAttack({
+
+            x:
+                enemy.x,
+
+            y:
+                enemy.y,
+
+            radius:
+                165,
+
+            delay:
+                0.72,
+
+            damage:
+                enemy.damage *
+                1.35,
+
+            color:
+                enemy.aura,
+
+            source:
+                enemy.id
+
+        });
+
+
+        return true;
+
+    }
+
+
+    function monarchAbility(
+        enemy
+    ) {
+
+        const player =
+            state.player;
+
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.6;
+
+
+        /*
+            Áreas ao redor do jogador.
+        */
+
+        for (
+            let index = 0;
+            index < 3;
+            index++
+        ) {
+
+            const angle =
+
+                index /
+                3 *
+
+                Math.PI *
+                2;
+
+
+            spawnDelayedAreaAttack({
+
+                x:
+                    player.x +
+                    Math.cos(
+                        angle
+                    ) *
+                    75,
+
+                y:
+                    player.y +
+                    Math.sin(
+                        angle
+                    ) *
+                    75,
+
+                radius:
+                    62,
+
+                delay:
+                    0.55 +
+                    index *
+                    0.13,
+
+                damage:
+                    enemy.damage *
+                    0.82,
+
+                color:
+                    enemy.aura,
+
+                source:
+                    enemy.id
+
+            });
+
+        }
+
+
+        /*
+            Rajada do Monarca.
+        */
+
+        const baseAngle =
+            Math.atan2(
+
+                player.y -
+                enemy.y,
+
+                player.x -
+                enemy.x
+
+            );
+
+
+        for (
+            let index = -1;
+            index <= 1;
+            index++
+        ) {
+
+            const angle =
+
+                baseAngle +
+
+                index *
+                0.18;
+
+
+            spawnEnemyProjectile({
+
+                x:
+                    enemy.x,
+
+                y:
+                    enemy.y,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    320,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    320,
+
+                radius:
+                    8,
+
+                damage:
+                    enemy.damage *
+                    0.65,
+
+                color:
+                    enemy.aura,
+
+                source:
+                    enemy.id
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function shadowBossAbility(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.35;
+
+
+        const player =
+            state.player;
+
+
+        const baseAngle =
+            Math.atan2(
+
+                player.y -
+                enemy.y,
+
+                player.x -
+                enemy.x
+
+            );
+
+
+        for (
+            let index = -2;
+            index <= 2;
+            index++
+        ) {
+
+            const angle =
+
+                baseAngle +
+
+                index *
+                0.16;
+
+
+            spawnEnemyProjectile({
+
+                x:
+                    enemy.x,
+
+                y:
+                    enemy.y,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    330,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    330,
+
+                radius:
+                    8,
+
+                damage:
+                    enemy.damage *
+                    0.58,
+
+                color:
+                    enemy.aura,
+
+                status:
+
+                    Math.abs(
+                        index
+                    ) ===
+                    2
+
+                        ? {
+                            type:
+                                "slow",
+
+                            duration:
+                                1.7,
+
+                            multiplier:
+                                0.68
+                        }
+
+                        : null,
+
+                source:
+                    enemy.id
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function fairyBossAbility(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.2;
+
+
+        const player =
+            state.player;
+
+
+        const baseAngle =
+            Math.atan2(
+
+                player.y -
+                enemy.y,
+
+                player.x -
+                enemy.x
+
+            );
+
+
+        for (
+            let index = -3;
+            index <= 3;
+            index++
+        ) {
+
+            const angle =
+
+                baseAngle +
+
+                index *
+                0.11;
+
+
+            spawnEnemyProjectile({
+
+                x:
+                    enemy.x,
+
+                y:
+                    enemy.y,
+
+                vx:
+                    Math.cos(
+                        angle
+                    ) *
+                    355,
+
+                vy:
+                    Math.sin(
+                        angle
+                    ) *
+                    355,
+
+                radius:
+                    6,
+
+                damage:
+                    enemy.damage *
+                    0.47,
+
+                color:
+                    "#f0aedf",
+
+                source:
+                    enemy.id
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function hellBossAbility(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2.15;
+
+
+        const player =
+            state.player;
+
+
+        for (
+            let index = 0;
+            index < 4;
+            index++
+        ) {
+
+            const angle =
+
+                index /
+                4 *
+
+                Math.PI *
+                2;
+
+
+            spawnDelayedAreaAttack({
+
+                x:
+                    player.x +
+                    Math.cos(
+                        angle
+                    ) *
+                    92,
+
+                y:
+                    player.y +
+                    Math.sin(
+                        angle
+                    ) *
+                    92,
+
+                radius:
+                    68,
+
+                delay:
+                    0.6 +
+                    index *
+                    0.1,
+
+                damage:
+                    enemy.damage *
+                    0.72,
+
+                color:
+                    "#d85a3a",
+
+                source:
+                    enemy.id
+
+            });
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function mirrorBossAbility(
+        enemy
+    ) {
+
+        enemy.abilityCooldown =
+            enemy.ability
+                ?.cooldown ||
+            2;
+
+
+        const character =
+            currentCharacter();
+
+
+        const player =
+            state.player;
+
+
+        if (
+            character.basicAttack
+                .type ===
+            "projectile"
+        ) {
+
+            return shootEnemyProjectileTowardPlayer(
+
+                enemy,
+
+                {
+                    speed:
+                        430,
+
+                    radius:
+                        9,
+
+                    damage:
+                        enemy.damage *
+                        0.92,
+
+                    color:
+                        character.color
+
+                }
+
+            );
+
+        }
+
+
+        const d =
+            distance(
+
+                enemy.x,
+                enemy.y,
+
+                player.x,
+                player.y
+
+            );
+
+
+        if (
+            d <=
+            150
+        ) {
+
+            spawnDelayedAreaAttack({
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                radius:
+                    88,
+
+                delay:
+                    0.42,
+
+                damage:
+                    enemy.damage *
+                    1.05,
+
+                color:
+                    character.color,
+
+                source:
+                    enemy.id
+
+            });
+
+
+            return true;
+
+        }
+
+
+        return shootEnemyProjectileTowardPlayer(
+
+            enemy,
+
+            {
+                speed:
+                    360,
+
+                radius:
+                    8,
+
+                damage:
+                    enemy.damage *
+                    0.8,
+
+                color:
+                    character.color
+
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       IA INIMIGA
+
+       IMPORTANTE:
+
+       NÃO depende do player estar andando.
+
+       Isso corrige o bug de lobo/javali
+       ficarem parados se o jogador também
+       estiver parado.
+       ========================================================= */
+
+    function updateEnemyIdle(
+        enemy,
+        dt
+    ) {
+
+        enemy.wanderTimer =
+            finiteNumber(
+                enemy.wanderTimer,
+                0
+            ) -
+            dt;
+
+
+        if (
+            enemy.wanderTarget
+        ) {
+
+            const d =
+                distance(
+
+                    enemy.x,
+                    enemy.y,
+
+                    enemy.wanderTarget.x,
+                    enemy.wanderTarget.y
+
+                );
+
+
+            if (
+                d >
+                12
+            ) {
+
+                moveEnemyToward(
+
+                    enemy,
+
+                    enemy.wanderTarget.x,
+
+                    enemy.wanderTarget.y,
+
+                    dt,
+
+                    0.35
+
+                );
+
+
+                return;
+
+            }
+
+
+            enemy.wanderTarget =
+                null;
+
+        }
+
+
+        if (
+            enemy.wanderTimer >
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        enemy.wanderTimer =
+            random(
+                1.4,
+                3.2
+            );
+
+
+        const angle =
+            random(
+                0,
+                Math.PI *
+                2
+            );
+
+
+        enemy.wanderTarget = {
+
+            x:
+                enemy.homeX +
+                Math.cos(
+                    angle
+                ) *
+                random(
+                    15,
+                    65
+                ),
+
+            y:
+                enemy.homeY +
+                Math.sin(
+                    angle
+                ) *
+                random(
+                    15,
+                    65
+                )
+
+        };
+
+    }
+
+
+    function updateEnemies(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !state.world ||
+            state.houseMode
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const enemy of
+            state.world.enemies
+        ) {
+
+            if (
+                enemy.dead
+            ) {
+
+                continue;
+
+            }
+
+
+            enemy.animationTime +=
+                dt;
+
+
+            enemy.hitFlash =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        enemy.hitFlash,
+                        0
+                    ) -
+                    dt
+                );
+
+
+            enemy.attackCooldown =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        enemy.attackCooldown,
+                        0
+                    ) -
+                    dt
+                );
+
+
+            enemy.abilityCooldown =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        enemy.abilityCooldown,
+                        0
+                    ) -
+                    dt
+                );
+
+
+            enemy.stun =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        enemy.stun,
+                        0
+                    ) -
+                    dt
+                );
+
+
+            enemy.slow =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        enemy.slow,
+                        0
+                    ) -
+                    dt
+                );
+
+
+            /*
+                Progression boss não ataca
+                antes da confirmação.
+            */
+
+            const playerDistance =
+                distance(
+
+                    enemy.x,
+                    enemy.y,
+
+                    player.x,
+                    player.y
+
+                );
+
+
+            if (
+                enemy.type ===
+                    "progression" &&
+                !enemy.accepted
+            ) {
+
+                enemy.state =
+                    "waiting";
+
+
+                if (
+                    playerDistance <=
+                    enemy.vision *
+                    0.72
+                ) {
+
+                    discoverBoss(
+                        enemy
+                    );
+
+                }
+
+
+                continue;
+
+            }
+
+
+            if (
+                player.dead
+            ) {
+
+                enemy.aggressive =
+                    false;
+
+
+                enemy.state =
+                    "idle";
+
+
+                continue;
+
+            }
+
+
+            if (
+                enemy.stun >
+                0
+            ) {
+
+                enemy.state =
+                    "stunned";
+
+
+                continue;
+
+            }
+
+
+            if (
+                enemy.charge
+                    ?.active
+            ) {
+
+                updateEnemyCharge(
+                    enemy,
+                    dt
+                );
+
+
+                continue;
+
+            }
+
+
+            if (
+                enemy.telegraph
+            ) {
+
+                updateEnemyTelegraph(
+                    enemy,
+                    dt
+                );
+
+
+                continue;
+
+            }
+
+
+            if (
+                playerDistance <=
+                enemy.vision
+            ) {
+
+                enemy.aggressive =
+                    true;
+
+            }
+
+
+            if (
+                enemy.aggressive &&
+                playerDistance >
+                    enemy.vision *
+                    1.65 &&
+                enemy.type !==
+                    "progression"
+            ) {
+
+                enemy.aggressive =
+                    false;
+
+
+                enemy.state =
+                    "returning";
+
+            }
+
+
+            if (
+                !enemy.aggressive
+            ) {
+
+                const homeDistance =
+                    distance(
+
+                        enemy.x,
+                        enemy.y,
+
+                        enemy.homeX,
+                        enemy.homeY
+
+                    );
+
+
+                if (
+                    homeDistance >
+                    95
+                ) {
+
+                    moveEnemyToward(
+
+                        enemy,
+
+                        enemy.homeX,
+                        enemy.homeY,
+
+                        dt,
+
+                        0.55
+
+                    );
+
+                }
+
+                else {
+
+                    updateEnemyIdle(
+                        enemy,
+                        dt
+                    );
+
+                }
+
+
+                continue;
+
+            }
+
+
+            /*
+                HABILIDADE TEM PRIORIDADE.
+            */
+
+            if (
+                enemy.ability &&
+                enemy.abilityCooldown <=
+                    0 &&
+                canEnemyUseAbility(
+                    enemy,
+                    playerDistance
+                )
+            ) {
+
+                if (
+                    useEnemyAbility(
+                        enemy
+                    )
+                ) {
+
+                    continue;
+
+                }
+
+            }
+
+
+            /*
+                ATAQUE NORMAL.
+
+                É baseado somente em distância
+                e cooldown. Não depende das teclas
+                nem do movimento do jogador.
+            */
+
+            if (
+                playerDistance <=
+                enemy.attackRange +
+                player.radius
+            ) {
+
+                enemy.state =
+                    "attacking";
+
+
+                attemptEnemyBasicAttack(
+                    enemy
+                );
+
+
+                continue;
+
+            }
+
+
+            enemy.state =
+                "chasing";
+
+
+            moveEnemyToward(
+
+                enemy,
+
+                player.x,
+                player.y,
+
+                dt
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DANO NO PLAYER
+       ========================================================= */
+
+    function damagePlayer(
+        rawDamage,
+        options = {}
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+            VIDA INFINITA.
+        */
+
+        if (
+            devShouldIgnorePlayerDamage()
+        ) {
+
+            player.hp =
+                player.maxHp;
+
+
+            return false;
+
+        }
+
+
+        if (
+            player.invincible >
+                0 &&
+            !options.ignoreInvincible
+        ) {
+
+            return false;
+
+        }
+
+
+        const defense =
+            getPlayerDefense();
+
+
+        let damage =
+            Math.max(
+
+                PLAYER_COMBAT_CONFIG
+                    .minimumDamage,
+
+                finiteNumber(
+                    rawDamage,
+                    1
+                ) -
+
+                defense *
+                PLAYER_COMBAT_CONFIG
+                    .damageReductionPerDefense
+
+            );
+
+
+        if (
+            player.ironGuard
+        ) {
+
+            damage *=
+                1 -
+                player.ironGuard
+                    .damageReduction;
+
+        }
+
+
+        damage =
+            Math.max(
+                1,
+                damage
+            );
+
+
+        player.hp =
+            Math.max(
+                0,
+                player.hp -
+                damage
+            );
+
+
+        if (
+            !options.ignoreInvincible
+        ) {
+
+            player.invincible =
+                PLAYER_COMBAT_CONFIG
+                    .enemyHitInvincibility;
+
+        }
+
+
+        player.hurtAnim =
+            0.25;
+
+
+        state.damageFlash =
+            Math.min(
+
+                VISUAL_CONFIG
+                    .blood
+                    .flashMax,
+
+                0.2 +
+                damage /
+                Math.max(
+                    1,
+                    player.maxHp
+                )
+
+            );
+
+
+        state.screenShake =
+            0.12;
+
+
+        state.screenShakePower =
+            Math.min(
+                8,
+                2 +
+                damage *
+                0.08
+            );
+
+
+        createBloodMark(
+
+            player.x,
+            player.y,
+
+            clamp(
+                damage /
+                20,
+                0.6,
+                1.4
+            )
+
+        );
+
+
+        spawnRadialParticles(
+
+            player.x,
+            player.y,
+
+            "#9b2f38",
+
+            8,
+
+            90
+
+        );
+
+
+        /*
+            Knockback suave.
+        */
+
+        if (
+            options.direction
+        ) {
+
+            const knockback =
+                10;
+
+
+            movePlayerBy(
+
+                options.direction.x *
+                knockback,
+
+                options.direction.y *
+                knockback
+
+            );
+
+        }
+
+
+        if (
+            player.hp <=
+            0
+        ) {
+
+            beginPlayerDeath();
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       MORTE / PERDA DE MATERIAL
+       ========================================================= */
+
+    function loseMaterialsOnDeath() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return [];
+
+        }
+
+
+        const lost =
+            [];
+
+
+        for (
+            const [
+                id,
+                item
+            ] of
+            Object.entries(
+                ITEMS
+            )
+        ) {
+
+            if (
+                item.category !==
+                "materials"
+            ) {
+
+                continue;
+
+            }
+
+
+            const amount =
+                getRealItemCount(
+                    id
+                );
+
+
+            if (
+                amount <=
+                0
+            ) {
+
+                continue;
+
+            }
+
+
+            const loss =
+                Math.min(
+
+                    GAME_CONFIG
+                        .deathMaterialLossMaxPerType,
+
+                    Math.floor(
+
+                        amount *
+
+                        GAME_CONFIG
+                            .deathMaterialLossRatio
+
+                    )
+
+                );
+
+
+            if (
+                loss <=
+                0
+            ) {
+
+                continue;
+
+            }
+
+
+            player.inventory[id] =
+                Math.max(
+                    0,
+                    amount -
+                    loss
+                );
+
+
+            lost.push({
+
+                id,
+
+                amount:
+                    loss
+
+            });
+
+        }
+
+
+        return lost;
+
+    }
+
+
+    function beginPlayerDeath() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            player.dead
+        ) {
+
+            return;
+
+        }
+
+
+        player.dead =
+            true;
+
+
+        player.hp =
+            0;
+
+
+        player.playerDash =
+            null;
+
+
+        player.zephyrDash =
+            null;
+
+
+        player.guardianRush =
+            null;
+
+
+        cancelHoldCollect();
+
+
+        const lost =
+            loseMaterialsOnDeath();
+
+
+        state.deathState = {
+
+            timer:
+                1.2,
+
+            lost
+
+        };
+
+
+        const panel =
+            $("deathPanel");
+
+
+        if (panel) {
+
+            panel.classList
+                .remove(
+                    "hidden"
+                );
+
+        }
+
+
+        if (
+            typeof showToast ===
+                "function" &&
+            lost.length >
+                0
+        ) {
+
+            const total =
+                lost.reduce(
+                    (
+                        sum,
+                        entry
+                    ) =>
+                        sum +
+                        entry.amount,
+                    0
+                );
+
+
+            showToast(
+                `Você perdeu ${total} material${total === 1 ? "" : "is"}.`
+            );
+
+        }
+
+    }
+
+
+    function respawnPlayerAtHome() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+
+            return false;
+
+        }
+
+
+        state.area =
+            "village";
+
+
+        state.houseMode =
+            false;
+
+
+        state.currentHouse =
+            null;
+
+
+        state.houseReturn =
+            null;
+
+
+        buildWorld();
+
+
+        const spawn =
+            calculateHomeRespawn();
+
+
+        const safe =
+            findSafeSpawn(
+
+                spawn.x,
+                spawn.y,
+
+                player.radius,
+
+                {
+                    ignoreDarknessBarrier:
+                        true
+                }
+
+            );
+
+
+        player.x =
+            safe.x;
+
+
+        player.y =
+            safe.y;
+
+
+        player.facing =
+            spawn.facing ||
+            "up";
+
+
+        player.dead =
+            false;
+
+
+        player.hp =
+            player.maxHp;
+
+
+        player.magic =
+            player.maxMagic;
+
+
+        player.energy =
+            player.maxEnergy;
+
+
+        player.hunger =
+            Math.max(
+                player.hunger,
+                player.maxHunger *
+                0.5
+            );
+
+
+        player.fatigue =
+            Math.max(
+                player.fatigue,
+                player.maxFatigue *
+                0.5
+            );
+
+
+        player.invincible =
+            1.5;
+
+
+        player.poisonEffect =
+            null;
+
+
+        player.movementSlowTimer =
+            0;
+
+
+        state.deathState =
+            null;
+
+
+        $("deathPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        state.camera.x =
+            0;
+
+
+        state.camera.y =
+            0;
+
+
+        maintainDevInfiniteResources();
+
+
+        return true;
+
+    }
+
+
+    function respawnPlayer() {
+
+        return respawnPlayerAtHome();
+
+    }
+
+
+    function updatePlayerDeath(
+        dt
+    ) {
+
+        if (
+            !state.deathState
+        ) {
+
+            return;
+
+        }
+
+
+        state.deathState.timer =
+            Math.max(
+                0,
+                state.deathState
+                    .timer -
+                dt
+            );
+
+    }
+
+
+    /* =========================================================
+       NPC MOVEMENT
+       ========================================================= */
+
+    function updateNPCs(
+        dt
+    ) {
+
+        if (
+            !state.world ||
+            state.houseMode
+        ) {
+
+            return;
+
+        }
+
+
+        for (
+            const npc of
+            state.world.npcs
+        ) {
+
+            if (
+                !npc ||
+                npc.movable ===
+                    false
+            ) {
+
+                continue;
+
+            }
+
+
+            npc.idleTime -=
+                dt;
+
+
+            if (
+                npc.moveTarget
+            ) {
+
+                const direction =
+                    normalize(
+
+                        npc.moveTarget.x -
+                        npc.x,
+
+                        npc.moveTarget.y -
+                        npc.y
+
+                    );
+
+
+                if (
+                    direction.length <
+                    5
+                ) {
+
+                    npc.moveTarget =
+                        null;
+
+
+                    npc.idleTime =
+                        random(
+                            1.5,
+                            4
+                        );
+
+
+                    continue;
+
+                }
+
+
+                const speed =
+                    34;
+
+
+                const nextX =
+
+                    npc.x +
+
+                    direction.x *
+                    speed *
+                    dt;
+
+
+                const nextY =
+
+                    npc.y +
+
+                    direction.y *
+                    speed *
+                    dt;
+
+
+                if (
+                    !isCircleBlockedByWorld(
+                        nextX,
+                        npc.y,
+                        16,
+                        {
+                            ignoreDarknessBarrier:
+                                true
+                        }
+                    )
+                ) {
+
+                    npc.x =
+                        nextX;
+
+                }
+
+
+                if (
+                    !isCircleBlockedByWorld(
+                        npc.x,
+                        nextY,
+                        16,
+                        {
+                            ignoreDarknessBarrier:
+                                true
+                        }
+                    )
+                ) {
+
+                    npc.y =
+                        nextY;
+
+                }
+
+
+                npc.walkPhase +=
+                    dt *
+                    5;
+
+
+                continue;
+
+            }
+
+
+            if (
+                npc.idleTime >
+                0
+            ) {
+
+                continue;
+
+            }
+
+
+            const angle =
+                random(
+                    0,
+                    Math.PI *
+                    2
+                );
+
+
+            npc.moveTarget = {
+
+                x:
+                    npc.homeX +
+                    Math.cos(
+                        angle
+                    ) *
+                    random(
+                        15,
+                        npc.wanderRadius
+                    ),
+
+                y:
+                    npc.homeY +
+                    Math.sin(
+                        angle
+                    ) *
+                    random(
+                        15,
+                        npc.wanderRadius
+                    )
+
+            };
+
+        }
+
+    }
+
+
+    /* =========================================================
+       UPDATE PRINCIPAL DO GAMEPLAY
+
+       Parte 4 chamará esta função no game loop.
+       ========================================================= */
+
+    function updateGameplaySystems(
+        dt
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        const safeDt =
+            clamp(
+                finiteNumber(
+                    dt,
+                    0
+                ),
+                0,
+                0.05
+            );
+
+
+        /*
+            TESTES INFINITOS
+            antes de tudo.
+        */
+        maintainDevInfiniteResources();
+
+
+        updateCombatCooldowns(
+            safeDt
+        );
+
+
+        updatePlayerStatusEffects(
+            safeDt
+        );
+
+
+        updateClassBuffs(
+            safeDt
+        );
+
+
+        updatePotionBuffs(
+            safeDt
+        );
+
+
+        updatePlayerRest(
+            safeDt
+        );
+
+
+        updateUniversalDash(
+            safeDt
+        );
+
+
+        updateZephyrCombatDash(
+            safeDt
+        );
+
+
+        updateGuardianRush(
+            safeDt
+        );
+
+
+        updatePlayerMovement(
+            safeDt
+        );
+
+
+        updateExteriorDoors(
+            safeDt
+        );
+
+
+        updateHoldCollection(
+            safeDt
+        );
+
+
+        updateResources(
+            safeDt
+        );
+
+
+        updateNPCs(
+            safeDt
+        );
+
+
+        updatePlayerProjectiles(
+            safeDt
+        );
+
+
+        updateEnemyProjectiles(
+            safeDt
+        );
+
+
+        updateDelayedAreas(
+            safeDt
+        );
+
+
+        updateEnemies(
+            safeDt
+        );
+
+
+        updateSurvival(
+            safeDt
+        );
+
+
+        updatePlayerDeath(
+            safeDt
+        );
+
+
+        updateBloodEffects(
+            safeDt
+        );
+
+
+        updateGameplayEffects(
+            safeDt
+        );
+
+
+        updateParticles(
+            safeDt
+        );
+
+
+        state.portalCooldown =
+            Math.max(
+
+                0,
+
+                finiteNumber(
+                    state.portalCooldown,
+                    0
+                ) -
+                safeDt
+
+            );
+
+
+        state.screenShake =
+            Math.max(
+
+                0,
+
+                finiteNumber(
+                    state.screenShake,
+                    0
+                ) -
+                safeDt
+
+            );
+
+
+        /*
+            TESTES INFINITOS
+            novamente depois de sistemas
+            que gastaram recursos.
+        */
+        maintainDevInfiniteResources();
+
+    }
+
+
+    /* =========================================================
+       VALIDAÇÃO PARTE 3
+       ========================================================= */
+
+    function validatePart3Data() {
+
+        const errors =
+            [];
+
+
+        const allowedStats = [
+
+            "power",
+            "energy",
+            "hunger",
+            "fatigue"
+
+        ];
+
+
+        for (
+            const stat of
+            Object.keys(
+                STAT_CONFIG
+            )
+        ) {
+
+            if (
+                !allowedStats.includes(
+                    stat
+                )
+            ) {
+
+                errors.push(
+                    `Status inválido: ${stat}`
+                );
+
+            }
+
+        }
+
+
+        if (
+            Object.keys(
+                STAT_CONFIG
+            ).length !==
+            4
+        ) {
+
+            errors.push(
+                "Devem existir exatamente quatro status distribuíveis."
+            );
+
+        }
+
+
+        if (
+            BASE_STATUS_POINTS_PER_LEVEL !==
+            3
+        ) {
+
+            errors.push(
+                "Cada nível normal deve conceder 3 pontos."
+            );
+
+        }
+
+
+        if (
+            SURVIVAL_CONFIG
+                .hungerDrainPerSecond !==
+            0.25
+        ) {
+
+            errors.push(
+                "O ritmo antigo de fome foi alterado."
+            );
+
+        }
+
+
+        if (
+            SURVIVAL_CONFIG
+                .fatigueDrainPerSecond !==
+            0.2
+        ) {
+
+            errors.push(
+                "O ritmo antigo de cansaço foi alterado."
+            );
+
+        }
+
+
+        if (
+            ENEMY_SPECIES
+                .wolf
+                .ability
+                .cooldown !==
+            2
+        ) {
+
+            errors.push(
+                "A investida do lobo precisa ter cooldown de 2 segundos."
+            );
+
+        }
+
+
+        if (
+            typeof performBasicAttack !==
+            "function"
+        ) {
+
+            errors.push(
+                "Ataque básico ausente."
+            );
+
+        }
+
+
+        if (
+            typeof useClassSkill !==
+            "function"
+        ) {
+
+            errors.push(
+                "Sistema Q/R/F ausente."
+            );
+
+        }
+
+
+        if (
+            typeof attemptUniversalDash !==
+            "function"
+        ) {
+
+            errors.push(
+                "Dash universal ausente."
+            );
+
+        }
+
+
+        if (
+            typeof updateEnemies !==
+            "function"
+        ) {
+
+            errors.push(
+                "IA dos inimigos ausente."
+            );
+
+        }
+
+
+        if (
+            typeof damagePlayer !==
+            "function"
+        ) {
+
+            errors.push(
+                "Sistema de dano do player ausente."
+            );
+
+        }
+
+
+        if (
+            typeof updateGameplaySystems !==
+            "function"
+        ) {
+
+            errors.push(
+                "Update principal de gameplay ausente."
+            );
+
+        }
+
+
+        if (
+            errors.length >
+            0
+        ) {
+
+            console.error(
+                "VEYRA V25 — erros na Parte 3:",
+                errors
+            );
+
+
+            return false;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* =========================================================
+       FIM DA PARTE 3/4
+
+       NÃO COLOQUE })(); AQUI.
+
+       A PARTE 4/4 SERÁ A ÚLTIMA E VAI TER:
+
+       - diálogos typewriter;
+       - E completa / E avança;
+       - casas e Z;
+       - lojas;
+       - armaduras sequenciais;
+       - vender 1 / vender tudo;
+       - quests;
+       - portões;
+       - altar / Monarca / Dash;
+       - 5 hordas do céu;
+       - Flauta da Memória;
+       - viagem;
+       - save/load;
+       - renderização completa;
+       - HUD;
+       - minimapa;
+       - mapa;
+       - lanterna OFFSCREEN;
+       - menu;
+       - seleção;
+       - todos os botões do HTML;
+       - painel X+Y;
+       - eventos;
+       - loop;
+       - inicialização;
+       - validação final;
+       - ÚNICO })();
+       ========================================================= */
