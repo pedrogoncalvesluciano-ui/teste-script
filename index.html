@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -15,15 +14,12 @@
         content="#10131a"
     >
 
-    <title>
-        VEYRA — A Quietude
-    </title>
+    <title>VEYRA — A Quietude</title>
 
     <link
         rel="stylesheet"
-        href="./style.css?v=17.2"
+        href="style.css"
     >
-
 </head>
 
 
@@ -34,12 +30,12 @@
 
         <!-- =====================================================
              MENU PRINCIPAL
-             VISUAL ORIGINAL PRESERVADO
         ====================================================== -->
 
         <section
             id="menuScreen"
             class="screen active"
+            aria-hidden="false"
         >
 
             <div class="menu-panel">
@@ -48,13 +44,16 @@
                     UMA HISTÓRIA SOBRE MEMÓRIA
                 </p>
 
+
                 <h1>
                     VEYRA
                 </h1>
 
+
                 <h2>
                     A QUIETUDE
                 </h2>
+
 
                 <p class="intro">
                     A Quietude está apagando o mundo.
@@ -68,7 +67,7 @@
 
                     <button
                         id="newGameBtn"
-                        class="primary-btn"
+                        class="primary-btn menu-big-btn"
                         type="button"
                     >
                         NOVO JOGO
@@ -77,7 +76,7 @@
 
                     <button
                         id="continueBtn"
-                        class="secondary-btn"
+                        class="secondary-btn menu-big-btn"
                         type="button"
                     >
                         CONTINUAR
@@ -96,9 +95,11 @@
                         COMO JOGAR
                     </button>
 
+
                     <span class="menu-dot">
                         •
                     </span>
+
 
                     <button
                         id="creditsBtn"
@@ -118,6 +119,22 @@
 
             </div>
 
+
+            <div
+                class="menu-ambient menu-ambient-a"
+                aria-hidden="true"
+            ></div>
+
+            <div
+                class="menu-ambient menu-ambient-b"
+                aria-hidden="true"
+            ></div>
+
+            <div
+                class="menu-ambient menu-ambient-c"
+                aria-hidden="true"
+            ></div>
+
         </section>
 
 
@@ -129,6 +146,7 @@
         <section
             id="howScreen"
             class="screen info-screen"
+            aria-hidden="true"
         >
 
             <div class="info-panel">
@@ -147,13 +165,20 @@
                     GUIA DO AVENTUREIRO
                 </p>
 
+
                 <h2>
                     COMO JOGAR
                 </h2>
 
 
-                <div class="help-grid">
+                <p class="info-intro">
+                    Explore Veyra, converse com seus habitantes,
+                    derrote criaturas, colete recursos e descubra
+                    o que está sendo apagado pela Quietude.
+                </p>
 
+
+                <div class="help-grid">
 
                     <div class="help-card">
 
@@ -171,13 +196,12 @@
                     <div class="help-card">
 
                         <strong>
-                            MOUSE ESQUERDO
+                            CLIQUE ESQUERDO
                         </strong>
 
                         <span>
-                            Atacar na direção apontada.
-                            Cada clique realiza um ataque.
-                            Segurar o mouse não repete o ataque.
+                            Realizar o ataque básico.
+                            Segurar o mouse não ataca automaticamente.
                         </span>
 
                     </div>
@@ -190,9 +214,8 @@
                         </strong>
 
                         <span>
-                            Conversar, pegar itens,
-                            interagir com objetos e iniciar ações.
-                            Segure E para cortar árvores ou minerar.
+                            Interagir, conversar, pegar drops e usar objetos.
+                            Segure E para coletar madeira e minérios.
                         </span>
 
                     </div>
@@ -205,8 +228,8 @@
                         </strong>
 
                         <span>
-                            Entrar ou sair de uma construção
-                            quando estiver perto da porta.
+                            Entrar ou sair de construções
+                            quando estiver perto de uma porta.
                         </span>
 
                     </div>
@@ -219,8 +242,8 @@
                         </strong>
 
                         <span>
-                            Usar as habilidades especiais
-                            da classe do personagem.
+                            Usar as habilidades do personagem.
+                            Algumas são liberadas conforme seu nível aumenta.
                         </span>
 
                     </div>
@@ -233,8 +256,8 @@
                         </strong>
 
                         <span>
-                            Usar o Dash na direção do mouse
-                            depois que a técnica for desbloqueada.
+                            Usar Dash depois que a técnica for desbloqueada.
+                            O movimento segue a direção do mouse.
                         </span>
 
                     </div>
@@ -247,21 +270,7 @@
                         </strong>
 
                         <span>
-                            Abrir e fechar o inventário.
-                        </span>
-
-                    </div>
-
-
-                    <div class="help-card">
-
-                        <strong>
-                            P
-                        </strong>
-
-                        <span>
-                            Abrir a distribuição de pontos
-                            de status.
+                            Abrir ou fechar o inventário.
                         </span>
 
                     </div>
@@ -274,7 +283,8 @@
                         </strong>
 
                         <span>
-                            Abrir e fechar o mapa.
+                            Abrir o mapa depois de adquirir
+                            o Minimapa de Veyra.
                         </span>
 
                     </div>
@@ -287,7 +297,22 @@
                         </strong>
 
                         <span>
-                            Abrir e fechar o Livro de registros.
+                            Abrir o Livro e consultar
+                            os bosses já descobertos.
+                        </span>
+
+                    </div>
+
+
+                    <div class="help-card">
+
+                        <strong>
+                            P
+                        </strong>
+
+                        <span>
+                            Abrir os atributos e distribuir
+                            pontos conquistados ao subir de nível.
                         </span>
 
                     </div>
@@ -300,8 +325,8 @@
                         </strong>
 
                         <span>
-                            Usar Poção de Cura /
-                            Elixir de Energia.
+                            Usar rapidamente Poção de Cura
+                            ou Elixir de Energia.
                         </span>
 
                     </div>
@@ -324,11 +349,10 @@
 
 
                 <p class="how-note">
-                    Explore com calma.
-                    Nem todas as passagens revelarão imediatamente
-                    o que é necessário para atravessá-las.
-                    Algumas respostas precisam ser descobertas
-                    durante a própria jornada.
+                    Nem todos os caminhos precisam ser compreendidos
+                    imediatamente. Explore com calma, observe o ambiente,
+                    volte para a vila quando precisar e descubra
+                    a progressão naturalmente.
                 </p>
 
             </div>
@@ -344,6 +368,7 @@
         <section
             id="creditsScreen"
             class="screen info-screen"
+            aria-hidden="true"
         >
 
             <div class="info-panel credits-panel">
@@ -362,6 +387,7 @@
                     CRÉDITOS
                 </p>
 
+
                 <h2>
                     VEYRA — A QUIETUDE
                 </h2>
@@ -374,17 +400,13 @@
 
                 <p>
                     Conceito e criação do projeto:
-                    <strong>
-                        Pedro
-                    </strong>
+                    <strong>Pedro</strong>
                 </p>
 
 
                 <p>
                     Desenvolvimento e apoio de programação:
-                    <strong>
-                        ChatGPT
-                    </strong>
+                    <strong>ChatGPT</strong>
                 </p>
 
 
@@ -404,11 +426,11 @@
 
         <section
             id="characterScreen"
-            class="screen"
+            class="screen character-screen"
+            aria-hidden="true"
         >
 
             <div class="character-panel">
-
 
                 <div class="character-header">
 
@@ -418,14 +440,15 @@
                             VILA DO CREPÚSCULO
                         </p>
 
+
                         <h2>
                             Escolha seu personagem
                         </h2>
 
+
                         <p class="muted">
-                            Cada personagem possui
-                            atributos, estilo de combate
-                            e habilidades próprias.
+                            Cada personagem possui atributos,
+                            aparência e habilidades próprias.
                         </p>
 
                     </div>
@@ -436,7 +459,7 @@
                         class="text-btn"
                         type="button"
                     >
-                        Voltar
+                        VOLTAR
                     </button>
 
                 </div>
@@ -454,6 +477,7 @@
                         Nome do personagem
                     </label>
 
+
                     <input
                         id="playerName"
                         type="text"
@@ -461,6 +485,7 @@
                         autocomplete="off"
                         placeholder="Digite seu nome"
                     >
+
 
                     <p
                         id="nameError"
@@ -472,7 +497,7 @@
 
                 <button
                     id="startGameBtn"
-                    class="primary-btn"
+                    class="primary-btn start-game-btn"
                     type="button"
                 >
                     ENTRAR EM VEYRA
@@ -491,12 +516,13 @@
         <section
             id="gameScreen"
             class="screen game-screen"
+            aria-hidden="true"
         >
 
-
-            <!-- CANVAS PRINCIPAL -->
-
-            <canvas id="gameCanvas"></canvas>
+            <canvas
+                id="gameCanvas"
+                aria-label="Mundo de Veyra"
+            ></canvas>
 
 
 
@@ -509,12 +535,9 @@
                 class="hud"
             >
 
-
                 <div class="hud-card">
 
-
                     <div class="player-title">
-
 
                         <div class="player-name-wrap">
 
@@ -532,6 +555,7 @@
                                     Aventureiro
                                 </span>
 
+
                                 <strong id="hudName">
                                     Viajante
                                 </strong>
@@ -542,23 +566,27 @@
 
 
                         <div class="hud-money">
-                            💰
+
+                            <span class="money-symbol">
+                                ◆
+                            </span>
+
                             <b id="moneyText">
                                 0
                             </b>
+
                         </div>
 
                     </div>
 
 
 
-                    <!-- HP -->
-
                     <div class="bar-row">
 
-                        <span>
+                        <span class="bar-label">
                             HP
                         </span>
+
 
                         <div class="bar hp">
 
@@ -569,6 +597,7 @@
 
                         </div>
 
+
                         <span id="hpText">
                             100/100
                         </span>
@@ -577,13 +606,12 @@
 
 
 
-                    <!-- MAGIA -->
-
                     <div class="bar-row">
 
-                        <span>
+                        <span class="bar-label">
                             MAGIA
                         </span>
+
 
                         <div class="bar magic">
 
@@ -594,6 +622,7 @@
 
                         </div>
 
+
                         <span id="magicText">
                             100/100
                         </span>
@@ -602,13 +631,12 @@
 
 
 
-                    <!-- ENERGIA -->
-
                     <div class="bar-row">
 
-                        <span>
+                        <span class="bar-label">
                             ENERGIA
                         </span>
+
 
                         <div class="bar energy">
 
@@ -619,6 +647,7 @@
 
                         </div>
 
+
                         <span id="energyText">
                             100/100
                         </span>
@@ -627,19 +656,18 @@
 
 
 
-                    <!-- SOBREVIVÊNCIA -->
-
                     <div class="survival-row">
 
                         <span>
-                            🍖 Fome
+                            FOME
                             <b id="hungerText">
                                 100
                             </b>
                         </span>
 
+
                         <span>
-                            💤 Cansaço
+                            CANSAÇO
                             <b id="fatigueText">
                                 100
                             </b>
@@ -651,10 +679,7 @@
 
 
 
-                <!-- HUD DIREITO -->
-
                 <div class="hud-right">
-
 
                     <div class="mini-card">
 
@@ -669,7 +694,7 @@
                     </div>
 
 
-                    <div class="mini-card">
+                    <div class="mini-card xp-card">
 
                         <span>
                             XP
@@ -684,7 +709,7 @@
 
                     <button
                         id="inventoryBtn"
-                        class="hud-btn"
+                        class="hud-btn hud-icon-btn"
                         type="button"
                         title="Inventário"
                     >
@@ -694,7 +719,7 @@
 
                     <button
                         id="mapBtn"
-                        class="hud-btn"
+                        class="hud-btn hud-icon-btn"
                         type="button"
                         title="Mapa"
                     >
@@ -704,7 +729,7 @@
 
                     <button
                         id="bookBtn"
-                        class="hud-btn"
+                        class="hud-btn hud-icon-btn"
                         type="button"
                         title="Livro"
                     >
@@ -712,15 +737,9 @@
                     </button>
 
 
-                    <!--
-                        O botão STATUS é criado
-                        automaticamente pelo JavaScript.
-                    -->
-
-
                     <button
                         id="saveBtn"
-                        class="hud-btn"
+                        class="hud-btn hud-text-btn"
                         type="button"
                     >
                         SALVAR
@@ -729,7 +748,7 @@
 
                     <button
                         id="menuBtn"
-                        class="hud-btn"
+                        class="hud-btn hud-text-btn"
                         type="button"
                     >
                         MENU
@@ -742,7 +761,7 @@
 
 
             <!-- =================================================
-                 NOME DA REGIÃO
+                 LOCAL ATUAL
             ================================================== -->
 
             <div id="locationLabel">
@@ -760,11 +779,16 @@
                 class="minimap"
             >
 
-                <canvas
-                    id="miniCanvas"
-                    width="190"
-                    height="135"
-                ></canvas>
+                <div class="minimap-frame">
+
+                    <canvas
+                        id="miniCanvas"
+                        width="190"
+                        height="135"
+                    ></canvas>
+
+                </div>
+
 
                 <span>
                     MINIMAPA
@@ -780,30 +804,23 @@
 
             <div id="controlsHint">
 
-                <span>
-                    WASD
-                </span>
-                mover •
+                <span>WASD</span>
+                mover
 
-                <span>
-                    MOUSE
-                </span>
-                atacar •
+                <i>•</i>
 
-                <span>
-                    E
-                </span>
-                ação •
+                <span>Mouse</span>
+                atacar
 
-                <span>
-                    Q R F
-                </span>
-                habilidades •
+                <i>•</i>
 
-                <span>
-                    P
-                </span>
-                status
+                <span>E</span>
+                ação
+
+                <i>•</i>
+
+                <span>Q R F</span>
+                habilidades
 
             </div>
 
@@ -822,38 +839,10 @@
                     E
                 </b>
 
+
                 <span id="interactionText">
                     Interagir
                 </span>
-
-            </div>
-
-
-
-            <!-- =================================================
-                 PROGRESSO AO SEGURAR E
-            ================================================== -->
-
-            <div
-                id="holdProgress"
-                class="hold-progress hidden"
-            >
-
-                <div
-                    id="holdProgressTitle"
-                    class="hold-progress-title"
-                >
-                    Coletando...
-                </div>
-
-                <div class="hold-progress-track">
-
-                    <div
-                        id="holdProgressFill"
-                        class="hold-progress-fill"
-                    ></div>
-
-                </div>
 
             </div>
 
@@ -875,10 +864,12 @@
                     NPC
                 </div>
 
+
                 <div
                     id="dialogueText"
                     class="dialogue-text"
                 ></div>
+
 
                 <div class="dialogue-help">
                     E ou ENTER para continuar
@@ -903,9 +894,11 @@
                         CAMINHO
                     </p>
 
+
                     <h2>
                         DESEJA CONTINUAR?
                     </h2>
+
 
                     <p
                         id="travelText"
@@ -922,6 +915,7 @@
                         >
                             SIM
                         </button>
+
 
                         <button
                             id="travelNo"
@@ -940,7 +934,7 @@
 
 
             <!-- =================================================
-                 BATALHA
+                 CONFIRMAÇÃO DE BOSS
             ================================================== -->
 
             <div
@@ -948,22 +942,25 @@
                 class="modal hidden"
             >
 
-                <div class="modal-card">
+                <div class="modal-card battle-modal-card">
 
                     <div
                         id="battleIcon"
                         class="battle-icon"
                     >
-                        ☠
+                        ◆
                     </div>
+
 
                     <p class="eyebrow">
                         DESAFIO
                     </p>
 
+
                     <h2 id="battleTitle">
-                        Guardião
+                        GUARDIÃO
                     </h2>
+
 
                     <p
                         id="battleText"
@@ -980,6 +977,7 @@
                         >
                             ACEITAR BATALHA
                         </button>
+
 
                         <button
                             id="battleDecline"
@@ -1012,6 +1010,7 @@
                         class="close-btn panel-close"
                         type="button"
                         data-close="inventoryPanel"
+                        aria-label="Fechar"
                     >
                         ×
                     </button>
@@ -1032,11 +1031,14 @@
                         </div>
 
 
-                        <span class="weight-info">
-                            Peso:
+                        <span class="weight-display">
+
+                            PESO
+
                             <b id="weightText">
-                                0
+                                0 / 100
                             </b>
+
                         </span>
 
                     </div>
@@ -1096,18 +1098,18 @@
                         <button
                             class="tab"
                             type="button"
-                            data-cat="food"
+                            data-cat="potions"
                         >
-                            Comida
+                            Poções
                         </button>
 
 
                         <button
                             class="tab"
                             type="button"
-                            data-cat="potions"
+                            data-cat="food"
                         >
-                            Poções
+                            Comida
                         </button>
 
 
@@ -1136,6 +1138,7 @@
                             EQUIPAMENTO
                         </h3>
 
+
                         <div
                             id="equipmentGrid"
                             class="equipment-grid"
@@ -1158,33 +1161,42 @@
                 class="modal hidden"
             >
 
-                <div class="wide-panel">
+                <div class="wide-panel map-wide-panel">
 
                     <button
                         class="close-btn panel-close"
                         type="button"
                         data-close="mapPanel"
+                        aria-label="Fechar"
                     >
                         ×
                     </button>
+
 
                     <p class="eyebrow">
                         EXPLORAÇÃO
                     </p>
 
+
                     <h2>
                         MAPA
                     </h2>
 
-                    <canvas
-                        id="worldMapCanvas"
-                        width="900"
-                        height="560"
-                    ></canvas>
+
+                    <div class="world-map-frame">
+
+                        <canvas
+                            id="worldMapCanvas"
+                            width="900"
+                            height="560"
+                        ></canvas>
+
+                    </div>
+
 
                     <p class="muted map-caption">
-                        O mapa representa a região atual
-                        e os caminhos encontrados nela.
+                        O mapa mostra sua região atual
+                        e os caminhos que já consegue explorar.
                     </p>
 
                 </div>
@@ -1208,17 +1220,27 @@
                         class="close-btn panel-close"
                         type="button"
                         data-close="bookPanel"
+                        aria-label="Fechar"
                     >
                         ×
                     </button>
+
 
                     <p class="eyebrow">
                         REGISTROS
                     </p>
 
+
                     <h2>
                         LIVRO
                     </h2>
+
+
+                    <p class="panel-description">
+                        Apenas criaturas importantes
+                        já descobertas aparecem nestes registros.
+                    </p>
+
 
                     <div
                         id="bossBook"
@@ -1240,19 +1262,22 @@
                 class="modal hidden"
             >
 
-                <div class="wide-panel">
+                <div class="wide-panel shop-wide-panel">
 
                     <button
                         class="close-btn panel-close"
                         type="button"
                         data-close="shopPanel"
+                        aria-label="Fechar"
                     >
                         ×
                     </button>
 
+
                     <p class="eyebrow">
                         COMERCIANTE
                     </p>
+
 
                     <h2 id="shopTitle">
                         LOJA
@@ -1261,7 +1286,7 @@
 
                     <div
                         id="shopTabs"
-                        class="tabs"
+                        class="tabs shop-tabs"
                     >
 
                         <button
@@ -1269,15 +1294,16 @@
                             type="button"
                             data-shop="buy"
                         >
-                            Comprar
+                            COMPRAR
                         </button>
+
 
                         <button
                             class="tab"
                             type="button"
                             data-shop="sell"
                         >
-                            Vender
+                            VENDER
                         </button>
 
                     </div>
@@ -1303,12 +1329,13 @@
                 class="modal hidden"
             >
 
-                <div class="modal-card">
+                <div class="modal-card quest-modal">
 
                     <button
                         class="close-btn panel-close"
                         type="button"
                         data-close="questPanel"
+                        aria-label="Fechar"
                     >
                         ×
                     </button>
@@ -1318,9 +1345,11 @@
                         MISSÃO
                     </p>
 
+
                     <h2 id="questTitle">
                         Missão
                     </h2>
+
 
                     <p
                         id="questText"
@@ -1339,7 +1368,7 @@
                         class="primary-btn"
                         type="button"
                     >
-                        ACEITAR
+                        CONTINUAR
                     </button>
 
                 </div>
@@ -1354,26 +1383,30 @@
 
             <div
                 id="deathPanel"
-                class="modal hidden"
+                class="modal death-modal hidden"
             >
 
                 <div class="modal-card">
 
-                    <div class="battle-icon">
-                        ☠
+                    <div class="death-symbol">
+                        ◈
                     </div>
 
+
                     <p class="eyebrow">
-                        A QUIETUDE TE ALCANÇOU
+                        A QUIETUDE AVANÇA
                     </p>
+
 
                     <h2>
                         VOCÊ FOI DERROTADO
                     </h2>
 
+
                     <p class="muted">
                         Você retornará ao último ponto seguro.
                     </p>
+
 
                     <button
                         id="respawnBtn"
@@ -1390,7 +1423,8 @@
 
 
             <!-- =================================================
-                 TRANSIÇÃO
+                 TRANSIÇÃO HTML DE SEGURANÇA
+                 O JS V19 TAMBÉM DESENHA A TRANSIÇÃO NO CANVAS.
             ================================================== -->
 
             <div
@@ -1407,33 +1441,22 @@
 
 
             <!-- =================================================
-                 TOAST
+                 MENSAGENS
             ================================================== -->
 
             <div
                 id="saveMessage"
-                class="toast"
+                class="toast hidden"
+                role="status"
+                aria-live="polite"
             ></div>
 
-
         </section>
-
-
-
-        <!-- =====================================================
-             FADE GLOBAL
-        ====================================================== -->
-
-        <div
-            id="uiFade"
-            class="ui-fade"
-        ></div>
-
 
     </main>
 
 
-    <script src="./script.js?v=17.2"></script>
+    <script src="script.js"></script>
 
 </body>
 
