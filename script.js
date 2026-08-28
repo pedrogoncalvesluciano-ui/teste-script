@@ -32604,3 +32604,17854 @@
 
        COLE A PARTE 3 LOGO ABAIXO.
        ========================================================= */
+     /* =========================================================
+       VEYRA: A QUIETUDE — V19
+       PARTE 3/3
+       RENDER, UI, LUZ, SAVE/LOAD, EVENTOS E LOOP
+       ========================================================= */
+
+
+    /* =========================================================
+       TOAST / MENSAGENS
+       ========================================================= */
+
+    function showToast(
+        message,
+        duration =
+            2400
+    ) {
+
+        const toast =
+            $("saveMessage");
+
+
+        if (
+            !toast
+        ) {
+
+            console.log(
+                "[VEYRA]",
+                message
+            );
+
+
+            return;
+
+        }
+
+
+        clearTimeout(
+            state.toastTimer
+        );
+
+
+        toast.textContent =
+            String(
+                message ||
+                ""
+            );
+
+
+        toast.classList
+            .remove(
+                "hidden"
+            );
+
+
+        toast.classList
+            .add(
+                "show"
+            );
+
+
+        state.toastTimer =
+            setTimeout(
+                () => {
+
+                    toast.classList
+                        .remove(
+                            "show"
+                        );
+
+
+                    toast.classList
+                        .add(
+                            "hidden"
+                        );
+
+                },
+                duration
+            );
+
+    }
+
+
+    /* =========================================================
+       TROCA DE TELAS COM TRANSIÇÃO
+
+       Mantém o layout da capa original.
+       Só recupera sensação de entrada suave.
+       ========================================================= */
+
+    function showScreen(
+        name,
+        options =
+            {}
+    ) {
+
+        const target =
+            screens[
+                name
+            ];
+
+
+        if (
+            !target
+        ) {
+
+            return;
+
+        }
+
+
+        Object
+            .values(
+                screens
+            )
+            .forEach(
+                screen => {
+
+                    const active =
+                        screen ===
+                        target;
+
+
+                    screen.classList
+                        .toggle(
+                            "active",
+                            active
+                        );
+
+
+                    screen.setAttribute(
+                        "aria-hidden",
+                        active
+                            ? "false"
+                            : "true"
+                    );
+
+                }
+            );
+
+
+        if (
+            options.animate ===
+            false
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            typeof target.animate ===
+            "function"
+        ) {
+
+            target.animate(
+
+                [
+
+                    {
+
+                        opacity:
+                            0,
+
+                        transform:
+                            "scale(1.018)",
+
+                        filter:
+                            "brightness(.78)"
+
+                    },
+
+
+                    {
+
+                        opacity:
+                            1,
+
+                        transform:
+                            "scale(1)",
+
+                        filter:
+                            "brightness(1)"
+
+                    }
+
+                ],
+
+                {
+
+                    duration:
+                        520,
+
+                    easing:
+                        "cubic-bezier(.2,.75,.2,1)"
+
+                }
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       EFEITOS DA CAPA / BOTÕES
+
+       Não muda posição nem layout.
+       ========================================================= */
+
+    function restoreIntroEffects() {
+
+        const buttons = [
+
+            $("newGameBtn"),
+
+            $("continueBtn"),
+
+            $("howToBtn"),
+
+            $("creditsBtn")
+
+        ]
+            .filter(
+                Boolean
+            );
+
+
+        buttons.forEach(
+            button => {
+
+                if (
+                    button.dataset
+                        .v19GlowBound ===
+                    "1"
+                ) {
+
+                    return;
+
+                }
+
+
+                button.dataset
+                    .v19GlowBound =
+                    "1";
+
+
+                let hoverAnimation =
+                    null;
+
+
+                button.addEventListener(
+                    "pointerenter",
+                    () => {
+
+                        if (
+
+                            button.disabled ||
+
+                            typeof button.animate !==
+                            "function"
+
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        hoverAnimation
+                            ?.cancel();
+
+
+                        hoverAnimation =
+                            button.animate(
+
+                                [
+
+                                    {
+
+                                        transform:
+                                            "translateY(0) scale(1)",
+
+                                        filter:
+                                            "brightness(1)",
+
+                                        boxShadow:
+                                            "0 0 0 rgba(255,220,155,0)"
+
+                                    },
+
+
+                                    {
+
+                                        transform:
+                                            "translateY(-2px) scale(1.018)",
+
+                                        filter:
+                                            "brightness(1.22)",
+
+                                        boxShadow:
+                                            "0 0 24px rgba(255,220,155,.42)"
+
+                                    }
+
+                                ],
+
+                                {
+
+                                    duration:
+                                        190,
+
+                                    easing:
+                                        "ease-out",
+
+                                    fill:
+                                        "forwards"
+
+                                }
+
+                            );
+
+                    }
+                );
+
+
+                button.addEventListener(
+                    "pointerleave",
+                    () => {
+
+                        if (
+
+                            button.disabled ||
+
+                            typeof button.animate !==
+                            "function"
+
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        hoverAnimation
+                            ?.cancel();
+
+
+                        hoverAnimation =
+                            button.animate(
+
+                                [
+
+                                    {
+
+                                        transform:
+                                            "translateY(-2px) scale(1.018)",
+
+                                        filter:
+                                            "brightness(1.22)",
+
+                                        boxShadow:
+                                            "0 0 24px rgba(255,220,155,.42)"
+
+                                    },
+
+
+                                    {
+
+                                        transform:
+                                            "translateY(0) scale(1)",
+
+                                        filter:
+                                            "brightness(1)",
+
+                                        boxShadow:
+                                            "0 0 0 rgba(255,220,155,0)"
+
+                                    }
+
+                                ],
+
+                                {
+
+                                    duration:
+                                        240,
+
+                                    easing:
+                                        "ease-out",
+
+                                    fill:
+                                        "forwards"
+
+                                }
+
+                            );
+
+                    }
+                );
+
+
+                button.addEventListener(
+                    "pointerdown",
+                    () => {
+
+                        if (
+
+                            button.disabled ||
+
+                            typeof button.animate !==
+                            "function"
+
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        button.animate(
+
+                            [
+
+                                {
+                                    transform:
+                                        "scale(1.018)"
+                                },
+
+                                {
+                                    transform:
+                                        "scale(.975)"
+                                },
+
+                                {
+                                    transform:
+                                        "scale(1.01)"
+                                }
+
+                            ],
+
+                            {
+
+                                duration:
+                                    170,
+
+                                easing:
+                                    "ease-out"
+
+                            }
+
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        const title =
+            screens.menu
+                ?.querySelector(
+                    "h1, .game-title, .title"
+                );
+
+
+        if (
+
+            title &&
+
+            !title.dataset
+                .v19TitleGlow &&
+
+            typeof title.animate ===
+            "function"
+
+        ) {
+
+            title.dataset
+                .v19TitleGlow =
+                "1";
+
+
+            title.animate(
+
+                [
+
+                    {
+
+                        filter:
+                            "drop-shadow(0 0 6px rgba(240,210,160,.18))"
+
+                    },
+
+
+                    {
+
+                        filter:
+                            "drop-shadow(0 0 17px rgba(240,210,160,.5))"
+
+                    },
+
+
+                    {
+
+                        filter:
+                            "drop-shadow(0 0 6px rgba(240,210,160,.18))"
+
+                    }
+
+                ],
+
+                {
+
+                    duration:
+                        3300,
+
+                    iterations:
+                        Infinity,
+
+                    easing:
+                        "ease-in-out"
+
+                }
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       COMO JOGAR
+
+       Remove aquela parte das áreas vermelhas.
+       ========================================================= */
+
+    function removeOldRedAreaHowToEntry() {
+
+        const how =
+            screens.how;
+
+
+        if (
+            !how
+        ) {
+
+            return;
+
+        }
+
+
+        const candidates =
+            [
+
+                ...how.querySelectorAll(
+
+                    "li, button, .control-row, .how-item, p, div"
+
+                )
+
+            ];
+
+
+        const unwanted =
+            candidates.filter(
+                node => {
+
+                    const text =
+                        (
+                            node.textContent ||
+                            ""
+                        )
+                            .toLocaleLowerCase(
+                                "pt-BR"
+                            );
+
+
+                    return (
+
+                        text.includes(
+                            "áreas vermelhas"
+                        ) ||
+
+                        text.includes(
+                            "areas vermelhas"
+                        ) ||
+
+                        text.includes(
+                            "zona vermelha"
+                        ) ||
+
+                        text.includes(
+                            "área vermelha"
+                        )
+
+                    );
+
+                }
+            );
+
+
+        unwanted.forEach(
+            node => {
+
+                const parentMatch =
+                    node.closest(
+
+                        "li, .control-row, .how-item"
+
+                    );
+
+
+                (
+                    parentMatch ||
+                    node
+                )
+                    .remove();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       CRÉDITOS
+       ========================================================= */
+
+    function ensureCredits() {
+
+        const credits =
+            screens.credits;
+
+
+        if (
+            !credits
+        ) {
+
+            return;
+
+        }
+
+
+        const text =
+            credits.textContent ||
+            "";
+
+
+        if (
+
+            text.includes(
+                "Pedro"
+            ) &&
+
+            text.includes(
+                "ChatGPT"
+            )
+
+        ) {
+
+            return;
+
+        }
+
+
+        const block =
+            document
+                .createElement(
+                    "div"
+                );
+
+
+        block.className =
+            "credits-extra";
+
+
+        block.innerHTML = `
+
+            <p>
+                <strong>
+                    Conceito e criação do projeto:
+                </strong>
+                Pedro
+            </p>
+
+            <p>
+                <strong>
+                    Desenvolvimento e apoio de programação:
+                </strong>
+                ChatGPT
+            </p>
+
+        `;
+
+
+        const close =
+            $("closeCreditsBtn");
+
+
+        if (
+            close?.parentNode ===
+            credits
+        ) {
+
+            credits.insertBefore(
+                block,
+                close
+            );
+
+        }
+
+        else {
+
+            credits.appendChild(
+                block
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       ITENS PERMANENTES
+       ========================================================= */
+
+    function hasMinimap() {
+
+        return Boolean(
+
+            state.player &&
+
+            (
+
+                state.player
+                    .minimapOwned ||
+
+                (
+                    state.player
+                        .inventory
+                        ?.minimapa ||
+                    0
+                ) >
+                0
+
+            )
+
+        );
+
+    }
+
+
+    function hasLantern() {
+
+        return Boolean(
+
+            state.player &&
+
+            (
+
+                state.player
+                    .lanternOwned ||
+
+                (
+                    state.player
+                        .inventory
+                        ?.lanterna ||
+                    0
+                ) >
+                0
+
+            )
+
+        );
+
+    }
+
+
+    /* =========================================================
+       HUD
+       ========================================================= */
+
+    function setBarWidth(
+        id,
+        value,
+        max
+    ) {
+
+        const bar =
+            $(id);
+
+
+        if (
+            !bar
+        ) {
+
+            return;
+
+        }
+
+
+        const ratio =
+            max >
+            0
+
+                ? clamp(
+                    value /
+                    max,
+                    0,
+                    1
+                )
+
+                : 0;
+
+
+        bar.style.width =
+            `${ratio * 100}%`;
+
+    }
+
+
+    function updateHUD() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+        ) {
+
+            return;
+
+        }
+
+
+        const character =
+            currentCharacter();
+
+
+        if (
+            $("hudAvatar")
+        ) {
+
+            $("hudAvatar")
+                .textContent =
+                character.icon;
+
+        }
+
+
+        if (
+            $("hudClass")
+        ) {
+
+            $("hudClass")
+                .textContent =
+                player.className;
+
+        }
+
+
+        if (
+            $("hudName")
+        ) {
+
+            $("hudName")
+                .textContent =
+                player.name;
+
+        }
+
+
+        if (
+            $("moneyText")
+        ) {
+
+            $("moneyText")
+                .textContent =
+                Math.floor(
+                    player.money ||
+                    0
+                );
+
+        }
+
+
+        if (
+            $("levelText")
+        ) {
+
+            $("levelText")
+                .textContent =
+                player.level;
+
+        }
+
+
+        if (
+            $("xpText")
+        ) {
+
+            $("xpText")
+                .textContent =
+
+                player.level >=
+                MAX_LEVEL
+
+                    ? "MÁX."
+
+                    : `${Math.floor(
+                        player.xp
+                    )} / ${Math.floor(
+                        player.xpToNext
+                    )}`;
+
+        }
+
+
+        if (
+            $("hpText")
+        ) {
+
+            $("hpText")
+                .textContent =
+                `${Math.ceil(
+                    player.hp
+                )}/${Math.ceil(
+                    player.maxHp
+                )}`;
+
+        }
+
+
+        if (
+            $("magicText")
+        ) {
+
+            $("magicText")
+                .textContent =
+                `${Math.ceil(
+                    player.magic
+                )}/${Math.ceil(
+                    player.maxMagic
+                )}`;
+
+        }
+
+
+        if (
+            $("energyText")
+        ) {
+
+            $("energyText")
+                .textContent =
+                `${Math.ceil(
+                    player.energy
+                )}/${Math.ceil(
+                    player.maxEnergy
+                )}`;
+
+        }
+
+
+        if (
+            $("hungerText")
+        ) {
+
+            $("hungerText")
+                .textContent =
+                `${Math.ceil(
+                    player.hunger
+                )}/${Math.ceil(
+                    player.maxHunger
+                )}`;
+
+        }
+
+
+        if (
+            $("fatigueText")
+        ) {
+
+            $("fatigueText")
+                .textContent =
+                `${Math.ceil(
+                    player.fatigue
+                )}/${Math.ceil(
+                    player.maxFatigue
+                )}`;
+
+        }
+
+
+        setBarWidth(
+            "hpBar",
+            player.hp,
+            player.maxHp
+        );
+
+
+        setBarWidth(
+            "magicBar",
+            player.magic,
+            player.maxMagic
+        );
+
+
+        setBarWidth(
+            "energyBar",
+            player.energy,
+            player.maxEnergy
+        );
+
+
+        if (
+            $("weightText")
+        ) {
+
+            $("weightText")
+                .textContent =
+                `${calculateInventoryWeight()} / ${player.inventoryWeightLimit}`;
+
+        }
+
+
+        if (
+            $("mapBtn")
+        ) {
+
+            $("mapBtn").disabled =
+                !hasMinimap();
+
+
+            $("mapBtn").title =
+                hasMinimap()
+
+                    ? "Mapa"
+
+                    : "Compre o Minimapa com Doran";
+
+        }
+
+
+        updateInteractionHint();
+
+        updateStatusButtonBadge();
+
+    }
+
+
+    /* =========================================================
+       PAINÉIS
+       ========================================================= */
+
+    function isPanelVisible(
+        id
+    ) {
+
+        const element =
+            $(id);
+
+
+        return Boolean(
+
+            element &&
+
+            !element.classList
+                .contains(
+                    "hidden"
+                )
+
+        );
+
+    }
+
+
+    function closeGameplayPanels(
+        exceptId =
+            null
+    ) {
+
+        [
+
+            "inventoryPanel",
+
+            "mapPanel",
+
+            "bookPanel",
+
+            "shopPanel",
+
+            "questPanel",
+
+            "statusPanelDynamic",
+
+            "finalChoicePanelDynamic"
+
+        ]
+            .forEach(
+                id => {
+
+                    if (
+                        id !==
+                        exceptId
+                    ) {
+
+                        $(id)
+                            ?.classList
+                            .add(
+                                "hidden"
+                            );
+
+                    }
+
+                }
+            );
+
+    }
+
+
+    function gameplayPanelOpen() {
+
+        return [
+
+            "inventoryPanel",
+
+            "mapPanel",
+
+            "bookPanel",
+
+            "shopPanel",
+
+            "questPanel",
+
+            "statusPanelDynamic",
+
+            "finalChoicePanelDynamic"
+
+        ]
+            .some(
+                isPanelVisible
+            );
+
+    }
+
+
+    /* =========================================================
+       INDICAÇÃO DE INTERAÇÃO
+       ========================================================= */
+
+    function updateInteractionHint() {
+
+        const hint =
+            $("interactionHint");
+
+
+        if (
+
+            !hint ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+
+            state.transition ||
+
+            state.player
+                .dead ||
+
+            state.dialogue ||
+
+            state.battle ||
+
+            gameplayPanelOpen()
+
+        ) {
+
+            hint.classList
+                .add(
+                    "hidden"
+                );
+
+
+            return;
+
+        }
+
+
+        const interaction =
+            getInteraction();
+
+
+        if (
+            !interaction
+        ) {
+
+            hint.classList
+                .add(
+                    "hidden"
+                );
+
+
+            return;
+
+        }
+
+
+        if (
+            $("interactionKey")
+        ) {
+
+            $("interactionKey")
+                .textContent =
+                interaction.key ||
+                "E";
+
+        }
+
+
+        if (
+            $("interactionText")
+        ) {
+
+            $("interactionText")
+                .textContent =
+                interaction.label ||
+                "INTERAGIR";
+
+        }
+
+
+        hint.classList
+            .remove(
+                "hidden"
+            );
+
+    }
+
+
+    function updateHoldIndicator() {
+
+        const hint =
+            $("interactionHint");
+
+
+        const text =
+            $("interactionText");
+
+
+        const action =
+            state.holdAction;
+
+
+        if (
+
+            !hint ||
+
+            !text ||
+
+            !action
+
+        ) {
+
+            return;
+
+        }
+
+
+        const ratio =
+            clamp(
+
+                action.time /
+                action.required,
+
+                0,
+                1
+
+            );
+
+
+        const blocks =
+            10;
+
+
+        const filled =
+            Math.round(
+                ratio *
+                blocks
+            );
+
+
+        const bar =
+            `${"▰".repeat(
+                filled
+            )}${"▱".repeat(
+                blocks -
+                filled
+            )}`;
+
+
+        text.textContent =
+
+            action.type ===
+            "tree"
+
+                ? `CORTANDO ${bar}`
+
+                : `COLETANDO ${bar}`;
+
+
+        hint.classList
+            .remove(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       INVENTÁRIO
+       ========================================================= */
+
+    function inventoryCategoryMatches(
+        item,
+        category
+    ) {
+
+        if (
+
+            !category ||
+
+            category ===
+            "all"
+
+        ) {
+
+            return true;
+
+        }
+
+
+        const aliases = {
+
+            material:
+                "materials",
+
+            materiais:
+                "materials",
+
+            weapon:
+                "weapons",
+
+            armas:
+                "weapons",
+
+            armor:
+                "armor",
+
+            armaduras:
+                "armor",
+
+            tool:
+                "tools",
+
+            ferramentas:
+                "tools",
+
+            potion:
+                "potions",
+
+            poções:
+                "potions",
+
+            pocoes:
+                "potions",
+
+            food:
+                "food",
+
+            comida:
+                "food",
+
+            special:
+                "special",
+
+            especiais:
+                "special",
+
+            mapa:
+                "map"
+
+        };
+
+
+        const normalized =
+            aliases[
+                category
+            ] ||
+            category;
+
+
+        return (
+            item.category ===
+            normalized
+        );
+
+    }
+
+
+    function renderInventory() {
+
+        const grid =
+            $("inventoryGrid");
+
+
+        const equipmentGrid =
+            $("equipmentGrid");
+
+
+        if (
+
+            !grid ||
+
+            !equipmentGrid ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        grid.innerHTML =
+            "";
+
+
+        const entries =
+            Object
+                .entries(
+                    state.player
+                        .inventory
+                )
+                .filter(
+                    ([
+                        ,
+                        amount
+                    ]) =>
+                        amount >
+                        0
+                )
+                .filter(
+                    ([
+                        id
+                    ]) =>
+
+                        ITEMS[
+                            id
+                        ] &&
+
+                        inventoryCategoryMatches(
+
+                            ITEMS[
+                                id
+                            ],
+
+                            state.inventoryCategory
+
+                        )
+                );
+
+
+        if (
+            !entries.length
+        ) {
+
+            const empty =
+                document
+                    .createElement(
+                        "div"
+                    );
+
+
+            empty.className =
+                "inventory-empty";
+
+
+            empty.textContent =
+                "Nenhum item nesta categoria.";
+
+
+            grid.appendChild(
+                empty
+            );
+
+        }
+
+
+        entries.forEach(
+            ([
+                id,
+                amount
+            ]) => {
+
+                const item =
+                    ITEMS[
+                        id
+                    ];
+
+
+                const card =
+                    document
+                        .createElement(
+                            "div"
+                        );
+
+
+                card.className =
+                    "inventory-item";
+
+
+                const equipped =
+                    Object
+                        .values(
+                            state.player
+                                .equipment ||
+                            {}
+                        )
+                        .includes(
+                            id
+                        );
+
+
+                card.innerHTML = `
+
+                    <div class="item-icon">
+                        ${item.icon || "◆"}
+                    </div>
+
+                    <div class="item-info">
+
+                        <strong>
+                            ${item.name}
+                        </strong>
+
+                        <small>
+                            x${amount}
+                            ${equipped ? " • EQUIPADO" : ""}
+                        </small>
+
+                    </div>
+
+                    <div class="item-actions"></div>
+
+                `;
+
+
+                const actions =
+                    card.querySelector(
+                        ".item-actions"
+                    );
+
+
+                const addAction = (
+                    label,
+                    handler,
+                    disabled =
+                        false
+                ) => {
+
+                    const button =
+                        document
+                            .createElement(
+                                "button"
+                            );
+
+
+                    button.type =
+                        "button";
+
+
+                    button.className =
+                        "secondary-btn";
+
+
+                    button.textContent =
+                        label;
+
+
+                    button.disabled =
+                        disabled;
+
+
+                    button.addEventListener(
+                        "click",
+                        event => {
+
+                            event.stopPropagation();
+
+
+                            handler();
+
+
+                            renderInventory();
+
+
+                            updateHUD();
+
+                        }
+                    );
+
+
+                    actions
+                        ?.appendChild(
+                            button
+                        );
+
+                };
+
+
+                if (
+
+                    [
+
+                        "weapons",
+
+                        "armor",
+
+                        "tools"
+
+                    ]
+                        .includes(
+                            item.category
+                        )
+
+                ) {
+
+                    addAction(
+
+                        equipped
+
+                            ? "EQUIPADO"
+
+                            : "EQUIPAR",
+
+                        () =>
+                            equipItem(
+                                id
+                            ),
+
+                        equipped
+
+                    );
+
+                }
+
+
+                if (
+
+                    [
+
+                        "food",
+
+                        "potions"
+
+                    ]
+                        .includes(
+                            item.category
+                        )
+
+                ) {
+
+                    addAction(
+
+                        "USAR",
+
+                        () =>
+                            useItem(
+                                id
+                            )
+
+                    );
+
+                }
+
+
+                if (
+                    id ===
+                    "flautaMemoria"
+                ) {
+
+                    addAction(
+
+                        "TOCAR",
+
+                        () => {
+
+                            closeGameplayPanels();
+
+
+                            useItem(
+                                id
+                            );
+
+                        }
+
+                    );
+
+                }
+
+
+                grid.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+        const equipment =
+            state.player
+                .equipment ||
+            {};
+
+
+        const weapon =
+            equipment.weapon
+
+                ? ITEMS[
+                    equipment.weapon
+                ]
+
+                : null;
+
+
+        const armor =
+            equipment.armor
+
+                ? ITEMS[
+                    equipment.armor
+                ]
+
+                : null;
+
+
+        const tool =
+            equipment.tool
+
+                ? ITEMS[
+                    equipment.tool
+                ]
+
+                : null;
+
+
+        equipmentGrid.innerHTML = `
+
+            <div>
+                ⚔️
+                <strong>
+                    Arma:
+                </strong>
+                ${weapon ? weapon.name : "Nenhuma"}
+            </div>
+
+            <div>
+                🛡️
+                <strong>
+                    Armadura:
+                </strong>
+                ${armor ? armor.name : "Nenhuma"}
+            </div>
+
+            <div>
+                🪓
+                <strong>
+                    Ferramenta:
+                </strong>
+                ${tool ? tool.name : "Nenhuma"}
+            </div>
+
+            <div>
+                ⚖️
+                <strong>
+                    Peso:
+                </strong>
+                ${calculateInventoryWeight()}
+                /
+                ${state.player.inventoryWeightLimit}
+            </div>
+
+        `;
+
+    }
+
+
+    function openInventoryPanel() {
+
+        const panel =
+            $("inventoryPanel");
+
+
+        if (
+            !panel
+        ) {
+
+            return;
+
+        }
+
+
+        const opening =
+            panel.classList
+                .contains(
+                    "hidden"
+                );
+
+
+        closeGameplayPanels();
+
+
+        if (
+            !opening
+        ) {
+
+            return;
+
+        }
+
+
+        renderInventory();
+
+
+        panel.classList
+            .remove(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       LIVRO
+       ========================================================= */
+
+    function renderBook() {
+
+        const book =
+            $("bossBook");
+
+
+        if (
+
+            !book ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        book.innerHTML =
+            "";
+
+
+        const discovered =
+            new Set(
+                state.player
+                    .discoveredBosses ||
+                []
+            );
+
+
+        const defeated =
+            new Set(
+                state.player
+                    .defeatedBosses ||
+                []
+            );
+
+
+        const known =
+            BOSS_REGISTRY
+                .filter(
+                    boss =>
+
+                        discovered.has(
+                            boss.id
+                        ) ||
+
+                        defeated.has(
+                            boss.id
+                        )
+                );
+
+
+        if (
+            !known.length
+        ) {
+
+            const empty =
+                document
+                    .createElement(
+                        "div"
+                    );
+
+
+            empty.className =
+                "book-empty";
+
+
+            empty.textContent =
+                "Nenhum boss descoberto. O livro não revela inimigos que você ainda não encontrou.";
+
+
+            book.appendChild(
+                empty
+            );
+
+
+            return;
+
+        }
+
+
+        known.forEach(
+            boss => {
+
+                const entry =
+                    document
+                        .createElement(
+                            "article"
+                        );
+
+
+                entry.className =
+                    "boss-entry";
+
+
+                const isDead =
+                    defeated.has(
+                        boss.id
+                    );
+
+
+                entry.innerHTML = `
+
+                    <div class="boss-book-symbol">
+                        ${boss.icon}
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            ${boss.name}
+                        </strong>
+
+                        <p>
+                            ${REGIONS[boss.region]?.name || boss.region}
+                        </p>
+
+                        <small>
+                            ${boss.quote}
+                        </small>
+
+                        <p>
+                            ${isDead ? "✅ DERROTADO" : "⚠️ DESCOBERTO"}
+                        </p>
+
+                    </div>
+
+                `;
+
+
+                book.appendChild(
+                    entry
+                );
+
+            }
+        );
+
+    }
+
+
+    function openBookPanel() {
+
+        const panel =
+            $("bookPanel");
+
+
+        if (
+            !panel
+        ) {
+
+            return;
+
+        }
+
+
+        const opening =
+            panel.classList
+                .contains(
+                    "hidden"
+                );
+
+
+        closeGameplayPanels();
+
+
+        if (
+            !opening
+        ) {
+
+            return;
+
+        }
+
+
+        renderBook();
+
+
+        panel.classList
+            .remove(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       MAPA
+       ========================================================= */
+
+    function openMapPanel() {
+
+        if (
+            !hasMinimap()
+        ) {
+
+            showToast(
+                "Compre o Minimapa com Doran para usar o mapa."
+            );
+
+
+            return;
+
+        }
+
+
+        const panel =
+            $("mapPanel");
+
+
+        if (
+            !panel
+        ) {
+
+            return;
+
+        }
+
+
+        const opening =
+            panel.classList
+                .contains(
+                    "hidden"
+                );
+
+
+        closeGameplayPanels();
+
+
+        if (
+            !opening
+        ) {
+
+            return;
+
+        }
+
+
+        panel.classList
+            .remove(
+                "hidden"
+            );
+
+
+        drawLargeMap();
+
+    }
+
+
+    /* =========================================================
+       STATUS
+       ========================================================= */
+
+    function ensureStatusPanel() {
+
+        if (
+            $("statusPanelDynamic")
+        ) {
+
+            return $("statusPanelDynamic");
+
+        }
+
+
+        const panel =
+            document
+                .createElement(
+                    "section"
+                );
+
+
+        panel.id =
+            "statusPanelDynamic";
+
+
+        panel.className =
+            "panel hidden";
+
+
+        panel.innerHTML = `
+
+            <div class="panel-header">
+
+                <h2>
+                    STATUS
+                </h2>
+
+                <button
+                    type="button"
+                    class="panel-close"
+                    data-v19-close="statusPanelDynamic"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <div class="panel-content">
+
+                <div id="statusPointsText"></div>
+
+                <div id="statusGridDynamic"></div>
+
+            </div>
+
+        `;
+
+
+        must(
+            "gameScreen"
+        )
+            .appendChild(
+                panel
+            );
+
+
+        panel
+            .querySelector(
+                "[data-v19-close]"
+            )
+            ?.addEventListener(
+                "click",
+                () =>
+                    panel.classList
+                        .add(
+                            "hidden"
+                        )
+            );
+
+
+        return panel;
+
+    }
+
+
+    function ensureStatusButton() {
+
+        if (
+            $("statusBtnDynamic")
+        ) {
+
+            return;
+
+        }
+
+
+        const anchor =
+            $("bookBtn") ||
+            $("mapBtn") ||
+            $("inventoryBtn");
+
+
+        if (
+            !anchor
+                ?.parentNode
+        ) {
+
+            return;
+
+        }
+
+
+        const button =
+            document
+                .createElement(
+                    "button"
+                );
+
+
+        button.id =
+            "statusBtnDynamic";
+
+
+        button.type =
+            "button";
+
+
+        button.className =
+            anchor.className;
+
+
+        button.textContent =
+            "STATUS";
+
+
+        button.title =
+            "Pontos de status (P)";
+
+
+        button.addEventListener(
+            "click",
+            openStatusPanel
+        );
+
+
+        anchor.parentNode
+            .insertBefore(
+                button,
+                anchor.nextSibling
+            );
+
+    }
+
+
+    function updateStatusButtonBadge() {
+
+        const button =
+            $("statusBtnDynamic");
+
+
+        if (
+
+            !button ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        button.textContent =
+
+            state.player
+                .statPoints >
+            0
+
+                ? `STATUS (${state.player.statPoints})`
+
+                : "STATUS";
+
+    }
+
+
+    function renderStatusPanel() {
+
+        const panel =
+            ensureStatusPanel();
+
+
+        const points =
+            $("statusPointsText");
+
+
+        const grid =
+            $("statusGridDynamic");
+
+
+        if (
+
+            !grid ||
+
+            !points ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        points.textContent =
+            `Pontos disponíveis: ${state.player.statPoints}`;
+
+
+        grid.innerHTML =
+            "";
+
+
+        Object
+            .entries(
+                STAT_CONFIG
+            )
+            .forEach(
+                ([
+                    id,
+                    config
+                ]) => {
+
+                    const current =
+                        state.player
+                            .stats[
+                                id
+                            ] ||
+                        0;
+
+
+                    const row =
+                        document
+                            .createElement(
+                                "div"
+                            );
+
+
+                    row.className =
+                        "status-row";
+
+
+                    row.innerHTML = `
+
+                        <div>
+
+                            <strong>
+                                ${config.label}
+                            </strong>
+
+                            <small>
+                                ${config.description}
+                            </small>
+
+                        </div>
+
+                        <div>
+                            ${current}/${config.cap}
+                        </div>
+
+                        <button
+                            type="button"
+                            class="primary-btn"
+                        >
+                            +
+                        </button>
+
+                    `;
+
+
+                    const button =
+                        row.querySelector(
+                            "button"
+                        );
+
+
+                    button.disabled =
+
+                        state.player
+                            .statPoints <=
+                        0 ||
+
+                        current >=
+                        config.cap;
+
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            if (
+                                allocateStatPoint(
+                                    id
+                                )
+                            ) {
+
+                                renderStatusPanel();
+
+
+                                updateHUD();
+
+                            }
+
+                        }
+                    );
+
+
+                    grid.appendChild(
+                        row
+                    );
+
+                }
+            );
+
+
+        return panel;
+
+    }
+
+
+    function openStatusPanel() {
+
+        const panel =
+            ensureStatusPanel();
+
+
+        const opening =
+            panel.classList
+                .contains(
+                    "hidden"
+                );
+
+
+        closeGameplayPanels();
+
+
+        if (
+            !opening
+        ) {
+
+            return;
+
+        }
+
+
+        renderStatusPanel();
+
+
+        panel.classList
+            .remove(
+                "hidden"
+            );
+
+    }
+
+
+    /* =========================================================
+       HELPERS VISUAIS DO MAPA
+       ========================================================= */
+
+    function pseudoNoise(
+        x,
+        y,
+        salt =
+            0
+    ) {
+
+        const value =
+            Math.sin(
+
+                x *
+                12.9898 +
+
+                y *
+                78.233 +
+
+                salt *
+                37.719
+
+            ) *
+            43758.5453;
+
+
+        return (
+            value -
+            Math.floor(
+                value
+            )
+        );
+
+    }
+
+
+    function visibleBounds(
+        padding =
+            100
+    ) {
+
+        return {
+
+            left:
+                state.camera.x -
+                padding,
+
+            top:
+                state.camera.y -
+                padding,
+
+            right:
+                state.camera.x +
+                window.innerWidth +
+                padding,
+
+            bottom:
+                state.camera.y +
+                window.innerHeight +
+                padding
+
+        };
+
+    }
+
+
+    function pointVisible(
+        x,
+        y,
+        padding =
+            100
+    ) {
+
+        const bounds =
+            visibleBounds(
+                padding
+            );
+
+
+        return (
+
+            x >=
+            bounds.left &&
+
+            x <=
+            bounds.right &&
+
+            y >=
+            bounds.top &&
+
+            y <=
+            bounds.bottom
+
+        );
+
+    }
+
+
+    function rectVisible(
+        rect,
+        padding =
+            100
+    ) {
+
+        const bounds =
+            visibleBounds(
+                padding
+            );
+
+
+        return (
+
+            rect.x +
+            rect.w >=
+            bounds.left &&
+
+            rect.x <=
+            bounds.right &&
+
+            rect.y +
+            rect.h >=
+            bounds.top &&
+
+            rect.y <=
+            bounds.bottom
+
+        );
+
+    }
+
+
+    /* =========================================================
+       CHÃO MAIS BONITO
+       ========================================================= */
+
+    function drawGround() {
+
+        const style =
+            BIOME_STYLE[
+                state.area
+            ] ||
+            BIOME_STYLE
+                .village;
+
+
+        ctx.fillStyle =
+            style.ground;
+
+
+        ctx.fillRect(
+
+            0,
+            0,
+
+            state.world.width,
+            state.world.height
+
+        );
+
+
+        const tile =
+            72;
+
+
+        const bounds =
+            visibleBounds(
+                90
+            );
+
+
+        const startX =
+            Math.max(
+
+                0,
+
+                Math.floor(
+                    bounds.left /
+                    tile
+                ) *
+                tile
+
+            );
+
+
+        const startY =
+            Math.max(
+
+                0,
+
+                Math.floor(
+                    bounds.top /
+                    tile
+                ) *
+                tile
+
+            );
+
+
+        const endX =
+            Math.min(
+
+                state.world.width,
+
+                bounds.right
+
+            );
+
+
+        const endY =
+            Math.min(
+
+                state.world.height,
+
+                bounds.bottom
+
+            );
+
+
+        for (
+            let y =
+                startY;
+
+            y <=
+            endY;
+
+            y +=
+            tile
+        ) {
+
+            for (
+                let x =
+                    startX;
+
+                x <=
+                endX;
+
+                x +=
+                tile
+            ) {
+
+                const noise =
+                    pseudoNoise(
+
+                        x /
+                        tile,
+
+                        y /
+                        tile,
+
+                        getWorldSeed(
+                            state.area
+                        ) %
+                        997
+
+                    );
+
+
+                ctx.globalAlpha =
+                    0.07 +
+                    noise *
+                    0.08;
+
+
+                ctx.fillStyle =
+
+                    noise >
+                    0.52
+
+                        ? style.ground2
+
+                        : style.accent;
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    x +
+                    tile *
+                    (
+                        0.25 +
+                        noise *
+                        0.5
+                    ),
+
+                    y +
+                    tile *
+                    (
+                        0.2 +
+                        pseudoNoise(
+                            y,
+                            x,
+                            4
+                        ) *
+                        0.6
+                    ),
+
+                    9 +
+                    noise *
+                    18,
+
+                    4 +
+                    noise *
+                    9,
+
+                    noise *
+                    Math.PI,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+
+                if (
+                    noise >
+                    0.7
+                ) {
+
+                    ctx.globalAlpha =
+                        0.16;
+
+
+                    ctx.fillStyle =
+                        style.speck;
+
+
+                    ctx.fillRect(
+
+                        x +
+                        10 +
+                        noise *
+                        38,
+
+                        y +
+                        12 +
+                        noise *
+                        21,
+
+                        2,
+                        2
+
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        ctx.globalAlpha =
+            1;
+
+    }
+
+
+    /* =========================================================
+       CAMINHOS
+       ========================================================= */
+
+    function pathColor(
+        path
+    ) {
+
+        const style =
+            BIOME_STYLE[
+                state.area
+            ] ||
+            BIOME_STYLE
+                .village;
+
+
+        const colors = {
+
+            villageRoad:
+                "#ab8b5b",
+
+            forestTrail:
+                "#887852",
+
+            groveTrail:
+                "#74684b",
+
+            snowTrail:
+                "#c6cbc8",
+
+            mineTrack:
+                "#534c45",
+
+            crystalTrail:
+                "#70404c",
+
+            mazeExit:
+                "#3b3440",
+
+            shadowRoad:
+                "#37394f",
+
+            fairyRoad:
+                "#9b78aa",
+
+            cloudRoad:
+                "#d0d9df",
+
+            hellRoad:
+                "#6d342a",
+
+            finalRoad:
+                "#45404c"
+
+        };
+
+
+        return (
+            colors[
+                path.kind
+            ] ||
+            style.dirt
+        );
+
+    }
+
+
+    function drawPaths() {
+
+        state.world
+            .paths
+            .forEach(
+                path => {
+
+                    if (
+                        !path.points
+                            ?.length
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    ctx.lineCap =
+                        "round";
+
+
+                    ctx.lineJoin =
+                        "round";
+
+
+                    ctx.strokeStyle =
+                        "rgba(0,0,0,.14)";
+
+
+                    ctx.lineWidth =
+                        (
+                            path.width ||
+                            90
+                        ) +
+                        15;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        path.points[
+                            0
+                        ].x,
+
+                        path.points[
+                            0
+                        ].y
+
+                    );
+
+
+                    for (
+                        let i = 1;
+                        i <
+                        path.points.length;
+                        i++
+                    ) {
+
+                        ctx.lineTo(
+
+                            path.points[
+                                i
+                            ].x,
+
+                            path.points[
+                                i
+                            ].y
+
+                        );
+
+                    }
+
+
+                    ctx.stroke();
+
+
+                    ctx.strokeStyle =
+                        pathColor(
+                            path
+                        );
+
+
+                    ctx.lineWidth =
+                        path.width ||
+                        90;
+
+
+                    ctx.globalAlpha =
+                        0.95;
+
+
+                    ctx.stroke();
+
+
+                    ctx.strokeStyle =
+                        "rgba(255,255,255,.07)";
+
+
+                    ctx.lineWidth =
+                        Math.max(
+
+                            2,
+
+                            (
+                                path.width ||
+                                90
+                            ) *
+                            0.06
+
+                        );
+
+
+                    ctx.stroke();
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       DETALHES DO CHÃO
+       ========================================================= */
+
+    function drawSmallGroundDetail(
+        deco
+    ) {
+
+        const style =
+            BIOME_STYLE[
+                state.area
+            ] ||
+            BIOME_STYLE
+                .village;
+
+
+        const size =
+            deco.size ||
+            10;
+
+
+        ctx.save();
+
+
+        ctx.translate(
+            deco.x,
+            deco.y
+        );
+
+
+        ctx.rotate(
+            deco.angle ||
+            0
+        );
+
+
+        const grassy = [
+
+            "grassTuft",
+
+            "fern",
+
+            "glowingGrass",
+
+            "sparkGrass",
+
+            "darkGrass"
+
+        ];
+
+
+        const flowery = [
+
+            "flower",
+
+            "magicFlower",
+
+            "fairyFlower",
+
+            "skyFlower",
+
+            "petal"
+
+        ];
+
+
+        const stony = [
+
+            "smallStone",
+
+            "pathStone",
+
+            "darkPebble",
+
+            "obsidianShard",
+
+            "mirrorShard",
+
+            "crystalShard",
+
+            "purpleShard",
+
+            "smallCrystal"
+
+        ];
+
+
+        if (
+            grassy.includes(
+                deco.type
+            )
+        ) {
+
+            ctx.strokeStyle =
+
+                deco.type.includes(
+                    "glow"
+                ) ||
+
+                deco.type.includes(
+                    "spark"
+                )
+
+                    ? "rgba(180,255,215,.65)"
+
+                    : style.accent;
+
+
+            ctx.lineWidth =
+                2;
+
+
+            for (
+                let i = -2;
+                i <=
+                2;
+                i++
+            ) {
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    0,
+                    size *
+                    0.5
+                );
+
+
+                ctx.quadraticCurveTo(
+
+                    i *
+                    2,
+
+                    -size *
+                    0.25,
+
+                    i *
+                    4,
+
+                    -size
+
+                );
+
+
+                ctx.stroke();
+
+            }
+
+        }
+
+        else if (
+            flowery.includes(
+                deco.type
+            )
+        ) {
+
+            ctx.fillStyle =
+
+                deco.type.includes(
+                    "fairy"
+                ) ||
+
+                deco.type.includes(
+                    "magic"
+                )
+
+                    ? "rgba(255,178,241,.8)"
+
+                    : "rgba(235,190,155,.75)";
+
+
+            for (
+                let i = 0;
+                i <
+                5;
+                i++
+            ) {
+
+                const angle =
+                    i /
+                    5 *
+                    Math.PI *
+                    2;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    Math.cos(
+                        angle
+                    ) *
+                    size *
+                    0.35,
+
+                    Math.sin(
+                        angle
+                    ) *
+                    size *
+                    0.35,
+
+                    size *
+                    0.22,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+            }
+
+
+            ctx.fillStyle =
+                "#e6c76c";
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                0,
+                0,
+                size *
+                0.18,
+                0,
+                Math.PI *
+                2
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+            stony.includes(
+                deco.type
+            )
+        ) {
+
+            ctx.fillStyle =
+
+                deco.type.includes(
+                    "crystal"
+                ) ||
+
+                deco.type.includes(
+                    "Shard"
+                )
+
+                    ? "rgba(203,128,220,.62)"
+
+                    : "rgba(90,86,82,.45)";
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+
+                0,
+                0,
+
+                size,
+
+                size *
+                0.55,
+
+                0,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+
+            deco.type ===
+            "leafPatch" ||
+
+            deco.type ===
+            "fallenLeaf"
+
+        ) {
+
+            ctx.fillStyle =
+                "rgba(97,114,67,.52)";
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+
+                0,
+                0,
+
+                size *
+                0.8,
+
+                size *
+                0.35,
+
+                0,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+            deco.type ===
+            "snowDrift"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.2)";
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+
+                0,
+                0,
+
+                size *
+                2,
+
+                size *
+                0.7,
+
+                0,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+
+            deco.type ===
+            "ash" ||
+
+            deco.type ===
+            "darkDust"
+
+        ) {
+
+            ctx.fillStyle =
+                "rgba(220,210,205,.18)";
+
+
+            ctx.fillRect(
+                -2,
+                -2,
+                4,
+                4
+            );
+
+        }
+
+        else if (
+            deco.type ===
+            "ember"
+        ) {
+
+            ctx.fillStyle =
+                `rgba(
+                    255,
+                    110,
+                    54,
+                    ${
+                        0.45 +
+                        Math.sin(
+                            state.time *
+                            5 +
+                            deco.x
+                        ) *
+                        0.15
+                    }
+                )`;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                0,
+                0,
+                3,
+                0,
+                Math.PI *
+                2
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else {
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.08)";
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                0,
+                0,
+
+                Math.max(
+                    2,
+                    size *
+                    0.25
+                ),
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawDecoration(
+        deco
+    ) {
+
+        if (
+            !pointVisible(
+                deco.x,
+                deco.y,
+                140
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+
+            deco.hiddenWithoutLantern &&
+
+            state.area ===
+            "monarchMaze" &&
+
+            !hasLantern()
+
+        ) {
+
+            return;
+
+        }
+
+
+        const complex = [
+
+            "plazaRing",
+
+            "fountainMist",
+
+            "darkCaveEntrance",
+
+            "dashAltar",
+
+            "skyTrialSeal",
+
+            "oldRune",
+
+            "windRune",
+
+            "lavaCrack",
+
+            "memoryFragment",
+
+            "cloudWisp",
+
+            "lightFeather",
+
+            "ancientRoot",
+
+            "deadPine",
+
+            "shadowMist",
+
+            "mineLantern",
+
+            "rail",
+
+            "toolCrate",
+
+            "stalagmite",
+
+            "boneFragment",
+
+            "obsidianShard"
+
+        ];
+
+
+        if (
+            !complex.includes(
+                deco.type
+            )
+        ) {
+
+            drawSmallGroundDetail(
+                deco
+            );
+
+
+            return;
+
+        }
+
+
+        ctx.save();
+
+
+        ctx.translate(
+            deco.x,
+            deco.y
+        );
+
+
+        switch (
+            deco.type
+        ) {
+
+            case "plazaRing": {
+
+                ctx.strokeStyle =
+                    "rgba(207,190,150,.26)";
+
+
+                ctx.lineWidth =
+                    18;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    0,
+                    0,
+
+                    deco.radius ||
+                    235,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.stroke();
+
+
+                ctx.strokeStyle =
+                    "rgba(60,50,40,.2)";
+
+
+                ctx.lineWidth =
+                    2;
+
+
+                for (
+                    let i = 0;
+                    i <
+                    20;
+                    i++
+                ) {
+
+                    const angle =
+                        i /
+                        20 *
+                        Math.PI *
+                        2;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        Math.cos(
+                            angle
+                        ) *
+                        205,
+
+                        Math.sin(
+                            angle
+                        ) *
+                        205
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        Math.cos(
+                            angle
+                        ) *
+                        252,
+
+                        Math.sin(
+                            angle
+                        ) *
+                        252
+
+                    );
+
+
+                    ctx.stroke();
+
+                }
+
+
+                break;
+
+            }
+
+
+            case "fountainMist": {
+
+                ctx.fillStyle =
+                    `rgba(
+                        190,
+                        235,
+                        245,
+                        ${
+                            0.03 +
+                            Math.sin(
+                                state.time *
+                                2
+                            ) *
+                            0.01
+                        }
+                    )`;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    0,
+                    0,
+
+                    deco.radius ||
+                    120,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "darkCaveEntrance": {
+
+                const radius =
+                    deco.large
+
+                        ? 66
+
+                        : 48;
+
+
+                ctx.fillStyle =
+                    "#070608";
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    0,
+                    0,
+                    radius,
+                    Math.PI,
+                    0
+                );
+
+
+                ctx.lineTo(
+                    radius,
+                    58
+                );
+
+
+                ctx.lineTo(
+                    -radius,
+                    58
+                );
+
+
+                ctx.closePath();
+
+
+                ctx.fill();
+
+
+                ctx.strokeStyle =
+                    "#544a50";
+
+
+                ctx.lineWidth =
+                    7;
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "dashAltar": {
+
+                ctx.restore();
+
+
+                drawDashAltar(
+                    deco.x,
+                    deco.y
+                );
+
+
+                return;
+
+            }
+
+
+            case "skyTrialSeal": {
+
+                ctx.strokeStyle =
+                    `rgba(
+                        245,
+                        235,
+                        200,
+                        ${
+                            0.45 +
+                            Math.sin(
+                                state.time *
+                                3
+                            ) *
+                            0.15
+                        }
+                    )`;
+
+
+                ctx.lineWidth =
+                    5;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    0,
+                    0,
+
+                    deco.radius ||
+                    78,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.stroke();
+
+
+                for (
+                    let i = 0;
+                    i <
+                    8;
+                    i++
+                ) {
+
+                    const angle =
+
+                        i /
+                        8 *
+                        Math.PI *
+                        2 +
+
+                        state.time *
+                        0.15;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        Math.cos(
+                            angle
+                        ) *
+                        45,
+
+                        Math.sin(
+                            angle
+                        ) *
+                        45
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        Math.cos(
+                            angle
+                        ) *
+                        70,
+
+                        Math.sin(
+                            angle
+                        ) *
+                        70
+
+                    );
+
+
+                    ctx.stroke();
+
+                }
+
+
+                break;
+
+            }
+
+
+            case "oldRune":
+
+            case "windRune": {
+
+                ctx.strokeStyle =
+
+                    deco.type ===
+                    "windRune"
+
+                        ? "rgba(235,245,255,.3)"
+
+                        : "rgba(145,130,190,.34)";
+
+
+                ctx.lineWidth =
+                    2;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    0,
+                    0,
+                    13,
+                    0,
+                    Math.PI *
+                    2
+                );
+
+
+                ctx.moveTo(
+                    -9,
+                    0
+                );
+
+
+                ctx.lineTo(
+                    9,
+                    0
+                );
+
+
+                ctx.moveTo(
+                    0,
+                    -9
+                );
+
+
+                ctx.lineTo(
+                    0,
+                    9
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "lavaCrack": {
+
+                ctx.strokeStyle =
+                    `rgba(
+                        255,
+                        95,
+                        35,
+                        ${
+                            0.35 +
+                            Math.sin(
+                                state.time *
+                                4 +
+                                deco.x
+                            ) *
+                            0.12
+                        }
+                    )`;
+
+
+                ctx.lineWidth =
+                    3;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    -16,
+                    -8
+                );
+
+
+                ctx.lineTo(
+                    -4,
+                    0
+                );
+
+
+                ctx.lineTo(
+                    -12,
+                    13
+                );
+
+
+                ctx.moveTo(
+                    -4,
+                    0
+                );
+
+
+                ctx.lineTo(
+                    15,
+                    8
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "memoryFragment": {
+
+                ctx.fillStyle =
+                    "rgba(215,193,230,.42)";
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    0,
+                    -16
+                );
+
+
+                ctx.lineTo(
+                    10,
+                    0
+                );
+
+
+                ctx.lineTo(
+                    2,
+                    18
+                );
+
+
+                ctx.lineTo(
+                    -11,
+                    4
+                );
+
+
+                ctx.closePath();
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "cloudWisp": {
+
+                ctx.fillStyle =
+                    "rgba(255,255,255,.16)";
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    0,
+                    0,
+
+                    34,
+                    13,
+
+                    0,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "lightFeather": {
+
+                ctx.strokeStyle =
+                    "rgba(255,255,255,.45)";
+
+
+                ctx.lineWidth =
+                    2;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    -8,
+                    12
+                );
+
+
+                ctx.quadraticCurveTo(
+                    8,
+                    0,
+                    4,
+                    -14
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "ancientRoot": {
+
+                ctx.strokeStyle =
+                    "rgba(83,61,42,.55)";
+
+
+                ctx.lineWidth =
+                    7;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    -24,
+                    14
+                );
+
+
+                ctx.quadraticCurveTo(
+                    0,
+                    -22,
+                    27,
+                    10
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "deadPine": {
+
+                ctx.strokeStyle =
+                    "rgba(74,69,61,.6)";
+
+
+                ctx.lineWidth =
+                    6;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    0,
+                    26
+                );
+
+
+                ctx.lineTo(
+                    0,
+                    -30
+                );
+
+
+                ctx.moveTo(
+                    0,
+                    -8
+                );
+
+
+                ctx.lineTo(
+                    -17,
+                    -20
+                );
+
+
+                ctx.moveTo(
+                    0,
+                    -14
+                );
+
+
+                ctx.lineTo(
+                    19,
+                    -28
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "shadowMist": {
+
+                ctx.fillStyle =
+                    "rgba(83,80,119,.1)";
+
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    0,
+
+                    Math.sin(
+                        state.time +
+                        deco.x
+                    ) *
+                    4,
+
+                    42,
+                    18,
+
+                    0,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "mineLantern": {
+
+                ctx.fillStyle =
+                    "#65513f";
+
+
+                ctx.fillRect(
+                    -3,
+                    -15,
+                    6,
+                    28
+                );
+
+
+                ctx.fillStyle =
+                    `rgba(
+                        255,
+                        188,
+                        91,
+                        ${
+                            0.55 +
+                            Math.sin(
+                                state.time *
+                                8 +
+                                deco.x
+                            ) *
+                            0.15
+                        }
+                    )`;
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    0,
+                    -18,
+                    7,
+                    0,
+                    Math.PI *
+                    2
+                );
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "rail": {
+
+                ctx.strokeStyle =
+                    "rgba(97,90,82,.6)";
+
+
+                ctx.lineWidth =
+                    3;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    -24,
+                    -6
+                );
+
+
+                ctx.lineTo(
+                    24,
+                    8
+                );
+
+
+                ctx.moveTo(
+                    -24,
+                    5
+                );
+
+
+                ctx.lineTo(
+                    24,
+                    19
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            case "toolCrate": {
+
+                ctx.fillStyle =
+                    "#5f4430";
+
+
+                ctx.fillRect(
+                    -14,
+                    -11,
+                    28,
+                    22
+                );
+
+
+                ctx.strokeStyle =
+                    "#33261e";
+
+
+                ctx.strokeRect(
+                    -14,
+                    -11,
+                    28,
+                    22
+                );
+
+
+                break;
+
+            }
+
+
+            case "stalagmite": {
+
+                ctx.fillStyle =
+                    "rgba(100,96,89,.68)";
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    0,
+                    -20
+                );
+
+
+                ctx.lineTo(
+                    12,
+                    15
+                );
+
+
+                ctx.lineTo(
+                    -12,
+                    15
+                );
+
+
+                ctx.closePath();
+
+
+                ctx.fill();
+
+
+                break;
+
+            }
+
+
+            case "boneFragment": {
+
+                ctx.strokeStyle =
+                    "rgba(220,205,185,.45)";
+
+
+                ctx.lineWidth =
+                    4;
+
+
+                ctx.beginPath();
+
+
+                ctx.moveTo(
+                    -10,
+                    -5
+                );
+
+
+                ctx.lineTo(
+                    10,
+                    5
+                );
+
+
+                ctx.stroke();
+
+
+                break;
+
+            }
+
+
+            default: {
+
+                drawSmallGroundDetail(
+                    deco
+                );
+
+
+                break;
+
+            }
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawDecorations() {
+
+        state.world
+            .decorations
+            .forEach(
+                drawDecoration
+            );
+
+    }
+
+
+    /* =========================================================
+       FONTE CENTRAL ROBUSTA
+       ========================================================= */
+
+    function drawFountain(
+        obstacle
+    ) {
+
+        const x =
+            obstacle.x +
+            obstacle.w /
+            2;
+
+
+        const y =
+            obstacle.y +
+            obstacle.h /
+            2;
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.24)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            x +
+            8,
+
+            y +
+            16,
+
+            obstacle.w *
+            0.53,
+
+            obstacle.h *
+            0.38,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#898980";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            x,
+            y,
+
+            obstacle.w *
+            0.5,
+
+            obstacle.h *
+            0.44,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#5c93a4";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            x,
+
+            y -
+            2,
+
+            obstacle.w *
+            0.42,
+
+            obstacle.h *
+            0.34,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "rgba(210,240,247,.23)";
+
+
+        ctx.lineWidth =
+            3;
+
+
+        for (
+            let i = 0;
+            i <
+            3;
+            i++
+        ) {
+
+            const radius =
+
+                45 +
+
+                i *
+                22 +
+
+                Math.sin(
+                    state.time *
+                    3 +
+                    i
+                ) *
+                4;
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+
+                x,
+                y,
+
+                radius,
+
+                radius *
+                0.45,
+
+                0,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.fillStyle =
+            "#9b9a90";
+
+
+        ctx.fillRect(
+
+            x -
+            25,
+
+            y -
+            105,
+
+            50,
+            110
+
+        );
+
+
+        ctx.fillStyle =
+            "#adaca1";
+
+
+        ctx.fillRect(
+
+            x -
+            34,
+
+            y -
+            112,
+
+            68,
+            18
+
+        );
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            x,
+
+            y -
+            118,
+
+            27,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        const waterAlpha =
+
+            0.6 +
+
+            Math.sin(
+                state.time *
+                8
+            ) *
+            0.1;
+
+
+        ctx.strokeStyle =
+            `rgba(
+                177,
+                231,
+                245,
+                ${waterAlpha}
+            )`;
+
+
+        ctx.lineWidth =
+            4;
+
+
+        for (
+            const side of
+            [
+                -1,
+                1
+            ]
+        ) {
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+
+                x +
+                side *
+                17,
+
+                y -
+                88
+
+            );
+
+
+            ctx.quadraticCurveTo(
+
+                x +
+                side *
+                62,
+
+                y -
+                68,
+
+                x +
+                side *
+                72,
+
+                y -
+                8
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            x,
+            y -
+            140
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            x +
+            Math.sin(
+                state.time *
+                2
+            ) *
+            5,
+
+            y -
+            182,
+
+            x,
+
+            y -
+            194
+
+        );
+
+
+        ctx.stroke();
+
+
+        for (
+            let i = 0;
+            i <
+            8;
+            i++
+        ) {
+
+            const angle =
+
+                state.time *
+                1.6 +
+
+                i *
+                Math.PI /
+                4;
+
+
+            const px =
+
+                x +
+
+                Math.cos(
+                    angle
+                ) *
+                62;
+
+
+            const py =
+
+                y -
+                6 +
+
+                Math.sin(
+                    angle
+                ) *
+                23;
+
+
+            ctx.fillStyle =
+                `rgba(
+                    195,
+                    238,
+                    247,
+                    ${
+                        0.25 +
+                        (
+                            i %
+                            3
+                        ) *
+                        0.08
+                    }
+                )`;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                px,
+                py,
+
+                2.5 +
+                (
+                    i %
+                    2
+                ),
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       CASAS
+       ========================================================= */
+
+    function drawBuildings() {
+
+        state.world
+            .buildings
+            .forEach(
+                building => {
+
+                    if (
+                        !rectVisible(
+                            building,
+                            120
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.2)";
+
+
+                    ctx.fillRect(
+
+                        building.x +
+                        14,
+
+                        building.y +
+                        18,
+
+                        building.w,
+                        building.h
+
+                    );
+
+
+                    ctx.fillStyle =
+                        building.color;
+
+
+                    ctx.fillRect(
+
+                        building.x,
+                        building.y,
+
+                        building.w,
+                        building.h
+
+                    );
+
+
+                    ctx.fillStyle =
+                        building.roof;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        building.x -
+                        24,
+
+                        building.y +
+                        8
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        building.x +
+                        building.w /
+                        2,
+
+                        building.y -
+                        88
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        building.x +
+                        building.w +
+                        24,
+
+                        building.y +
+                        8
+
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    ctx.strokeStyle =
+                        "rgba(255,255,255,.08)";
+
+
+                    ctx.lineWidth =
+                        4;
+
+
+                    ctx.strokeRect(
+
+                        building.x,
+                        building.y,
+
+                        building.w,
+                        building.h
+
+                    );
+
+
+                    const windowY =
+                        building.y +
+                        74;
+
+
+                    [
+
+                        building.x +
+                        48,
+
+                        building.x +
+                        building.w -
+                        98
+
+                    ]
+                        .forEach(
+                            windowX => {
+
+                                ctx.fillStyle =
+                                    "#b99b72";
+
+
+                                ctx.fillRect(
+
+                                    windowX -
+                                    6,
+
+                                    windowY -
+                                    6,
+
+                                    58,
+                                    49
+
+                                );
+
+
+                                ctx.fillStyle =
+                                    "rgba(66,100,112,.72)";
+
+
+                                ctx.fillRect(
+
+                                    windowX,
+                                    windowY,
+
+                                    46,
+                                    37
+
+                                );
+
+
+                                ctx.strokeStyle =
+                                    "rgba(230,215,170,.3)";
+
+
+                                ctx.lineWidth =
+                                    2;
+
+
+                                ctx.beginPath();
+
+
+                                ctx.moveTo(
+
+                                    windowX +
+                                    23,
+
+                                    windowY
+
+                                );
+
+
+                                ctx.lineTo(
+
+                                    windowX +
+                                    23,
+
+                                    windowY +
+                                    37
+
+                                );
+
+
+                                ctx.moveTo(
+
+                                    windowX,
+
+                                    windowY +
+                                    18
+
+                                );
+
+
+                                ctx.lineTo(
+
+                                    windowX +
+                                    46,
+
+                                    windowY +
+                                    18
+
+                                );
+
+
+                                ctx.stroke();
+
+                            }
+                        );
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.fillStyle =
+                        "#eadbb7";
+
+
+                    ctx.font =
+                        "700 12px Georgia";
+
+
+                    ctx.fillText(
+
+                        building.name,
+
+                        building.x +
+                        building.w /
+                        2,
+
+                        building.y +
+                        building.h +
+                        28
+
+                    );
+
+
+                    ctx.restore();
+
+                }
+            );
+
+
+        drawExteriorDoors();
+
+    }
+
+
+    function drawExteriorDoors() {
+
+        state.world
+            .doors
+            .forEach(
+                door => {
+
+                    const building =
+                        state.world
+                            .buildings
+                            .find(
+                                item =>
+                                    item.id ===
+                                    door.buildingId
+                            );
+
+
+                    if (
+                        !building
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const frameY =
+
+                        building.y +
+
+                        building.h -
+
+                        84;
+
+
+                    const open =
+                        clamp(
+                            door.animation ||
+                            0,
+                            0,
+                            1
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+                        "#261a16";
+
+
+                    ctx.fillRect(
+
+                        door.x -
+                        7,
+
+                        frameY,
+
+                        door.w +
+                        14,
+
+                        86
+
+                    );
+
+
+                    ctx.strokeStyle =
+                        "#b08b59";
+
+
+                    ctx.lineWidth =
+                        3;
+
+
+                    ctx.strokeRect(
+
+                        door.x -
+                        7,
+
+                        frameY,
+
+                        door.w +
+                        14,
+
+                        86
+
+                    );
+
+
+                    const visible =
+                        Math.max(
+
+                            7,
+
+                            door.w *
+                            (
+                                1 -
+                                open *
+                                0.84
+                            )
+
+                        );
+
+
+                    ctx.fillStyle =
+                        "#593829";
+
+
+                    ctx.fillRect(
+
+                        door.x,
+
+                        frameY +
+                        6,
+
+                        visible,
+
+                        80
+
+                    );
+
+
+                    ctx.fillStyle =
+                        "rgba(240,216,162,.15)";
+
+
+                    if (
+                        open >
+                        0.08
+                    ) {
+
+                        ctx.fillRect(
+
+                            door.x +
+                            visible,
+
+                            frameY +
+                            7,
+
+                            door.w -
+                            visible,
+
+                            79
+
+                        );
+
+                    }
+
+
+                    if (
+                        open <
+                        0.75
+                    ) {
+
+                        ctx.fillStyle =
+                            "#d4b260";
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            door.x +
+                            visible -
+                            9,
+
+                            frameY +
+                            46,
+
+                            4,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       ÁRVORES
+       ========================================================= */
+
+    function drawTree(
+        tree
+    ) {
+
+        if (
+
+            !tree.alive ||
+
+            !pointVisible(
+                tree.x,
+                tree.y,
+                80
+            )
+
+        ) {
+
+            return;
+
+        }
+
+
+        const ancient =
+
+            tree.type ===
+            "ancientTree" ||
+
+            tree.type ===
+            "fairyTree";
+
+
+        const fairy =
+            tree.type ===
+            "fairyTree";
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.18)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            tree.x,
+
+            tree.y +
+            38,
+
+            30,
+            9,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+
+            ancient
+
+                ? "#5d4430"
+
+                : "#68492f";
+
+
+        ctx.fillRect(
+
+            tree.x -
+            10,
+
+            tree.y,
+
+            20,
+            45
+
+        );
+
+
+        ctx.strokeStyle =
+            ctx.fillStyle;
+
+
+        ctx.lineWidth =
+            7;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            tree.x,
+            tree.y +
+            10
+        );
+
+
+        ctx.lineTo(
+            tree.x -
+            20,
+            tree.y -
+            15
+        );
+
+
+        ctx.moveTo(
+            tree.x,
+            tree.y +
+            6
+        );
+
+
+        ctx.lineTo(
+            tree.x +
+            22,
+            tree.y -
+            18
+        );
+
+
+        ctx.stroke();
+
+
+        const leaf =
+
+            fairy
+
+                ? "#735985"
+
+                : ancient
+
+                    ? "#335a3f"
+
+                    : "#3d7043";
+
+
+        ctx.fillStyle =
+            leaf;
+
+
+        const sway =
+
+            Math.sin(
+
+                state.time *
+                1.2 +
+
+                tree.x *
+                0.01
+
+            ) *
+            2;
+
+
+        [
+
+            [
+                0,
+                -30,
+                38
+            ],
+
+            [
+                -24,
+                -25,
+                27
+            ],
+
+            [
+                25,
+                -24,
+                27
+            ],
+
+            [
+                0,
+                -54,
+                27
+            ]
+
+        ]
+            .forEach(
+                ([
+                    ox,
+                    oy,
+                    radius
+                ]) => {
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        tree.x +
+                        ox +
+                        sway,
+
+                        tree.y +
+                        oy,
+
+                        radius,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.fill();
+
+                }
+            );
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawTrees() {
+
+        state.world
+            .trees
+            .forEach(
+                drawTree
+            );
+
+    }
+
+
+    /* =========================================================
+       PEDRAS / OBSTÁCULOS
+       ========================================================= */
+
+    function obstacleColor(
+        type
+    ) {
+
+        const map = {
+
+            wall:
+                "#454a46",
+
+            rock:
+                "#777a73",
+
+            mossRock:
+                "#62705f",
+
+            groveStone:
+                "#677068",
+
+            snowrock:
+                "#a9afaf",
+
+            iceRock:
+                "#a8c0cb",
+
+            oreRock:
+                "#55514c",
+
+            ironrock:
+                "#666b6d",
+
+            rubyrock:
+                "#74394a",
+
+            rubyPillar:
+                "#873f54",
+
+            mazeWall:
+                "#262229",
+
+            arenaWall:
+                "#39303c",
+
+            shadowRock:
+                "#34374d",
+
+            lavaRock:
+                "#51332c",
+
+            obsidianRock:
+                "#332d31"
+
+        };
+
+
+        return (
+            map[
+                type
+            ] ||
+            "#686b66"
+        );
+
+    }
+
+
+    function drawObstacles() {
+
+        state.world
+            .obstacles
+            .forEach(
+                obstacle => {
+
+                    if (
+
+                        [
+
+                            "building",
+
+                            "tree"
+
+                        ]
+                            .includes(
+                                obstacle.type
+                            )
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !rectVisible(
+                            obstacle,
+                            100
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        obstacle.type ===
+                        "fountain"
+                    ) {
+
+                        drawFountain(
+                            obstacle
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+                        obstacleColor(
+                            obstacle.type
+                        );
+
+
+                    if (
+
+                        [
+
+                            "wall",
+
+                            "mazeWall",
+
+                            "arenaWall"
+
+                        ]
+                            .includes(
+                                obstacle.type
+                            )
+
+                    ) {
+
+                        ctx.fillRect(
+
+                            obstacle.x,
+                            obstacle.y,
+
+                            obstacle.w,
+                            obstacle.h
+
+                        );
+
+
+                        ctx.strokeStyle =
+                            "rgba(255,255,255,.05)";
+
+
+                        ctx.lineWidth =
+                            2;
+
+
+                        ctx.strokeRect(
+
+                            obstacle.x,
+                            obstacle.y,
+
+                            obstacle.w,
+                            obstacle.h
+
+                        );
+
+                    }
+
+                    else {
+
+                        ctx.fillStyle =
+                            "rgba(0,0,0,.14)";
+
+
+                        ctx.beginPath();
+
+
+                        ctx.ellipse(
+
+                            obstacle.x +
+                            obstacle.w /
+                            2 +
+                            5,
+
+                            obstacle.y +
+                            obstacle.h /
+                            2 +
+                            7,
+
+                            obstacle.w *
+                            0.48,
+
+                            obstacle.h *
+                            0.42,
+
+                            0,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+
+                        ctx.fillStyle =
+                            obstacleColor(
+                                obstacle.type
+                            );
+
+
+                        ctx.beginPath();
+
+
+                        ctx.ellipse(
+
+                            obstacle.x +
+                            obstacle.w /
+                            2,
+
+                            obstacle.y +
+                            obstacle.h /
+                            2,
+
+                            obstacle.w *
+                            0.5,
+
+                            obstacle.h *
+                            0.5,
+
+                            -0.12,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+
+                        ctx.fillStyle =
+                            "rgba(255,255,255,.07)";
+
+
+                        ctx.beginPath();
+
+
+                        ctx.ellipse(
+
+                            obstacle.x +
+                            obstacle.w *
+                            0.38,
+
+                            obstacle.y +
+                            obstacle.h *
+                            0.35,
+
+                            obstacle.w *
+                            0.18,
+
+                            obstacle.h *
+                            0.12,
+
+                            -0.2,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       RECURSOS
+       ========================================================= */
+
+    function drawResources() {
+
+        state.world
+            .resources
+            .forEach(
+                resource => {
+
+                    if (
+
+                        !resource.alive ||
+
+                        !pointVisible(
+                            resource.x,
+                            resource.y,
+                            60
+                        )
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const colors = {
+
+                        carvao:
+                            "#303236",
+
+                        ferro:
+                            "#92999d",
+
+                        ouro:
+                            "#ddb74b",
+
+                        diamante:
+                            "#8ed7e9",
+
+                        rubi:
+                            "#c94b67",
+
+                        madeira:
+                            "#8b633f"
+
+                    };
+
+
+                    const color =
+                        colors[
+                            resource.type
+                        ] ||
+                        "#aaa";
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.2)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.ellipse(
+
+                        resource.x,
+
+                        resource.y +
+                        12,
+
+                        18,
+                        6,
+
+                        0,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.fillStyle =
+                        color;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        resource.x,
+
+                        resource.y -
+                        18
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x +
+                        15,
+
+                        resource.y -
+                        2
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x +
+                        9,
+
+                        resource.y +
+                        16
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x -
+                        13,
+
+                        resource.y +
+                        12
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x -
+                        16,
+
+                        resource.y -
+                        5
+
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    ctx.fillStyle =
+                        "rgba(255,255,255,.25)";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        resource.x,
+
+                        resource.y -
+                        14
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x +
+                        5,
+
+                        resource.y -
+                        3
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        resource.x -
+                        3,
+
+                        resource.y +
+                        2
+
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       CENOURAS
+       ========================================================= */
+
+    function drawFoods() {
+
+        state.world
+            .foods
+            .forEach(
+                food => {
+
+                    if (
+
+                        !food.alive ||
+
+                        !pointVisible(
+                            food.x,
+                            food.y,
+                            50
+                        )
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    ctx.translate(
+                        food.x,
+                        food.y
+                    );
+
+
+                    ctx.rotate(
+                        -0.2
+                    );
+
+
+                    ctx.fillStyle =
+                        "#d97d39";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+                        0,
+                        -12
+                    );
+
+
+                    ctx.lineTo(
+                        7,
+                        12
+                    );
+
+
+                    ctx.lineTo(
+                        -6,
+                        12
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    ctx.strokeStyle =
+                        "#5d8e4e";
+
+
+                    ctx.lineWidth =
+                        3;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+                        0,
+                        -10
+                    );
+
+
+                    ctx.lineTo(
+                        -7,
+                        -18
+                    );
+
+
+                    ctx.moveTo(
+                        0,
+                        -10
+                    );
+
+
+                    ctx.lineTo(
+                        6,
+                        -19
+                    );
+
+
+                    ctx.stroke();
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       MÓVEIS
+       ========================================================= */
+
+    function drawFurnitureItem(
+        item
+    ) {
+
+        ctx.save();
+
+
+        const x =
+            item.x;
+
+
+        const y =
+            item.y;
+
+
+        const w =
+            item.w;
+
+
+        const h =
+            item.h;
+
+
+        if (
+            item.type ===
+            "rug"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(117,62,58,.55)";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(235,205,154,.35)";
+
+
+            ctx.strokeRect(
+
+                x +
+                5,
+
+                y +
+                5,
+
+                w -
+                10,
+
+                h -
+                10
+
+            );
+
+        }
+
+        else if (
+            item.type ===
+            "bed"
+        ) {
+
+            ctx.fillStyle =
+                "#49352b";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.fillStyle =
+                "#d8c8aa";
+
+
+            ctx.fillRect(
+
+                x +
+                10,
+
+                y +
+                10,
+
+                w -
+                20,
+
+                h -
+                20
+
+            );
+
+
+            ctx.fillStyle =
+                "#7e5350";
+
+
+            ctx.fillRect(
+
+                x +
+                12,
+
+                y +
+                h *
+                0.42,
+
+                w -
+                24,
+
+                h *
+                0.48
+
+            );
+
+        }
+
+        else if (
+
+            [
+
+                "table",
+
+                "desk",
+
+                "workbench",
+
+                "counter"
+
+            ]
+                .includes(
+                    item.type
+                )
+
+        ) {
+
+            ctx.fillStyle =
+
+                item.type ===
+                "counter"
+
+                    ? "#60422f"
+
+                    : "#694a31";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.08)";
+
+
+            ctx.fillRect(
+
+                x +
+                6,
+
+                y +
+                5,
+
+                w -
+                12,
+
+                8
+
+            );
+
+        }
+
+        else if (
+            item.type ===
+            "furnace"
+        ) {
+
+            ctx.fillStyle =
+                "#343237";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.fillStyle =
+                "#171518";
+
+
+            ctx.fillRect(
+
+                x +
+                42,
+
+                y +
+                62,
+
+                w -
+                84,
+
+                h -
+                86
+
+            );
+
+
+            ctx.fillStyle =
+                `rgba(
+                    255,
+                    102,
+                    30,
+                    ${
+                        0.52 +
+                        Math.sin(
+                            state.time *
+                            9
+                        ) *
+                        0.16
+                    }
+                )`;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                x +
+                w /
+                2,
+
+                y +
+                h *
+                0.67,
+
+                39,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+            item.type ===
+            "anvil"
+        ) {
+
+            ctx.fillStyle =
+                "#2e3237";
+
+
+            ctx.fillRect(
+
+                x +
+                20,
+
+                y +
+                35,
+
+                w -
+                40,
+
+                h -
+                45
+
+            );
+
+
+            ctx.fillRect(
+
+                x,
+
+                y +
+                24,
+
+                w,
+                32
+
+            );
+
+        }
+
+        else if (
+
+            [
+
+                "bookshelf",
+
+                "shopShelf"
+
+            ]
+                .includes(
+                    item.type
+                )
+
+        ) {
+
+            ctx.fillStyle =
+                "#53392a";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            for (
+                let yy =
+                    y +
+                    38;
+
+                yy <
+                y +
+                h -
+                8;
+
+                yy +=
+                42
+            ) {
+
+                ctx.fillStyle =
+                    "#282526";
+
+
+                ctx.fillRect(
+
+                    x +
+                    8,
+
+                    yy,
+
+                    w -
+                    16,
+
+                    5
+
+                );
+
+
+                for (
+                    let xx =
+                        x +
+                        13;
+
+                    xx <
+                    x +
+                    w -
+                    12;
+
+                    xx +=
+                    16
+                ) {
+
+                    const colors = [
+
+                        "#8f5b54",
+
+                        "#566f8b",
+
+                        "#8d7951",
+
+                        "#6d5b8e"
+
+                    ];
+
+
+                    ctx.fillStyle =
+                        colors[
+                            (
+                                Math.floor(
+                                    xx +
+                                    yy
+                                ) >>
+                                3
+                            ) %
+                            colors.length
+                        ];
+
+
+                    ctx.fillRect(
+
+                        xx,
+
+                        yy -
+                        25,
+
+                        9,
+                        24
+
+                    );
+
+                }
+
+            }
+
+        }
+
+        else if (
+
+            [
+
+                "chest",
+
+                "crate",
+
+                "oreCrate"
+
+            ]
+                .includes(
+                    item.type
+                )
+
+        ) {
+
+            ctx.fillStyle =
+
+                item.type ===
+                "oreCrate"
+
+                    ? "#4d4945"
+
+                    : "#61442e";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.strokeStyle =
+                "#2d221a";
+
+
+            ctx.lineWidth =
+                4;
+
+
+            ctx.strokeRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+
+            ctx.lineTo(
+                x +
+                w,
+
+                y +
+                h
+            );
+
+
+            ctx.moveTo(
+                x +
+                w,
+                y
+            );
+
+
+            ctx.lineTo(
+                x,
+
+                y +
+                h
+            );
+
+
+            ctx.stroke();
+
+        }
+
+        else if (
+
+            [
+
+                "logStack",
+
+                "boardStack"
+
+            ]
+                .includes(
+                    item.type
+                )
+
+        ) {
+
+            ctx.fillStyle =
+                "#755236";
+
+
+            for (
+                let yy =
+                    y +
+                    8;
+
+                yy <
+                y +
+                h;
+
+                yy +=
+                24
+            ) {
+
+                ctx.fillRect(
+
+                    x +
+                    5,
+
+                    yy,
+
+                    w -
+                    10,
+
+                    15
+
+                );
+
+            }
+
+        }
+
+        else {
+
+            ctx.fillStyle =
+                "#5d4432";
+
+
+            ctx.fillRect(
+                x,
+                y,
+                w,
+                h
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       INTERIORES
+       ========================================================= */
+
+    function drawHouseInterior() {
+
+        const spec =
+            getHouseSpec();
+
+
+        const room =
+            spec.room;
+
+
+        ctx.fillStyle =
+            "#0d0e0f";
+
+
+        ctx.fillRect(
+
+            0,
+            0,
+
+            state.world.width,
+            state.world.height
+
+        );
+
+
+        ctx.fillStyle =
+            spec.wall;
+
+
+        ctx.fillRect(
+
+            room.x -
+            32,
+
+            room.y -
+            32,
+
+            room.w +
+            64,
+
+            room.h +
+            64
+
+        );
+
+
+        ctx.fillStyle =
+            spec.floor;
+
+
+        ctx.fillRect(
+
+            room.x,
+            room.y,
+
+            room.w,
+            room.h
+
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(45,29,20,.18)";
+
+
+        ctx.lineWidth =
+            2;
+
+
+        for (
+            let y =
+                room.y +
+                32;
+
+            y <
+            room.y +
+            room.h;
+
+            y +=
+            38
+        ) {
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                room.x,
+                y
+            );
+
+
+            ctx.lineTo(
+
+                room.x +
+                room.w,
+
+                y
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.strokeStyle =
+            spec.trim;
+
+
+        ctx.lineWidth =
+            6;
+
+
+        ctx.strokeRect(
+
+            room.x,
+            room.y,
+
+            room.w,
+            room.h
+
+        );
+
+
+        getHouseFurniture()
+            .forEach(
+                drawFurnitureItem
+            );
+
+
+        drawInteriorDoor();
+
+
+        getHouseInteriorNPCs()
+            .forEach(
+                drawNPC
+            );
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillStyle =
+            "#ecddba";
+
+
+        ctx.font =
+            "700 18px Georgia";
+
+
+        ctx.fillText(
+
+            state.currentHouse
+                ?.name ||
+            "INTERIOR",
+
+            room.x +
+            room.w /
+            2,
+
+            room.y -
+            46
+
+        );
+
+    }
+
+
+    function drawInteriorDoor() {
+
+        const door =
+            getInteriorDoor();
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "#251a16";
+
+
+        ctx.fillRect(
+
+            door.x -
+            6,
+
+            door.y -
+            20,
+
+            door.w +
+            12,
+
+            80
+
+        );
+
+
+        ctx.fillStyle =
+            "#573a29";
+
+
+        ctx.fillRect(
+
+            door.x,
+
+            door.y -
+            14,
+
+            door.w,
+
+            74
+
+        );
+
+
+        ctx.strokeStyle =
+            "#c29a61";
+
+
+        ctx.lineWidth =
+            3;
+
+
+        ctx.strokeRect(
+
+            door.x -
+            6,
+
+            door.y -
+            20,
+
+            door.w +
+            12,
+
+            80
+
+        );
+
+
+        ctx.fillStyle =
+            "#d5b763";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            door.x +
+            door.w -
+            15,
+
+            door.y +
+            20,
+
+            4,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       NPCs COMO BONEQUINHOS
+       ========================================================= */
+
+    function drawNPC(
+        npc
+    ) {
+
+        if (
+
+            !pointVisible(
+                npc.x,
+                npc.y,
+                80
+            ) &&
+
+            !state.houseMode
+
+        ) {
+
+            return;
+
+        }
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.2)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            npc.x,
+
+            npc.y +
+            19,
+
+            16,
+            6,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            npc.color ||
+            "#c8aa80";
+
+
+        ctx.fillRect(
+
+            npc.x -
+            11,
+
+            npc.y -
+            3,
+
+            22,
+            26
+
+        );
+
+
+        ctx.fillStyle =
+            "#c99e79";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            npc.x,
+
+            npc.y -
+            12,
+
+            11,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#3a302b";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            npc.x,
+
+            npc.y -
+            16,
+
+            10,
+
+            Math.PI,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            npc.spriteType ===
+            "merchant"
+        ) {
+
+            ctx.fillStyle =
+                "#b98a4d";
+
+
+            ctx.fillRect(
+
+                npc.x -
+                15,
+
+                npc.y -
+                26,
+
+                30,
+                5
+
+            );
+
+        }
+
+
+        ctx.fillStyle =
+            "#f1e4c5";
+
+
+        ctx.font =
+            "700 11px Arial";
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillText(
+
+            npc.name,
+
+            npc.x,
+
+            npc.y -
+            34
+
+        );
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawNPCs() {
+
+        state.world
+            .npcs
+            .forEach(
+                drawNPC
+            );
+
+    }
+
+
+    /* =========================================================
+       PLAYER — BONEQUINHO
+       ========================================================= */
+
+    function drawPlayerSprite(
+        player
+    ) {
+
+        const character =
+            currentCharacter();
+
+
+        const sprite =
+            player.sprite ||
+            character.sprite;
+
+
+        const scale =
+            sprite.scale ||
+            1;
+
+
+        const walk =
+            player.walkTime ||
+            0;
+
+
+        const bob =
+            Math.sin(
+                walk
+            ) *
+            1.7;
+
+
+        const legSwing =
+            Math.sin(
+                walk
+            ) *
+            5;
+
+
+        const attack =
+            player.attackAnim >
+            0
+
+                ? 1 -
+                    player.attackAnim /
+                    0.26
+
+                : 0;
+
+
+        const aim =
+            getAimVector();
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            player.x,
+
+            player.y +
+            bob
+
+        );
+
+
+        ctx.scale(
+            scale,
+            scale
+        );
+
+
+        if (
+
+            player.invincible >
+            0 &&
+
+            Math.floor(
+                state.time *
+                18
+            ) %
+            2 ===
+            0
+
+        ) {
+
+            ctx.globalAlpha =
+                0.55;
+
+        }
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.24)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            0,
+            22,
+            19,
+            7,
+            0,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            sprite.wings
+        ) {
+
+            ctx.fillStyle =
+                "rgba(244,201,245,.38)";
+
+
+            for (
+                const side of
+                [
+                    -1,
+                    1
+                ]
+            ) {
+
+                ctx.beginPath();
+
+
+                ctx.ellipse(
+
+                    side *
+                    17,
+
+                    -2,
+
+                    10,
+                    22,
+
+                    side *
+                    0.4,
+
+                    0,
+
+                    Math.PI *
+                    2
+
+                );
+
+
+                ctx.fill();
+
+            }
+
+        }
+
+
+        if (
+            sprite.cape
+        ) {
+
+            ctx.fillStyle =
+                sprite.cape;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                -11,
+                -5
+            );
+
+
+            ctx.lineTo(
+                11,
+                -5
+            );
+
+
+            ctx.lineTo(
+                15,
+                21
+            );
+
+
+            ctx.lineTo(
+                -15,
+                21
+            );
+
+
+            ctx.closePath();
+
+
+            ctx.fill();
+
+        }
+
+
+        ctx.strokeStyle =
+            "#332c29";
+
+
+        ctx.lineWidth =
+            6;
+
+
+        ctx.lineCap =
+            "round";
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -7,
+            13
+        );
+
+
+        ctx.lineTo(
+
+            -8 +
+            legSwing,
+
+            25
+
+        );
+
+
+        ctx.moveTo(
+            7,
+            13
+        );
+
+
+        ctx.lineTo(
+
+            8 -
+            legSwing,
+
+            25
+
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            sprite.body;
+
+
+        ctx.beginPath();
+
+
+        ctx.roundRect(
+
+            -13,
+            -8,
+
+            26,
+            28,
+
+            7
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            sprite.trim;
+
+
+        ctx.fillRect(
+
+            -13,
+            5,
+
+            26,
+            4
+
+        );
+
+
+        ctx.strokeStyle =
+            sprite.skin;
+
+
+        ctx.lineWidth =
+            6;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -11,
+            -2
+        );
+
+
+        ctx.lineTo(
+
+            -19,
+
+            9 +
+            Math.sin(
+                walk
+            ) *
+            2
+
+        );
+
+
+        ctx.moveTo(
+            11,
+            -2
+        );
+
+
+        ctx.lineTo(
+
+            19,
+
+            9 -
+            Math.sin(
+                walk
+            ) *
+            2
+
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            sprite.skin;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            0,
+            -19,
+
+            12,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            sprite.hair;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            0,
+            -23,
+
+            11,
+
+            Math.PI,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillRect(
+
+            -10,
+            -24,
+
+            20,
+            5
+
+        );
+
+
+        const eyeOffsetX =
+
+            player.facing ===
+            "left"
+
+                ? -2
+
+                : player.facing ===
+                    "right"
+
+                    ? 2
+
+                    : 0;
+
+
+        ctx.fillStyle =
+            "#1f2021";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            -4 +
+            eyeOffsetX,
+
+            -18,
+
+            1.5,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.arc(
+
+            4 +
+            eyeOffsetX,
+
+            -18,
+
+            1.5,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        drawPlayerWeapon(
+
+            sprite.weapon,
+
+            sprite.accent,
+
+            aim,
+
+            attack
+
+        );
+
+
+        if (
+
+            player.shieldTimer >
+            0 ||
+
+            player.adaptiveBuff
+
+        ) {
+
+            ctx.strokeStyle =
+
+                player.shieldTimer >
+                0
+
+                    ? "rgba(220,235,255,.68)"
+
+                    : "rgba(180,140,255,.58)";
+
+
+            ctx.lineWidth =
+                3;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                0,
+                -2,
+
+                29 +
+                Math.sin(
+                    state.time *
+                    5
+                ) *
+                2,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawPlayerWeapon(
+        type,
+        accent,
+        aim,
+        attackProgress
+    ) {
+
+        if (
+            !type
+        ) {
+
+            return;
+
+        }
+
+
+        const angle =
+
+            Math.atan2(
+                aim.y,
+                aim.x
+            ) +
+
+            Math.sin(
+                attackProgress *
+                Math.PI
+            ) *
+            0.85;
+
+
+        ctx.save();
+
+
+        ctx.rotate(
+            angle
+        );
+
+
+        ctx.translate(
+            18,
+            0
+        );
+
+
+        ctx.lineCap =
+            "round";
+
+
+        if (
+
+            type ===
+            "staff" ||
+
+            type ===
+            "wand"
+
+        ) {
+
+            ctx.strokeStyle =
+
+                type ===
+                "staff"
+
+                    ? "#6f4b2f"
+
+                    : "#d2b0d0";
+
+
+            ctx.lineWidth =
+
+                type ===
+                "staff"
+
+                    ? 5
+
+                    : 3;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                -8,
+                0
+            );
+
+
+            ctx.lineTo(
+
+                type ===
+                "staff"
+
+                    ? 25
+
+                    : 18,
+
+                0
+
+            );
+
+
+            ctx.stroke();
+
+
+            ctx.fillStyle =
+                accent;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                type ===
+                "staff"
+
+                    ? 28
+
+                    : 21,
+
+                0,
+
+                type ===
+                "staff"
+
+                    ? 6
+
+                    : 4,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else if (
+            type ===
+            "club"
+        ) {
+
+            ctx.strokeStyle =
+                "#674830";
+
+
+            ctx.lineWidth =
+                7;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                -6,
+                0
+            );
+
+
+            ctx.lineTo(
+                25,
+                0
+            );
+
+
+            ctx.stroke();
+
+
+            ctx.fillStyle =
+                "#5a4c3a";
+
+
+            ctx.beginPath();
+
+
+            ctx.ellipse(
+
+                30,
+                0,
+
+                11,
+                7,
+
+                0,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+        else {
+
+            ctx.strokeStyle =
+                "#6a5138";
+
+
+            ctx.lineWidth =
+                4;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                -4,
+                0
+            );
+
+
+            ctx.lineTo(
+                9,
+                0
+            );
+
+
+            ctx.stroke();
+
+
+            ctx.fillStyle =
+
+                type ===
+                "sword"
+
+                    ? "#d9e0e3"
+
+                    : accent;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                8,
+                -3
+            );
+
+
+            ctx.lineTo(
+                34,
+                0
+            );
+
+
+            ctx.lineTo(
+                8,
+                3
+            );
+
+
+            ctx.closePath();
+
+
+            ctx.fill();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawPlayer() {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        drawPlayerSprite(
+            state.player
+        );
+
+
+        ctx.fillStyle =
+            "#f3e8ce";
+
+
+        ctx.font =
+            "700 12px Arial";
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillText(
+
+            state.player
+                .name,
+
+            state.player
+                .x,
+
+            state.player
+                .y -
+            46
+
+        );
+
+    }
+
+
+    /* =========================================================
+       INIMIGOS — BONEQUINHOS
+       ========================================================= */
+
+    function drawEnemyHumanoid(
+        enemy,
+        options =
+            {}
+    ) {
+
+        const bob =
+
+            Math.sin(
+
+                state.time *
+                5 +
+
+                enemy.x *
+                0.01
+
+            ) *
+            1.2;
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            enemy.x,
+
+            enemy.y +
+            bob
+
+        );
+
+
+        const scale =
+            options.scale ||
+            1;
+
+
+        ctx.scale(
+            scale,
+            scale
+        );
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.22)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            0,
+
+            enemy.radius *
+            0.8,
+
+            enemy.radius *
+            0.75,
+
+            enemy.radius *
+            0.25,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+
+            enemy.hitFlash >
+            0
+
+                ? "#fff"
+
+                : enemy.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.roundRect(
+
+            -enemy.radius *
+            0.48,
+
+            -enemy.radius *
+            0.2,
+
+            enemy.radius *
+            0.96,
+
+            enemy.radius *
+            1.15,
+
+            7
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            options.skin ||
+            "#8c7669";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            0,
+
+            -enemy.radius *
+            0.55,
+
+            enemy.radius *
+            0.42,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            options.head ||
+            "#332f35";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            0,
+
+            -enemy.radius *
+            0.7,
+
+            enemy.radius *
+            0.4,
+
+            Math.PI,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            options.eye ||
+            "#e9d8c5";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            -4,
+
+            -enemy.radius *
+            0.52,
+
+            2,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.arc(
+
+            4,
+
+            -enemy.radius *
+            0.52,
+
+            2,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawEnemyQuadruped(
+        enemy,
+        options =
+            {}
+    ) {
+
+        ctx.save();
+
+
+        ctx.translate(
+            enemy.x,
+            enemy.y
+        );
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.22)";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            0,
+            16,
+
+            enemy.radius,
+            6,
+
+            0,
+            0,
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+
+            enemy.hitFlash >
+            0
+
+                ? "#fff"
+
+                : enemy.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+
+            -2,
+            0,
+
+            enemy.radius *
+            0.9,
+
+            enemy.radius *
+            0.55,
+
+            0,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            enemy.radius *
+            0.65,
+
+            -5,
+
+            enemy.radius *
+            0.45,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            enemy.color;
+
+
+        ctx.lineWidth =
+            4;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+
+            -enemy.radius *
+            0.55,
+
+            8
+
+        );
+
+
+        ctx.lineTo(
+
+            -enemy.radius *
+            0.6,
+
+            22
+
+        );
+
+
+        ctx.moveTo(
+
+            enemy.radius *
+            0.35,
+
+            8
+
+        );
+
+
+        ctx.lineTo(
+
+            enemy.radius *
+            0.4,
+
+            22
+
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            options.eye ||
+            "#ffd2a0";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            enemy.radius *
+            0.78,
+
+            -9,
+
+            2,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawSpiderEnemy(
+        enemy
+    ) {
+
+        ctx.save();
+
+
+        ctx.translate(
+            enemy.x,
+            enemy.y
+        );
+
+
+        ctx.strokeStyle =
+            enemy.color;
+
+
+        ctx.lineWidth =
+            4;
+
+
+        for (
+            let i = 0;
+            i <
+            4;
+            i++
+        ) {
+
+            const y =
+
+                -10 +
+
+                i *
+                7;
+
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                -8,
+                y *
+                0.4
+            );
+
+
+            ctx.lineTo(
+                -22,
+                y -
+                5
+            );
+
+
+            ctx.moveTo(
+                8,
+                y *
+                0.4
+            );
+
+
+            ctx.lineTo(
+                22,
+                y -
+                5
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.fillStyle =
+
+            enemy.hitFlash >
+            0
+
+                ? "#fff"
+
+                : enemy.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            0,
+            3,
+            13,
+            15,
+            0,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            0,
+            -9,
+            9,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#d6b7e8";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            -3,
+            -11,
+            1.6,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.arc(
+            3,
+            -11,
+            1.6,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawBatEnemy(
+        enemy
+    ) {
+
+        const flap =
+
+            Math.sin(
+
+                state.time *
+                10 +
+
+                enemy.x
+
+            ) *
+            8;
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            enemy.x,
+
+            enemy.y -
+            8
+
+        );
+
+
+        ctx.fillStyle =
+
+            enemy.hitFlash >
+            0
+
+                ? "#fff"
+
+                : enemy.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -6,
+            0
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            -24,
+
+            -15 -
+            flap,
+
+            -31,
+
+            5
+
+        );
+
+
+        ctx.quadraticCurveTo(
+            -17,
+            -3,
+            -6,
+            7
+        );
+
+
+        ctx.closePath();
+
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            6,
+            0
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            24,
+
+            -15 -
+            flap,
+
+            31,
+
+            5
+
+        );
+
+
+        ctx.quadraticCurveTo(
+            17,
+            -3,
+            6,
+            7
+        );
+
+
+        ctx.closePath();
+
+
+        ctx.fill();
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            0,
+            1,
+            9,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#e9b6cf";
+
+
+        ctx.fillRect(
+            -4,
+            -2,
+            2,
+            2
+        );
+
+
+        ctx.fillRect(
+            2,
+            -2,
+            2,
+            2
+        );
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawMonarch(
+        enemy
+    ) {
+
+        ctx.save();
+
+
+        ctx.translate(
+            enemy.x,
+            enemy.y
+        );
+
+
+        ctx.fillStyle =
+            "rgba(65,38,77,.22)";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            0,
+            0,
+
+            enemy.radius +
+            18 +
+            Math.sin(
+                state.time *
+                3
+            ) *
+            4,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+
+            enemy.hitFlash >
+            0
+
+                ? "#fff"
+
+                : "#3a2d45";
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -34,
+            45
+        );
+
+
+        ctx.lineTo(
+            -20,
+            -20
+        );
+
+
+        ctx.lineTo(
+            0,
+            -42
+        );
+
+
+        ctx.lineTo(
+            20,
+            -20
+        );
+
+
+        ctx.lineTo(
+            34,
+            45
+        );
+
+
+        ctx.closePath();
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#8e6aa4";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            0,
+            -36,
+            22,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#c4a1d6";
+
+
+        ctx.lineWidth =
+            5;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -17,
+            -55
+        );
+
+
+        ctx.lineTo(
+            -10,
+            -77
+        );
+
+
+        ctx.lineTo(
+            0,
+            -63
+        );
+
+
+        ctx.lineTo(
+            10,
+            -79
+        );
+
+
+        ctx.lineTo(
+            18,
+            -55
+        );
+
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "#f3d8ff";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            -6,
+            -37,
+            2.5,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.arc(
+            6,
+            -37,
+            2.5,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        if (
+            enemy.monarchStagger >
+            0
+        ) {
+
+            ctx.fillStyle =
+                "#f6d8ff";
+
+
+            ctx.font =
+                "700 20px serif";
+
+
+            ctx.textAlign =
+                "center";
+
+
+            for (
+                let i = 0;
+                i <
+                4;
+                i++
+            ) {
+
+                const angle =
+
+                    state.time *
+                    4 +
+
+                    i *
+                    Math.PI /
+                    2;
+
+
+                ctx.fillText(
+
+                    i %
+                    2
+
+                        ? "✦"
+
+                        : "🥷",
+
+                    Math.cos(
+                        angle
+                    ) *
+                    44,
+
+                    -74 +
+                    Math.sin(
+                        angle
+                    ) *
+                    8
+
+                );
+
+            }
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawEnemy(
+        enemy
+    ) {
+
+        if (
+
+            enemy.dead ||
+
+            !pointVisible(
+                enemy.x,
+                enemy.y,
+                120
+            )
+
+        ) {
+
+            return;
+
+        }
+
+
+        const quadrupeds = [
+
+            "wolf",
+
+            "boar",
+
+            "hound",
+
+            "rubyHound",
+
+            "hellHound",
+
+            "ancientDeer"
+
+        ];
+
+
+        const bats = [
+
+            "bat",
+
+            "moth",
+
+            "skyWisp"
+
+        ];
+
+
+        if (
+            enemy.spriteType ===
+            "monarch"
+        ) {
+
+            drawMonarch(
+                enemy
+            );
+
+        }
+
+        else if (
+            enemy.spriteType ===
+            "monarchClone"
+        ) {
+
+            drawEnemyHumanoid(
+
+                enemy,
+
+                {
+
+                    skin:
+                        "#5a4865",
+
+                    head:
+                        "#241e2a",
+
+                    eye:
+                        "#d8c4e5",
+
+                    scale:
+                        0.9
+
+                }
+
+            );
+
+        }
+
+        else if (
+            enemy.spriteType ===
+            "spider"
+        ) {
+
+            drawSpiderEnemy(
+                enemy
+            );
+
+        }
+
+        else if (
+            enemy.spriteType ===
+            "scorpion"
+        ) {
+
+            drawSpiderEnemy(
+                enemy
+            );
+
+
+            ctx.strokeStyle =
+                enemy.color;
+
+
+            ctx.lineWidth =
+                4;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                enemy.x -
+                8,
+
+                enemy.y -
+                11,
+
+                19,
+
+                Math.PI *
+                1.1,
+
+                Math.PI *
+                1.8
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+        else if (
+            bats.includes(
+                enemy.spriteType
+            )
+        ) {
+
+            drawBatEnemy(
+                enemy
+            );
+
+        }
+
+        else if (
+            quadrupeds.includes(
+                enemy.spriteType
+            )
+        ) {
+
+            drawEnemyQuadruped(
+                enemy
+            );
+
+        }
+
+        else {
+
+            const bossScale =
+
+                enemy.type ===
+                "progression"
+
+                    ? 1.1
+
+                    : 1;
+
+
+            drawEnemyHumanoid(
+
+                enemy,
+
+                {
+
+                    scale:
+                        bossScale,
+
+                    skin:
+                        enemy.spriteType
+                            .includes(
+                                "hell"
+                            )
+
+                            ? "#816054"
+
+                            : "#8c7669",
+
+                    head:
+                        enemy.spriteType
+                            .includes(
+                                "shadow"
+                            )
+
+                            ? "#27263a"
+
+                            : "#302e31",
+
+                    eye:
+                        enemy.spriteType
+                            .includes(
+                                "ruby"
+                            )
+
+                            ? "#ff9aac"
+
+                            : "#f0dfc8"
+
+                }
+
+            );
+
+        }
+
+
+        const ratio =
+            clamp(
+
+                enemy.hp /
+                enemy.maxHp,
+
+                0,
+                1
+
+            );
+
+
+        if (
+
+            enemy.aggressive ||
+
+            enemy.type ===
+            "progression" ||
+
+            enemy.type ===
+            "resourceBoss"
+
+        ) {
+
+            const width =
+
+                enemy.type ===
+                "progression"
+
+                    ? 86
+
+                    : 62;
+
+
+            ctx.fillStyle =
+                "rgba(0,0,0,.48)";
+
+
+            ctx.fillRect(
+
+                enemy.x -
+                width /
+                2,
+
+                enemy.y -
+                enemy.radius -
+                31,
+
+                width,
+                6
+
+            );
+
+
+            ctx.fillStyle =
+
+                enemy.id ===
+                "monarch"
+
+                    ? "#9165a9"
+
+                    : "#c35454";
+
+
+            ctx.fillRect(
+
+                enemy.x -
+                width /
+                2,
+
+                enemy.y -
+                enemy.radius -
+                31,
+
+                width *
+                ratio,
+
+                6
+
+            );
+
+        }
+
+
+        ctx.fillStyle =
+            "#eee0c9";
+
+
+        ctx.font =
+            "700 10px Arial";
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillText(
+
+            enemy.name,
+
+            enemy.x,
+
+            enemy.y -
+            enemy.radius -
+            39
+
+        );
+
+    }
+
+
+    function drawEnemies() {
+
+        state.world
+            .enemies
+            .forEach(
+                drawEnemy
+            );
+
+    }
+
+
+    /* =========================================================
+       DROPS
+       ========================================================= */
+
+    function drawDrops() {
+
+        state.world
+            .drops
+            .forEach(
+                drop => {
+
+                    if (
+                        !pointVisible(
+                            drop.x,
+                            drop.y,
+                            70
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const item =
+                        ITEMS[
+                            drop.itemId
+                        ];
+
+
+                    if (
+                        !item
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const bob =
+                        Math.sin(
+                            drop.bob
+                        ) *
+                        5;
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+                        0.25;
+
+
+                    ctx.fillStyle =
+                        "#f2d58a";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        drop.x,
+
+                        drop.y +
+                        bob,
+
+                        26,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.fill();
+
+
+                    ctx.globalAlpha =
+                        1;
+
+
+                    ctx.fillStyle =
+                        "#e8d6ad";
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+
+                        drop.x,
+
+                        drop.y -
+                        13 +
+                        bob
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        drop.x +
+                        11,
+
+                        drop.y +
+                        bob
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        drop.x,
+
+                        drop.y +
+                        13 +
+                        bob
+
+                    );
+
+
+                    ctx.lineTo(
+
+                        drop.x -
+                        11,
+
+                        drop.y +
+                        bob
+
+                    );
+
+
+                    ctx.closePath();
+
+
+                    ctx.fill();
+
+
+                    ctx.fillStyle =
+                        "#5b4936";
+
+
+                    ctx.font =
+                        "700 9px Arial";
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.fillText(
+
+                        drop.amount >
+                        1
+
+                            ? `x${drop.amount}`
+
+                            : "",
+
+                        drop.x,
+
+                        drop.y +
+                        29 +
+                        bob
+
+                    );
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       PROJÉTEIS
+       ========================================================= */
+
+    function drawProjectiles() {
+
+        ensureWorldRuntimeArrays();
+
+
+        state.world
+            .projectiles
+            .forEach(
+                projectile => {
+
+                    if (
+                        !pointVisible(
+                            projectile.x,
+                            projectile.y,
+                            60
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    const angle =
+                        Math.atan2(
+
+                            projectile.dirY,
+
+                            projectile.dirX
+
+                        );
+
+
+                    ctx.translate(
+
+                        projectile.x,
+
+                        projectile.y
+
+                    );
+
+
+                    ctx.rotate(
+                        angle
+                    );
+
+
+                    ctx.fillStyle =
+                        projectile.color;
+
+
+                    if (
+
+                        [
+
+                            "fairyArrow",
+
+                            "ironShard",
+
+                            "skyLance"
+
+                        ]
+                            .includes(
+                                projectile.type
+                            )
+
+                    ) {
+
+                        ctx.beginPath();
+
+
+                        ctx.moveTo(
+                            12,
+                            0
+                        );
+
+
+                        ctx.lineTo(
+                            -8,
+                            -4
+                        );
+
+
+                        ctx.lineTo(
+                            -4,
+                            0
+                        );
+
+
+                        ctx.lineTo(
+                            -8,
+                            4
+                        );
+
+
+                        ctx.closePath();
+
+
+                        ctx.fill();
+
+                    }
+
+                    else {
+
+                        ctx.globalAlpha =
+                            0.25;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            0,
+                            0,
+
+                            projectile.radius *
+                            2.2,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+
+                        ctx.globalAlpha =
+                            1;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            0,
+                            0,
+
+                            projectile.radius,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       AVISOS DE ATAQUES
+       ========================================================= */
+
+    function drawHazards() {
+
+        state.world
+            .hazards
+            .forEach(
+                hazard => {
+
+                    if (
+                        !pointVisible(
+
+                            hazard.x,
+                            hazard.y,
+
+                            hazard.radius +
+                            80
+
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    const warning =
+                        !hazard.triggered;
+
+
+                    const pulse =
+
+                        0.82 +
+
+                        Math.sin(
+
+                            state.time *
+                            9 +
+
+                            hazard.x
+
+                        ) *
+                        0.08;
+
+
+                    ctx.strokeStyle =
+
+                        warning
+
+                            ? hazard.color
+
+                            : "rgba(255,230,210,.8)";
+
+
+                    ctx.globalAlpha =
+
+                        warning
+
+                            ? 0.72
+
+                            : 0.45;
+
+
+                    ctx.lineWidth =
+
+                        warning
+
+                            ? 3
+
+                            : 6;
+
+
+                    ctx.setLineDash(
+
+                        warning
+
+                            ? [
+                                8,
+                                7
+                            ]
+
+                            : []
+
+                    );
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        hazard.x,
+                        hazard.y,
+
+                        hazard.radius *
+                        pulse,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.stroke();
+
+
+                    ctx.setLineDash(
+                        []
+                    );
+
+
+                    if (
+                        warning
+                    ) {
+
+                        const ratio =
+
+                            hazard.maxDelay >
+                            0
+
+                                ? clamp(
+
+                                    hazard.delay /
+                                    hazard.maxDelay,
+
+                                    0,
+                                    1
+
+                                )
+
+                                : 0;
+
+
+                        ctx.globalAlpha =
+
+                            0.16 +
+
+                            (
+                                1 -
+                                ratio
+                            ) *
+                            0.16;
+
+
+                        ctx.fillStyle =
+                            hazard.color;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            hazard.x,
+                            hazard.y,
+
+                            hazard.radius *
+                            (
+                                1 -
+                                ratio *
+                                0.35
+                            ),
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       PARTÍCULAS
+       ========================================================= */
+
+    function drawParticles() {
+
+        state.world
+            .particles
+            .forEach(
+                particle => {
+
+                    const ratio =
+
+                        particle.maxLife >
+                        0
+
+                            ? clamp(
+
+                                particle.life /
+                                particle.maxLife,
+
+                                0,
+                                1
+
+                            )
+
+                            : 1;
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+
+                        ratio *
+
+                        (
+                            particle.alpha ??
+                            1
+                        );
+
+
+                    ctx.translate(
+
+                        particle.x,
+
+                        particle.y
+
+                    );
+
+
+                    ctx.rotate(
+                        particle.rotation ||
+                        0
+                    );
+
+
+                    ctx.fillStyle =
+                        particle.color;
+
+
+                    if (
+
+                        [
+
+                            "spark",
+
+                            "star"
+
+                        ]
+                            .includes(
+                                particle.shape
+                            )
+
+                    ) {
+
+                        ctx.beginPath();
+
+
+                        ctx.moveTo(
+
+                            0,
+
+                            -particle.size *
+                            1.4
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            particle.size *
+                            0.45,
+
+                            -particle.size *
+                            0.4
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            particle.size *
+                            1.4,
+
+                            0
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            particle.size *
+                            0.45,
+
+                            particle.size *
+                            0.4
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            0,
+
+                            particle.size *
+                            1.4
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            -particle.size *
+                            0.45,
+
+                            particle.size *
+                            0.4
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            -particle.size *
+                            1.4,
+
+                            0
+
+                        );
+
+
+                        ctx.lineTo(
+
+                            -particle.size *
+                            0.45,
+
+                            -particle.size *
+                            0.4
+
+                        );
+
+
+                        ctx.closePath();
+
+
+                        ctx.fill();
+
+                    }
+
+                    else if (
+
+                        [
+
+                            "rock",
+
+                            "wood"
+
+                        ]
+                            .includes(
+                                particle.shape
+                            )
+
+                    ) {
+
+                        ctx.fillRect(
+
+                            -particle.size /
+                            2,
+
+                            -particle.size /
+                            2,
+
+                            particle.size,
+
+                            particle.size *
+                            0.75
+
+                        );
+
+                    }
+
+                    else {
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            0,
+                            0,
+
+                            particle.size,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       EFEITOS DOS ATAQUES
+       ========================================================= */
+
+    function drawEffects() {
+
+        state.world
+            .effects
+            .forEach(
+                effect => {
+
+                    if (
+                        !pointVisible(
+
+                            effect.x,
+                            effect.y,
+
+                            effect.maxRadius +
+                            100
+
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const ratio =
+
+                        effect.maxLife >
+                        0
+
+                            ? clamp(
+
+                                effect.life /
+                                effect.maxLife,
+
+                                0,
+                                1
+
+                            )
+
+                            : 0;
+
+
+                    const progress =
+                        1 -
+                        ratio;
+
+
+                    const radius =
+                        lerp(
+
+                            effect.radius,
+
+                            effect.maxRadius,
+
+                            progress
+
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+                        Math.max(
+                            0,
+                            ratio
+                        ) *
+                        0.8;
+
+
+                    ctx.strokeStyle =
+                        effect.color;
+
+
+                    ctx.fillStyle =
+                        effect.color;
+
+
+                    if (
+
+                        [
+
+                            "basicSlash",
+
+                            "heavySlash"
+
+                        ]
+                            .includes(
+                                effect.type
+                            )
+
+                    ) {
+
+                        ctx.lineWidth =
+
+                            effect.type ===
+                            "heavySlash"
+
+                                ? 11
+
+                                : 7;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            effect.x,
+                            effect.y,
+
+                            radius,
+
+                            effect.angle -
+                            0.72,
+
+                            effect.angle +
+                            0.72
+
+                        );
+
+
+                        ctx.stroke();
+
+                    }
+
+                    else if (
+                        effect.type ===
+                        "chargeTelegraph"
+                    ) {
+
+                        ctx.lineWidth =
+                            5;
+
+
+                        ctx.setLineDash(
+                            [
+                                14,
+                                10
+                            ]
+                        );
+
+
+                        ctx.beginPath();
+
+
+                        ctx.moveTo(
+                            effect.x,
+                            effect.y
+                        );
+
+
+                        ctx.lineTo(
+
+                            effect.x +
+                            Math.cos(
+                                effect.angle
+                            ) *
+                            effect.maxRadius,
+
+                            effect.y +
+                            Math.sin(
+                                effect.angle
+                            ) *
+                            effect.maxRadius
+
+                        );
+
+
+                        ctx.stroke();
+
+
+                        ctx.setLineDash(
+                            []
+                        );
+
+                    }
+
+                    else if (
+
+                        [
+
+                            "groundCrack",
+
+                            "treeFall"
+
+                        ]
+                            .includes(
+                                effect.type
+                            )
+
+                    ) {
+
+                        ctx.lineWidth =
+                            4;
+
+
+                        for (
+                            let i = 0;
+                            i <
+                            7;
+                            i++
+                        ) {
+
+                            const angle =
+
+                                i /
+                                7 *
+                                Math.PI *
+                                2;
+
+
+                            ctx.beginPath();
+
+
+                            ctx.moveTo(
+
+                                effect.x +
+                                Math.cos(
+                                    angle
+                                ) *
+                                radius *
+                                0.15,
+
+                                effect.y +
+                                Math.sin(
+                                    angle
+                                ) *
+                                radius *
+                                0.15
+
+                            );
+
+
+                            ctx.lineTo(
+
+                                effect.x +
+                                Math.cos(
+                                    angle +
+                                    0.12
+                                ) *
+                                radius,
+
+                                effect.y +
+                                Math.sin(
+                                    angle +
+                                    0.12
+                                ) *
+                                radius
+
+                            );
+
+
+                            ctx.stroke();
+
+                        }
+
+                    }
+
+                    else {
+
+                        ctx.lineWidth =
+                            effect.width ||
+                            4;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            effect.x,
+                            effect.y,
+
+                            radius,
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.stroke();
+
+
+                        if (
+
+                            [
+
+                                "memoryCast",
+
+                                "levelUp",
+
+                                "dashUnlock",
+
+                                "monarchAwakening",
+
+                                "starField",
+
+                                "memoryStormCore"
+
+                            ]
+                                .includes(
+                                    effect.type
+                                )
+
+                        ) {
+
+                            ctx.globalAlpha *=
+                                0.12;
+
+
+                            ctx.beginPath();
+
+
+                            ctx.arc(
+
+                                effect.x,
+                                effect.y,
+
+                                radius *
+                                0.8,
+
+                                0,
+
+                                Math.PI *
+                                2
+
+                            );
+
+
+                            ctx.fill();
+
+                        }
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       NÚMEROS DE DANO
+       ========================================================= */
+
+    function drawDamageNumbers() {
+
+        ensureWorldRuntimeArrays();
+
+
+        state.world
+            .damageNumbers
+            .forEach(
+                number => {
+
+                    if (
+                        !pointVisible(
+                            number.x,
+                            number.y,
+                            60
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const ratio =
+
+                        number.maxLife >
+                        0
+
+                            ? clamp(
+
+                                number.life /
+                                number.maxLife,
+
+                                0,
+                                1
+
+                            )
+
+                            : 1;
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+                        ratio;
+
+
+                    ctx.fillStyle =
+                        number.color;
+
+
+                    ctx.font =
+                        `${Math.round(
+                            17 *
+                            (
+                                number.scale ||
+                                1
+                            )
+                        )}px Arial`;
+
+
+                    ctx.textAlign =
+                        "center";
+
+
+                    ctx.strokeStyle =
+                        "rgba(0,0,0,.7)";
+
+
+                    ctx.lineWidth =
+                        3;
+
+
+                    ctx.strokeText(
+
+                        number.text,
+
+                        number.x,
+                        number.y
+
+                    );
+
+
+                    ctx.fillText(
+
+                        number.text,
+
+                        number.x,
+                        number.y
+
+                    );
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       ALTAR
+       ========================================================= */
+
+    function drawDashAltar(
+        x,
+        y
+    ) {
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "#2a2630";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            x,
+            y +
+            28,
+            86,
+            39,
+            0,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#494150";
+
+
+        ctx.beginPath();
+
+
+        ctx.ellipse(
+            x,
+            y +
+            10,
+            60,
+            28,
+            0,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#211e25";
+
+
+        ctx.fillRect(
+            x -
+            17,
+            y -
+            66,
+            34,
+            78
+        );
+
+
+        if (
+            state.player
+                ?.monarchDefeated
+        ) {
+
+            ctx.strokeStyle =
+                `rgba(
+                    200,
+                    165,
+                    225,
+                    ${
+                        0.5 +
+                        Math.sin(
+                            state.time *
+                            4
+                        ) *
+                        0.2
+                    }
+                )`;
+
+
+            ctx.lineWidth =
+                3;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                x,
+                y +
+                8,
+
+                34 +
+                Math.sin(
+                    state.time *
+                    3
+                ) *
+                3,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    function drawTrials() {
+
+        state.world
+            .trials
+            .forEach(
+                trial => {
+
+                    if (
+                        !pointVisible(
+                            trial.x,
+                            trial.y,
+                            120
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        trial.dashAltar
+                    ) {
+
+                        if (
+
+                            state.area ===
+                            "monarchMaze" &&
+
+                            !hasLantern()
+
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        drawDashAltar(
+                            trial.x,
+                            trial.y
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    ctx.save();
+
+
+                    ctx.strokeStyle =
+                        `rgba(
+                            245,
+                            235,
+                            200,
+                            ${
+                                0.45 +
+                                Math.sin(
+                                    state.time *
+                                    3
+                                ) *
+                                0.12
+                            }
+                        )`;
+
+
+                    ctx.lineWidth =
+                        4;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        trial.x,
+                        trial.y,
+
+                        trial.radius +
+                        Math.sin(
+                            state.time *
+                            3
+                        ) *
+                        3,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.stroke();
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       PORTÕES
+       ========================================================= */
+
+    function drawGates() {
+
+        state.world
+            .gates
+            .forEach(
+                gate => {
+
+                    const unlocked =
+                        Boolean(
+
+                            state.player
+                                ?.gateUnlocks
+                                ?.[
+                                    gate.side
+                                ]
+
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.fillStyle =
+
+                        unlocked
+
+                            ? "rgba(70,90,66,.24)"
+
+                            : "#4a423d";
+
+
+                    ctx.fillRect(
+
+                        gate.x,
+                        gate.y,
+
+                        gate.w,
+                        gate.h
+
+                    );
+
+
+                    ctx.strokeStyle =
+
+                        unlocked
+
+                            ? "#7b9e76"
+
+                            : "#8c7968";
+
+
+                    ctx.lineWidth =
+                        5;
+
+
+                    ctx.strokeRect(
+
+                        gate.x,
+                        gate.y,
+
+                        gate.w,
+                        gate.h
+
+                    );
+
+
+                    if (
+                        !unlocked
+                    ) {
+
+                        ctx.strokeStyle =
+                            "#28231f";
+
+
+                        ctx.lineWidth =
+                            5;
+
+
+                        if (
+                            gate.w >
+                            gate.h
+                        ) {
+
+                            for (
+                                let x =
+                                    gate.x +
+                                    22;
+
+                                x <
+                                gate.x +
+                                gate.w;
+
+                                x +=
+                                32
+                            ) {
+
+                                ctx.beginPath();
+
+
+                                ctx.moveTo(
+                                    x,
+                                    gate.y +
+                                    6
+                                );
+
+
+                                ctx.lineTo(
+                                    x,
+                                    gate.y +
+                                    gate.h -
+                                    6
+                                );
+
+
+                                ctx.stroke();
+
+                            }
+
+                        }
+
+                        else {
+
+                            for (
+                                let y =
+                                    gate.y +
+                                    22;
+
+                                y <
+                                gate.y +
+                                gate.h;
+
+                                y +=
+                                32
+                            ) {
+
+                                ctx.beginPath();
+
+
+                                ctx.moveTo(
+                                    gate.x +
+                                    6,
+                                    y
+                                );
+
+
+                                ctx.lineTo(
+                                    gate.x +
+                                    gate.w -
+                                    6,
+                                    y
+                                );
+
+
+                                ctx.stroke();
+
+                            }
+
+                        }
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       PORTAIS
+       ========================================================= */
+
+    function drawPortals() {
+
+        state.world
+            .portals
+            .forEach(
+                portal => {
+
+                    if (
+
+                        portal.hidden ||
+
+                        !pointVisible(
+
+                            portal.x +
+                            portal.w /
+                            2,
+
+                            portal.y +
+                            portal.h /
+                            2,
+
+                            120
+
+                        )
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const available =
+                        portalRequirementMet(
+                            portal
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.globalAlpha =
+
+                        available
+
+                            ? 1
+
+                            : 0.28;
+
+
+                    const centerX =
+
+                        portal.x +
+
+                        portal.w /
+                        2;
+
+
+                    const centerY =
+
+                        portal.y +
+
+                        portal.h /
+                        2;
+
+
+                    ctx.strokeStyle =
+
+                        available
+
+                            ? "rgba(216,195,239,.78)"
+
+                            : "rgba(120,115,125,.5)";
+
+
+                    ctx.lineWidth =
+                        4;
+
+
+                    ctx.strokeRect(
+
+                        portal.x,
+                        portal.y,
+
+                        portal.w,
+                        portal.h
+
+                    );
+
+
+                    const gradient =
+                        ctx.createRadialGradient(
+
+                            centerX,
+                            centerY,
+                            4,
+
+                            centerX,
+                            centerY,
+
+                            Math.max(
+                                portal.w,
+                                portal.h
+                            )
+
+                        );
+
+
+                    gradient.addColorStop(
+
+                        0,
+
+                        available
+
+                            ? "rgba(198,166,231,.2)"
+
+                            : "rgba(100,100,100,.08)"
+
+                    );
+
+
+                    gradient.addColorStop(
+                        1,
+                        "rgba(80,60,110,0)"
+                    );
+
+
+                    ctx.fillStyle =
+                        gradient;
+
+
+                    ctx.fillRect(
+
+                        portal.x -
+                        60,
+
+                        portal.y -
+                        60,
+
+                        portal.w +
+                        120,
+
+                        portal.h +
+                        120
+
+                    );
+
+
+                    ctx.restore();
+
+                }
+            );
+
+
+        const hell =
+            getHellStairPortal();
+
+
+        if (
+            hell
+        ) {
+
+            ctx.save();
+
+
+            for (
+                let i = 0;
+                i <
+                7;
+                i++
+            ) {
+
+                ctx.fillStyle =
+
+                    i %
+                    2
+
+                        ? "#2d2628"
+
+                        : "#3b3032";
+
+
+                ctx.fillRect(
+
+                    hell.x +
+                    i *
+                    9,
+
+                    hell.y +
+                    i *
+                    7,
+
+                    hell.w -
+                    i *
+                    18,
+
+                    12
+
+                );
+
+            }
+
+
+            ctx.strokeStyle =
+                "rgba(190,111,82,.5)";
+
+
+            ctx.strokeRect(
+
+                hell.x,
+                hell.y,
+
+                hell.w,
+                hell.h
+
+            );
+
+
+            ctx.restore();
+
+        }
+
+
+        drawGates();
+
+    }
+
+
+    function drawWorldLabels() {
+
+        ctx.save();
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.font =
+            "700 11px Arial";
+
+
+        ctx.fillStyle =
+            "rgba(245,235,215,.7)";
+
+
+        state.world
+            .trials
+            .forEach(
+                trial => {
+
+                    if (
+
+                        trial.dashAltar &&
+
+                        state.area ===
+                        "monarchMaze" &&
+
+                        !hasLantern()
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    ctx.fillText(
+
+                        trial.title,
+
+                        trial.x,
+
+                        trial.y -
+                        trial.radius -
+                        17
+
+                    );
+
+                }
+            );
+
+
+        const hell =
+            getHellStairPortal();
+
+
+        if (
+            hell
+        ) {
+
+            ctx.fillText(
+
+                "ESCADARIA ESQUECIDA",
+
+                hell.x +
+                hell.w /
+                2,
+
+                hell.y -
+                14
+
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       LUZ BLOQUEADA POR PAREDES
+       ========================================================= */
+
+    function raySegmentDistance(
+        ox,
+        oy,
+        dx,
+        dy,
+        x1,
+        y1,
+        x2,
+        y2,
+        maxDistance
+    ) {
+
+        const sx =
+            x2 -
+            x1;
+
+
+        const sy =
+            y2 -
+            y1;
+
+
+        const denominator =
+
+            dx *
+            sy -
+
+            dy *
+            sx;
+
+
+        if (
+            Math.abs(
+                denominator
+            ) <
+            0.000001
+        ) {
+
+            return maxDistance;
+
+        }
+
+
+        const qx =
+            x1 -
+            ox;
+
+
+        const qy =
+            y1 -
+            oy;
+
+
+        const t =
+
+            (
+                qx *
+                sy -
+
+                qy *
+                sx
+            ) /
+            denominator;
+
+
+        const u =
+
+            (
+                qx *
+                dy -
+
+                qy *
+                dx
+            ) /
+            denominator;
+
+
+        if (
+
+            t >=
+            0 &&
+
+            u >=
+            0 &&
+
+            u <=
+            1 &&
+
+            t <
+            maxDistance
+
+        ) {
+
+            return t;
+
+        }
+
+
+        return maxDistance;
+
+    }
+
+
+    function rayRectDistance(
+        ox,
+        oy,
+        dx,
+        dy,
+        rect,
+        maxDistance
+    ) {
+
+        let best =
+            maxDistance;
+
+
+        const x =
+            rect.x;
+
+
+        const y =
+            rect.y;
+
+
+        const w =
+            rect.w;
+
+
+        const h =
+            rect.h;
+
+
+        best =
+            Math.min(
+
+                best,
+
+                raySegmentDistance(
+
+                    ox,
+                    oy,
+                    dx,
+                    dy,
+
+                    x,
+                    y,
+
+                    x +
+                    w,
+                    y,
+
+                    best
+
+                )
+
+            );
+
+
+        best =
+            Math.min(
+
+                best,
+
+                raySegmentDistance(
+
+                    ox,
+                    oy,
+                    dx,
+                    dy,
+
+                    x +
+                    w,
+                    y,
+
+                    x +
+                    w,
+                    y +
+                    h,
+
+                    best
+
+                )
+
+            );
+
+
+        best =
+            Math.min(
+
+                best,
+
+                raySegmentDistance(
+
+                    ox,
+                    oy,
+                    dx,
+                    dy,
+
+                    x +
+                    w,
+                    y +
+                    h,
+
+                    x,
+                    y +
+                    h,
+
+                    best
+
+                )
+
+            );
+
+
+        best =
+            Math.min(
+
+                best,
+
+                raySegmentDistance(
+
+                    ox,
+                    oy,
+                    dx,
+                    dy,
+
+                    x,
+                    y +
+                    h,
+
+                    x,
+                    y,
+
+                    best
+
+                )
+
+            );
+
+
+        return best;
+
+    }
+
+
+    function computeLightPolygon(
+        x,
+        y,
+        radius
+    ) {
+
+        const blockers =
+            state.world
+                .obstacles
+                .filter(
+                    obstacle => {
+
+                        if (
+                            !obstacle.blocksLight
+                        ) {
+
+                            return false;
+
+                        }
+
+
+                        const nearestX =
+                            clamp(
+
+                                x,
+
+                                obstacle.x,
+
+                                obstacle.x +
+                                obstacle.w
+
+                            );
+
+
+                        const nearestY =
+                            clamp(
+
+                                y,
+
+                                obstacle.y,
+
+                                obstacle.y +
+                                obstacle.h
+
+                            );
+
+
+                        return (
+
+                            Math.hypot(
+
+                                x -
+                                nearestX,
+
+                                y -
+                                nearestY
+
+                            ) <=
+
+                            radius +
+                            60
+
+                        );
+
+                    }
+                );
+
+
+        const angles =
+            [];
+
+
+        for (
+            let i = 0;
+            i <
+            96;
+            i++
+        ) {
+
+            angles.push(
+
+                i /
+                96 *
+                Math.PI *
+                2
+
+            );
+
+        }
+
+
+        blockers.forEach(
+            rect => {
+
+                [
+
+                    [
+                        rect.x,
+                        rect.y
+                    ],
+
+                    [
+                        rect.x +
+                        rect.w,
+                        rect.y
+                    ],
+
+                    [
+                        rect.x +
+                        rect.w,
+                        rect.y +
+                        rect.h
+                    ],
+
+                    [
+                        rect.x,
+                        rect.y +
+                        rect.h
+                    ]
+
+                ]
+                    .forEach(
+                        ([
+                            cornerX,
+                            cornerY
+                        ]) => {
+
+                            const angle =
+                                Math.atan2(
+
+                                    cornerY -
+                                    y,
+
+                                    cornerX -
+                                    x
+
+                                );
+
+
+                            angles.push(
+
+                                angle -
+                                0.00035,
+
+                                angle,
+
+                                angle +
+                                0.00035
+
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+
+        angles.sort(
+            (
+                a,
+                b
+            ) =>
+                a -
+                b
+        );
+
+
+        return angles.map(
+            angle => {
+
+                const dx =
+                    Math.cos(
+                        angle
+                    );
+
+
+                const dy =
+                    Math.sin(
+                        angle
+                    );
+
+
+                let distance =
+                    radius;
+
+
+                blockers.forEach(
+                    rect => {
+
+                        distance =
+                            Math.min(
+
+                                distance,
+
+                                rayRectDistance(
+
+                                    x,
+                                    y,
+
+                                    dx,
+                                    dy,
+
+                                    rect,
+
+                                    distance
+
+                                )
+
+                            );
+
+                    }
+                );
+
+
+                return {
+
+                    x:
+                        x +
+                        dx *
+                        distance,
+
+                    y:
+                        y +
+                        dy *
+                        distance
+
+                };
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       ESCURIDÃO / LANTERNA
+       ========================================================= */
+
+    function drawDarknessOverlay() {
+
+        if (
+
+            state.area !==
+            "monarchMaze" ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        const screenX =
+
+            state.player.x -
+
+            state.camera.x;
+
+
+        const screenY =
+
+            state.player.y -
+
+            state.camera.y;
+
+
+        const lantern =
+            hasLantern();
+
+
+        const radius =
+
+            lantern
+
+                ? VISUAL_CONFIG
+                    .lantern
+                    .radius
+
+                : VISUAL_CONFIG
+                    .lantern
+                    .noLanternRadius;
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+
+            lantern
+
+                ? "rgba(0,0,0,.965)"
+
+                : "rgba(0,0,0,.995)";
+
+
+        ctx.fillRect(
+
+            0,
+            0,
+
+            window.innerWidth,
+            window.innerHeight
+
+        );
+
+
+        ctx.globalCompositeOperation =
+            "destination-out";
+
+
+        if (
+            !lantern
+        ) {
+
+            const gradient =
+                ctx.createRadialGradient(
+
+                    screenX,
+                    screenY,
+                    0,
+
+                    screenX,
+                    screenY,
+                    radius
+
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(0,0,0,.88)"
+            );
+
+
+            gradient.addColorStop(
+                0.72,
+                "rgba(0,0,0,.42)"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "rgba(0,0,0,0)"
+            );
+
+
+            ctx.fillStyle =
+                gradient;
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                screenX,
+                screenY,
+
+                radius,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            ctx.fill();
+
+
+            ctx.restore();
+
+
+            return;
+
+        }
+
+
+        const polygon =
+            computeLightPolygon(
+
+                state.player.x,
+
+                state.player.y,
+
+                radius
+
+            );
+
+
+        if (
+            polygon.length
+        ) {
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+
+                polygon[
+                    0
+                ].x -
+                state.camera.x,
+
+                polygon[
+                    0
+                ].y -
+                state.camera.y
+
+            );
+
+
+            for (
+                let i = 1;
+                i <
+                polygon.length;
+                i++
+            ) {
+
+                ctx.lineTo(
+
+                    polygon[
+                        i
+                    ].x -
+                    state.camera.x,
+
+                    polygon[
+                        i
+                    ].y -
+                    state.camera.y
+
+                );
+
+            }
+
+
+            ctx.closePath();
+
+
+            ctx.clip();
+
+
+            const gradient =
+                ctx.createRadialGradient(
+
+                    screenX,
+                    screenY,
+                    0,
+
+                    screenX,
+                    screenY,
+                    radius
+
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(0,0,0,1)"
+            );
+
+
+            gradient.addColorStop(
+                0.55,
+                "rgba(0,0,0,.96)"
+            );
+
+
+            gradient.addColorStop(
+                0.78,
+                "rgba(0,0,0,.62)"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "rgba(0,0,0,0)"
+            );
+
+
+            ctx.fillStyle =
+                gradient;
+
+
+            ctx.fillRect(
+
+                screenX -
+                radius,
+
+                screenY -
+                radius,
+
+                radius *
+                2,
+
+                radius *
+                2
+
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       SANGUE / TELA VERMELHA
+       ========================================================= */
+
+    function drawDamageOverlay() {
+
+        if (
+
+            state.damageFlash <=
+            0 &&
+
+            !state.bloodMarks
+                .length
+
+        ) {
+
+            return;
+
+        }
+
+
+        ctx.save();
+
+
+        if (
+            state.damageFlash >
+            0
+        ) {
+
+            const alpha =
+                clamp(
+
+                    state.damageFlash,
+
+                    0,
+
+                    VISUAL_CONFIG
+                        .blood
+                        .flashMax
+
+                );
+
+
+            const gradient =
+                ctx.createRadialGradient(
+
+                    window.innerWidth /
+                    2,
+
+                    window.innerHeight /
+                    2,
+
+                    Math.min(
+
+                        window.innerWidth,
+
+                        window.innerHeight
+
+                    ) *
+                    0.16,
+
+                    window.innerWidth /
+                    2,
+
+                    window.innerHeight /
+                    2,
+
+                    Math.max(
+
+                        window.innerWidth,
+
+                        window.innerHeight
+
+                    ) *
+                    0.72
+
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(120,0,0,0)"
+            );
+
+
+            gradient.addColorStop(
+
+                0.55,
+
+                `rgba(
+                    145,
+                    0,
+                    0,
+                    ${
+                        alpha *
+                        0.1
+                    }
+                )`
+
+            );
+
+
+            gradient.addColorStop(
+
+                1,
+
+                `rgba(
+                    195,
+                    0,
+                    0,
+                    ${alpha}
+                )`
+
+            );
+
+
+            ctx.fillStyle =
+                gradient;
+
+
+            ctx.fillRect(
+
+                0,
+                0,
+
+                window.innerWidth,
+
+                window.innerHeight
+
+            );
+
+        }
+
+
+        state.bloodMarks
+            .forEach(
+                mark => {
+
+                    const lifeRatio =
+                        clamp(
+
+                            mark.life /
+                            (
+                                mark.maxLife ||
+                                VISUAL_CONFIG
+                                    .blood
+                                    .markLife
+                            ),
+
+                            0,
+                            1
+
+                        );
+
+
+                    const radiusPx =
+
+                        mark.radius *
+
+                        Math.min(
+
+                            window.innerWidth,
+
+                            window.innerHeight
+
+                        );
+
+
+                    ctx.save();
+
+
+                    ctx.translate(
+
+                        mark.x *
+                        window.innerWidth,
+
+                        mark.y *
+                        window.innerHeight
+
+                    );
+
+
+                    ctx.rotate(
+                        mark.rotation
+                    );
+
+
+                    ctx.scale(
+                        mark.stretch,
+                        1
+                    );
+
+
+                    ctx.fillStyle =
+                        `rgba(
+                            105,
+                            0,
+                            10,
+                            ${
+                                mark.alpha *
+                                lifeRatio
+                            }
+                        )`;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.arc(
+
+                        0,
+                        0,
+
+                        radiusPx,
+
+                        0,
+
+                        Math.PI *
+                        2
+
+                    );
+
+
+                    ctx.fill();
+
+
+                    for (
+                        let i = 0;
+                        i <
+                        3;
+                        i++
+                    ) {
+
+                        const angle =
+
+                            i /
+                            3 *
+                            Math.PI *
+                            2 +
+
+                            mark.rotation;
+
+
+                        ctx.beginPath();
+
+
+                        ctx.arc(
+
+                            Math.cos(
+                                angle
+                            ) *
+                            radiusPx *
+                            1.2,
+
+                            Math.sin(
+                                angle
+                            ) *
+                            radiusPx *
+                            0.8,
+
+                            radiusPx *
+                            (
+                                0.12 +
+                                i *
+                                0.04
+                            ),
+
+                            0,
+
+                            Math.PI *
+                            2
+
+                        );
+
+
+                        ctx.fill();
+
+                    }
+
+
+                    ctx.restore();
+
+                }
+            );
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       BARRA DE BOSS
+
+       Mais baixa e menor.
+       Também mede os botões para não ficar atrás.
+       ========================================================= */
+
+    function calculateBossBarY(
+        width
+    ) {
+
+        const centerLeft =
+
+            (
+                window.innerWidth -
+                width
+            ) /
+            2;
+
+
+        const centerRight =
+
+            centerLeft +
+            width;
+
+
+        let y =
+
+            window.innerWidth <
+            800
+
+                ? VISUAL_CONFIG
+                    .bossBar
+                    .topCompact
+
+                : VISUAL_CONFIG
+                    .bossBar
+                    .topDesktop;
+
+
+        [
+
+            "inventoryBtn",
+
+            "mapBtn",
+
+            "bookBtn",
+
+            "statusBtnDynamic",
+
+            "saveBtn",
+
+            "menuBtn"
+
+        ]
+            .forEach(
+                id => {
+
+                    const element =
+                        $(id);
+
+
+                    if (
+
+                        !element ||
+
+                        !element
+                            .getBoundingClientRect
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const rect =
+                        element
+                            .getBoundingClientRect();
+
+
+                    const overlapsHorizontally =
+
+                        rect.right >
+                        centerLeft &&
+
+                        rect.left <
+                        centerRight;
+
+
+                    if (
+
+                        overlapsHorizontally &&
+
+                        rect.bottom +
+                        12 >
+                        y
+
+                    ) {
+
+                        y =
+                            rect.bottom +
+                            12;
+
+                    }
+
+                }
+            );
+
+
+        return Math.min(
+
+            y,
+
+            window.innerHeight *
+            0.28
+
+        );
+
+    }
+
+
+    function drawBossBar() {
+
+        const boss =
+            state.bossBarTarget;
+
+
+        if (
+
+            !boss ||
+
+            boss.dead ||
+
+            boss.hp <=
+            0
+
+        ) {
+
+            return;
+
+        }
+
+
+        const max =
+            Math.min(
+
+                VISUAL_CONFIG
+                    .bossBar
+                    .maxWidth,
+
+                window.innerWidth -
+                70
+
+            );
+
+
+        const width =
+            Math.max(
+
+                Math.min(
+
+                    max,
+
+                    window.innerWidth *
+                    0.48
+
+                ),
+
+                Math.min(
+
+                    VISUAL_CONFIG
+                        .bossBar
+                        .minWidth,
+
+                    window.innerWidth -
+                    40
+
+                )
+
+            );
+
+
+        const x =
+
+            (
+                window.innerWidth -
+                width
+            ) /
+            2;
+
+
+        const y =
+            calculateBossBarY(
+                width
+            );
+
+
+        const height =
+            VISUAL_CONFIG
+                .bossBar
+                .height;
+
+
+        const ratio =
+            clamp(
+
+                boss.hp /
+                boss.maxHp,
+
+                0,
+                1
+
+            );
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            "rgba(8,8,12,.88)";
+
+
+        ctx.fillRect(
+
+            x -
+            10,
+
+            y -
+            24,
+
+            width +
+            20,
+
+            height +
+            42
+
+        );
+
+
+        ctx.fillStyle =
+            "rgba(255,255,255,.09)";
+
+
+        ctx.fillRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+
+        const gradient =
+            ctx.createLinearGradient(
+
+                x,
+                y,
+
+                x +
+                width,
+
+                y
+
+            );
+
+
+        if (
+            boss.id ===
+            "monarch"
+        ) {
+
+            gradient.addColorStop(
+                0,
+                "#9a69ad"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "#56305e"
+            );
+
+        }
+
+        else if (
+            boss.id ===
+            "other_self"
+        ) {
+
+            gradient.addColorStop(
+                0,
+                state.player
+                    .color
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "#4a3c50"
+            );
+
+        }
+
+        else {
+
+            gradient.addColorStop(
+                0,
+                "#cb5d55"
+            );
+
+
+            gradient.addColorStop(
+                1,
+                "#702d32"
+            );
+
+        }
+
+
+        ctx.fillStyle =
+            gradient;
+
+
+        ctx.fillRect(
+
+            x,
+            y,
+
+            width *
+            ratio,
+
+            height
+
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,.38)";
+
+
+        ctx.strokeRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.fillStyle =
+            "#fff";
+
+
+        ctx.font =
+            "800 13px Arial";
+
+
+        const stagger =
+
+            boss.id ===
+            "monarch" &&
+
+            boss.monarchStagger >
+            0
+
+                ? ` • DESORIENTADO ${boss.monarchStagger.toFixed(1)}s`
+
+                : "";
+
+
+        ctx.fillText(
+
+            `${boss.name}${stagger}`,
+
+            window.innerWidth /
+            2,
+
+            y -
+            8
+
+        );
+
+
+        ctx.font =
+            "700 10px Arial";
+
+
+        ctx.fillText(
+
+            `${Math.ceil(boss.hp)} / ${Math.ceil(boss.maxHp)}`,
+
+            window.innerWidth /
+            2,
+
+            y +
+            13
+
+        );
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       HUD DAS HABILIDADES
+       ========================================================= */
+
+    function drawSkillHud() {
+
+        if (
+
+            !state.player ||
+
+            state.houseMode
+
+        ) {
+
+            return;
+
+        }
+
+
+        const skills =
+            CLASS_SKILLS[
+                state.player
+                    .characterId
+            ];
+
+
+        if (
+            !skills
+        ) {
+
+            return;
+
+        }
+
+
+        const slots = [
+
+            "q",
+
+            "r",
+
+            "f"
+
+        ];
+
+
+        const size =
+            48;
+
+
+        const gap =
+            8;
+
+
+        const total =
+
+            size *
+            3 +
+
+            gap *
+            2;
+
+
+        let x =
+
+            window.innerWidth /
+            2 -
+
+            total /
+            2;
+
+
+        const y =
+
+            window.innerHeight -
+            66;
+
+
+        ctx.save();
+
+
+        ctx.textAlign =
+            "center";
+
+
+        slots.forEach(
+            slot => {
+
+                const skill =
+                    skills[
+                        slot
+                    ];
+
+
+                const unlocked =
+
+                    state.player
+                        .level >=
+                    skill.level;
+
+
+                const cooldown =
+
+                    state.player
+                        .skillCooldowns[
+                            slot
+                        ] ||
+                    0;
+
+
+                ctx.fillStyle =
+
+                    unlocked
+
+                        ? "rgba(12,14,19,.86)"
+
+                        : "rgba(12,14,19,.55)";
+
+
+                ctx.fillRect(
+                    x,
+                    y,
+                    size,
+                    size
+                );
+
+
+                ctx.strokeStyle =
+
+                    unlocked
+
+                        ? "rgba(255,255,255,.32)"
+
+                        : "rgba(255,255,255,.12)";
+
+
+                ctx.strokeRect(
+                    x,
+                    y,
+                    size,
+                    size
+                );
+
+
+                ctx.fillStyle =
+                    "#fff";
+
+
+                ctx.font =
+                    "800 13px Arial";
+
+
+                ctx.fillText(
+
+                    slot.toUpperCase(),
+
+                    x +
+                    size /
+                    2,
+
+                    y +
+                    16
+
+                );
+
+
+                ctx.font =
+                    "9px Arial";
+
+
+                ctx.fillText(
+
+                    unlocked
+
+                        ? skill.name
+                            .slice(
+                                0,
+                                8
+                            )
+
+                        : `Nv.${skill.level}`,
+
+                    x +
+                    size /
+                    2,
+
+                    y +
+                    34
+
+                );
+
+
+                if (
+                    cooldown >
+                    0
+                ) {
+
+                    ctx.fillStyle =
+                        "rgba(0,0,0,.62)";
+
+
+                    ctx.fillRect(
+
+                        x,
+                        y,
+
+                        size,
+
+                        size *
+                        clamp(
+
+                            cooldown /
+                            skill.cooldown,
+
+                            0,
+                            1
+
+                        )
+
+                    );
+
+
+                    ctx.fillStyle =
+                        "#fff";
+
+
+                    ctx.font =
+                        "700 9px Arial";
+
+
+                    ctx.fillText(
+
+                        cooldown
+                            .toFixed(
+                                1
+                            ),
+
+                        x +
+                        size /
+                        2,
+
+                        y +
+                        45
+
+                    );
+
+                }
+
+
+                x +=
+                    size +
+                    gap;
+
+            }
+        );
+
+
+        if (
+            state.player
+                .abilities
+                ?.dash
+        ) {
+
+            const dashX =
+
+                window.innerWidth /
+                2 +
+
+                total /
+                2 +
+
+                16;
+
+
+            ctx.fillStyle =
+                "rgba(12,14,19,.86)";
+
+
+            ctx.fillRect(
+
+                dashX,
+                y,
+
+                66,
+                size
+
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(190,155,230,.55)";
+
+
+            ctx.strokeRect(
+
+                dashX,
+                y,
+
+                66,
+                size
+
+            );
+
+
+            ctx.fillStyle =
+                "#fff";
+
+
+            ctx.font =
+                "800 9px Arial";
+
+
+            ctx.fillText(
+
+                "ESPAÇO",
+
+                dashX +
+                33,
+
+                y +
+                16
+
+            );
+
+
+            ctx.font =
+                "9px Arial";
+
+
+            ctx.fillText(
+
+                state.player
+                    .dashCooldown >
+                0
+
+                    ? state.player
+                        .dashCooldown
+                        .toFixed(
+                            1
+                        )
+
+                    : "DASH",
+
+                dashX +
+                33,
+
+                y +
+                35
+
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       TRANSIÇÃO DE TELA
+       ========================================================= */
+
+    function drawTransitionOverlay() {
+
+        const transition =
+            state.transition;
+
+
+        if (
+            !transition
+        ) {
+
+            return;
+
+        }
+
+
+        ctx.save();
+
+
+        ctx.fillStyle =
+            `rgba(
+                2,
+                3,
+                5,
+                ${
+                    clamp(
+                        transition.alpha,
+                        0,
+                        1
+                    )
+                }
+            )`;
+
+
+        ctx.fillRect(
+
+            0,
+            0,
+
+            window.innerWidth,
+
+            window.innerHeight
+
+        );
+
+
+        if (
+
+            transition.label &&
+
+            transition.alpha >
+            0.56
+
+        ) {
+
+            const alpha =
+                clamp(
+
+                    (
+                        transition.alpha -
+                        0.56
+                    ) /
+                    0.44,
+
+                    0,
+                    1
+
+                );
+
+
+            ctx.globalAlpha =
+                alpha;
+
+
+            ctx.textAlign =
+                "center";
+
+
+            ctx.fillStyle =
+                "#eadfca";
+
+
+            ctx.font =
+                "700 20px Georgia";
+
+
+            ctx.fillText(
+
+                transition.label,
+
+                window.innerWidth /
+                2,
+
+                window.innerHeight /
+                2
+
+            );
+
+
+            ctx.fillStyle =
+                "rgba(234,223,202,.5)";
+
+
+            ctx.fillRect(
+
+                window.innerWidth /
+                2 -
+                85,
+
+                window.innerHeight /
+                2 +
+                18,
+
+                170,
+                1
+
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    /* =========================================================
+       MINIMAPA
+       ========================================================= */
+
+    function drawMinimap() {
+
+        miniCtx.clearRect(
+
+            0,
+            0,
+
+            miniCanvas.width,
+
+            miniCanvas.height
+
+        );
+
+
+        if (
+
+            !state.player ||
+
+            !hasMinimap()
+
+        ) {
+
+            return;
+
+        }
+
+
+        const width =
+            miniCanvas.width;
+
+
+        const height =
+            miniCanvas.height;
+
+
+        miniCtx.fillStyle =
+            "#111418";
+
+
+        miniCtx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        if (
+            state.houseMode
+        ) {
+
+            miniCtx.fillStyle =
+                "#d9c9a6";
+
+
+            miniCtx.font =
+                "700 11px Arial";
+
+
+            miniCtx.textAlign =
+                "center";
+
+
+            miniCtx.fillText(
+
+                "INTERIOR",
+
+                width /
+                2,
+
+                height /
+                2
+
+            );
+
+
+            return;
+
+        }
+
+
+        if (
+            state.area ===
+            "monarchMaze"
+        ) {
+
+            miniCtx.fillStyle =
+                "#040405";
+
+
+            miniCtx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            miniCtx.fillStyle =
+                "#bcb6ac";
+
+
+            miniCtx.font =
+                "700 10px Arial";
+
+
+            miniCtx.textAlign =
+                "center";
+
+
+            miniCtx.fillText(
+
+                hasLantern()
+
+                    ? "LABIRINTO ESCURO"
+
+                    : "ESCURIDÃO TOTAL",
+
+                width /
+                2,
+
+                18
+
+            );
+
+
+            miniCtx.fillStyle =
+                "#fff";
+
+
+            miniCtx.beginPath();
+
+
+            miniCtx.arc(
+
+                width /
+                2,
+
+                height /
+                2,
+
+                4,
+
+                0,
+
+                Math.PI *
+                2
+
+            );
+
+
+            miniCtx.fill();
+
+
+            return;
+
+        }
+
+
+        const scaleX =
+
+            width /
+
+            state.world.width;
+
+
+        const scaleY =
+
+            height /
+
+            state.world.height;
+
+
+        state.world
+            .paths
+            .forEach(
+                path => {
+
+                    if (
+                        !path.points
+                            ?.length
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    miniCtx.strokeStyle =
+                        "rgba(195,169,116,.67)";
+
+
+                    miniCtx.lineWidth =
+                        Math.max(
+
+                            1,
+
+                            (
+                                path.width ||
+                                80
+                            ) *
+
+                            (
+                                scaleX +
+                                scaleY
+                            ) *
+                            0.5
+
+                        );
+
+
+                    miniCtx.lineCap =
+                        "round";
+
+
+                    miniCtx.beginPath();
+
+
+                    miniCtx.moveTo(
+
+                        path.points[
+                            0
+                        ].x *
+                        scaleX,
+
+                        path.points[
+                            0
+                        ].y *
+                        scaleY
+
+                    );
+
+
+                    for (
+                        let i = 1;
+                        i <
+                        path.points.length;
+                        i++
+                    ) {
+
+                        miniCtx.lineTo(
+
+                            path.points[
+                                i
+                            ].x *
+                            scaleX,
+
+                            path.points[
+                                i
+                            ].y *
+                            scaleY
+
+                        );
+
+                    }
+
+
+                    miniCtx.stroke();
+
+                }
+            );
+
+
+        state.world
+            .buildings
+            .forEach(
+                building => {
+
+                    miniCtx.fillStyle =
+                        "#926e52";
+
+
+                    miniCtx.fillRect(
+
+                        building.x *
+                        scaleX,
+
+                        building.y *
+                        scaleY,
+
+                        Math.max(
+
+                            2,
+
+                            building.w *
+                            scaleX
+
+                        ),
+
+                        Math.max(
+
+                            2,
+
+                            building.h *
+                            scaleY
+
+                        )
+
+                    );
+
+                }
+            );
+
+
+        miniCtx.fillStyle =
+            "#fff";
+
+
+        miniCtx.beginPath();
+
+
+        miniCtx.arc(
+
+            state.player.x *
+            scaleX,
+
+            state.player.y *
+            scaleY,
+
+            4,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        miniCtx.fill();
+
+    }
+
+
+    /* =========================================================
+       MAPA GRANDE
+       ========================================================= */
+
+    function drawLargeMap() {
+
+        if (
+
+            !state.player ||
+
+            !hasMinimap()
+
+        ) {
+
+            return;
+
+        }
+
+
+        const width =
+            mapCanvas.width;
+
+
+        const height =
+            mapCanvas.height;
+
+
+        mapCtx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        mapCtx.fillStyle =
+            "#15181b";
+
+
+        mapCtx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        if (
+
+            state.area ===
+            "monarchMaze" &&
+
+            !hasLantern()
+
+        ) {
+
+            mapCtx.fillStyle =
+                "#050506";
+
+
+            mapCtx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            mapCtx.fillStyle =
+                "#bcb6ac";
+
+
+            mapCtx.font =
+                "700 22px Arial";
+
+
+            mapCtx.textAlign =
+                "center";
+
+
+            mapCtx.fillText(
+
+                "ESCURIDÃO TOTAL",
+
+                width /
+                2,
+
+                height /
+                2
+
+            );
+
+
+            return;
+
+        }
+
+
+        const scaleX =
+
+            width /
+
+            state.world.width;
+
+
+        const scaleY =
+
+            height /
+
+            state.world.height;
+
+
+        state.world
+            .paths
+            .forEach(
+                path => {
+
+                    if (
+                        !path.points
+                            ?.length
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    mapCtx.strokeStyle =
+                        "rgba(195,169,116,.72)";
+
+
+                    mapCtx.lineWidth =
+                        Math.max(
+
+                            2,
+
+                            (
+                                path.width ||
+                                80
+                            ) *
+
+                            (
+                                scaleX +
+                                scaleY
+                            ) *
+                            0.5
+
+                        );
+
+
+                    mapCtx.lineCap =
+                        "round";
+
+
+                    mapCtx.beginPath();
+
+
+                    mapCtx.moveTo(
+
+                        path.points[
+                            0
+                        ].x *
+                        scaleX,
+
+                        path.points[
+                            0
+                        ].y *
+                        scaleY
+
+                    );
+
+
+                    for (
+                        let i = 1;
+                        i <
+                        path.points.length;
+                        i++
+                    ) {
+
+                        mapCtx.lineTo(
+
+                            path.points[
+                                i
+                            ].x *
+                            scaleX,
+
+                            path.points[
+                                i
+                            ].y *
+                            scaleY
+
+                        );
+
+                    }
+
+
+                    mapCtx.stroke();
+
+                }
+            );
+
+
+        if (
+            state.area !==
+            "monarchMaze"
+        ) {
+
+            state.world
+                .buildings
+                .forEach(
+                    building => {
+
+                        mapCtx.fillStyle =
+                            "#997255";
+
+
+                        mapCtx.fillRect(
+
+                            building.x *
+                            scaleX,
+
+                            building.y *
+                            scaleY,
+
+                            Math.max(
+
+                                3,
+
+                                building.w *
+                                scaleX
+
+                            ),
+
+                            Math.max(
+
+                                3,
+
+                                building.h *
+                                scaleY
+
+                            )
+
+                        );
+
+                    }
+                );
+
+        }
+
+
+        mapCtx.fillStyle =
+            "#fff";
+
+
+        mapCtx.beginPath();
+
+
+        mapCtx.arc(
+
+            state.player.x *
+            scaleX,
+
+            state.player.y *
+            scaleY,
+
+            6,
+
+            0,
+
+            Math.PI *
+            2
+
+        );
+
+
+        mapCtx.fill();
+
+    }
+
+
+    /* =========================================================
+       DRAW DO MUNDO
+       ========================================================= */
+
+    function drawWorld() {
+
+        const shakeX =
+
+            state.screenShake >
+            0
+
+                ? random(
+
+                    -state.screenShakePower,
+
+                    state.screenShakePower
+
+                )
+
+                : 0;
+
+
+        const shakeY =
+
+            state.screenShake >
+            0
+
+                ? random(
+
+                    -state.screenShakePower,
+
+                    state.screenShakePower
+
+                )
+
+                : 0;
+
+
+        ctx.clearRect(
+
+            0,
+            0,
+
+            window.innerWidth,
+
+            window.innerHeight
+
+        );
+
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            -state.camera.x +
+            shakeX,
+
+            -state.camera.y +
+            shakeY
+
+        );
+
+
+        if (
+            state.houseMode
+        ) {
+
+            drawHouseInterior();
+
+            drawEffects();
+
+            drawPlayer();
+
+            drawParticles();
+
+            drawDamageNumbers();
+
+        }
+
+        else {
+
+            drawGround();
+
+            drawPaths();
+
+            drawDecorations();
+
+            drawBuildings();
+
+            drawTrees();
+
+            drawResources();
+
+            drawFoods();
+
+            drawObstacles();
+
+            drawTrials();
+
+            drawPortals();
+
+            drawDrops();
+
+            drawHazards();
+
+            drawEffects();
+
+            drawProjectiles();
+
+            drawNPCs();
+
+            drawEnemies();
+
+            drawPlayer();
+
+            drawParticles();
+
+            drawDamageNumbers();
+
+            drawWorldLabels();
+
+        }
+
+
+        ctx.restore();
+
+
+        drawDarknessOverlay();
+
+        drawBossBar();
+
+        drawSkillHud();
+
+        drawDamageOverlay();
+
+        drawMinimap();
+
+        drawTransitionOverlay();
+
+    }
+
+
+    /* =========================================================
+       ESCOLHA FINAL
+       ========================================================= */
+
+    function ensureFinalChoicePanel() {
+
+        let panel =
+            $("finalChoicePanelDynamic");
+
+
+        if (
+            panel
+        ) {
+
+            return panel;
+
+        }
+
+
+        panel =
+            document
+                .createElement(
+                    "section"
+                );
+
+
+        panel.id =
+            "finalChoicePanelDynamic";
+
+
+        panel.className =
+            "panel hidden";
+
+
+        panel.innerHTML = `
+
+            <div class="panel-header">
+
+                <h2>
+                    O OUTRO EU
+                </h2>
+
+            </div>
+
+            <div class="panel-content">
+
+                <p>
+                    “Aceite a Quietude. Ou prove que ainda existe algo pelo qual lutar.”
+                </p>
+
+                <div class="panel-actions">
+
+                    <button
+                        type="button"
+                        id="finalJoinBtnDynamic"
+                        class="secondary-btn"
+                    >
+                        ACEITAR A QUIETUDE
+                    </button>
+
+                    <button
+                        type="button"
+                        id="finalFightBtnDynamic"
+                        class="primary-btn"
+                    >
+                        LUTAR
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        must(
+            "gameScreen"
+        )
+            .appendChild(
+                panel
+            );
+
+
+        return panel;
+
+    }
+
+
+    function openFinalChoice(
+        enemy
+    ) {
+
+        state.finalChoiceShown =
+            true;
+
+
+        state.paused =
+            true;
+
+
+        state.pauseReason =
+            "finalChoice";
+
+
+        const panel =
+            ensureFinalChoicePanel();
+
+
+        panel.classList
+            .remove(
+                "hidden"
+            );
+
+
+        const join =
+            $("finalJoinBtnDynamic");
+
+
+        const fight =
+            $("finalFightBtnDynamic");
+
+
+        join.onclick =
+            () => {
+
+                state.player
+                    .finalChoice =
+                    "join";
+
+
+                panel.classList
+                    .add(
+                        "hidden"
+                    );
+
+
+                startDialogue(
+
+                    {
+                        name:
+                            "VEYRA"
+                    },
+
+                    [
+
+                        "Você escolheu a Quietude Absoluta.",
+
+                        "Veyra finalmente ficou em silêncio."
+
+                    ]
+
+                );
+
+            };
+
+
+        fight.onclick =
+            () => {
+
+                state.player
+                    .finalChoice =
+                    "fight";
+
+
+                panel.classList
+                    .add(
+                        "hidden"
+                    );
+
+
+                state.paused =
+                    false;
+
+
+                state.pauseReason =
+                    null;
+
+
+                enemy.accepted =
+                    true;
+
+
+                enemy.aggressive =
+                    true;
+
+
+                state.bossBarTarget =
+                    enemy;
+
+
+                createEffect({
+
+                    type:
+                        "finalAwakening",
+
+                    x:
+                        enemy.x,
+
+                    y:
+                        enemy.y,
+
+                    color:
+                        state.player
+                            .color,
+
+                    life:
+                        1,
+
+                    maxLife:
+                        1,
+
+                    radius:
+                        20,
+
+                    maxRadius:
+                        130
+
+                });
+
+            };
+
+    }
+
+
+    /* =========================================================
+       VIAGEM
+       ========================================================= */
+
+    function cancelTravel() {
+
+        state.travel =
+            null;
+
+
+        $("travelPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        if (
+            state.pauseReason ===
+            "travel"
+        ) {
+
+            state.paused =
+                false;
+
+
+            state.pauseReason =
+                null;
+
+        }
+
+    }
+
+
+    function confirmTravel() {
+
+        const travel =
+            state.travel;
+
+
+        if (
+            !travel
+                ?.target
+        ) {
+
+            cancelTravel();
+
+
+            return;
+
+        }
+
+
+        const target =
+            travel.target;
+
+
+        const spawn =
+            travel.spawn;
+
+
+        cancelTravel();
+
+
+        transitionToRegion(
+
+            target,
+
+            {
+                spawn
+            }
+
+        );
+
+    }
+
+
+    /* =========================================================
+       SAVE
+       ========================================================= */
+
+    function cleanPlayerForSave() {
+
+        const player =
+            JSON.parse(
+
+                JSON.stringify(
+
+                    state.player,
+
+                    (
+                        key,
+                        value
+                    ) =>
+
+                        value instanceof
+                        Set
+
+                            ? [
+                                ...value
+                            ]
+
+                            : value
+
+                )
+
+            );
+
+
+        player.playerDash =
+            null;
+
+
+        player.zephyrDash =
+            null;
+
+
+        player.attackAnim =
+            0;
+
+
+        player.hurtAnim =
+            0;
+
+
+        player.invincible =
+            0;
+
+
+        player.stunTimer =
+            0;
+
+
+        return player;
+
+    }
+
+
+    function makeSavePayload() {
+
+        return {
+
+            version:
+                GAME_VERSION,
+
+            area:
+                state.area,
+
+            player:
+                cleanPlayerForSave(),
+
+            houseMode:
+                state.houseMode,
+
+            currentHouseId:
+                state.currentHouse
+                    ?.id ||
+                null,
+
+            houseReturn:
+                state.houseReturn,
+
+            savedAt:
+                new Date()
+                    .toISOString()
+
+        };
+
+    }
+
+
+    function saveGame(
+        showMessage =
+            true
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            localStorage
+                .setItem(
+
+                    SAVE_KEY,
+
+                    JSON.stringify(
+                        makeSavePayload()
+                    )
+
+                );
+
+
+            if (
+                showMessage
+            ) {
+
+                showToast(
+                    "Jogo salvo com sucesso."
+                );
+
+            }
+
+
+            updateContinueButton();
+
+
+            return true;
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "Erro ao salvar VEYRA:",
+                error
+            );
+
+
+            if (
+                showMessage
+            ) {
+
+                showToast(
+                    "Não foi possível salvar o jogo."
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+    }
+
+
+    function getSaveEntry() {
+
+        try {
+
+            const current =
+                localStorage
+                    .getItem(
+                        SAVE_KEY
+                    );
+
+
+            if (
+                current
+            ) {
+
+                return {
+
+                    key:
+                        SAVE_KEY,
+
+                    raw:
+                        current,
+
+                    legacy:
+                        false
+
+                };
+
+            }
+
+
+            for (
+                const key of
+                LEGACY_SAVE_KEYS
+            ) {
+
+                const raw =
+                    localStorage
+                        .getItem(
+                            key
+                        );
+
+
+                if (
+                    raw
+                ) {
+
+                    return {
+
+                        key,
+
+                        raw,
+
+                        legacy:
+                            true
+
+                    };
+
+                }
+
+            }
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "Erro lendo save:",
+                error
+            );
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function hasSave() {
+
+        return Boolean(
+            getSaveEntry()
+        );
+
+    }
+
+
+    function normalizeLegacyInventory(
+        inventory =
+            {}
+    ) {
+
+        const result = {
+            ...inventory
+        };
+
+
+        const aliases = {
+
+            flauta:
+                "flautaMemoria",
+
+            flautaDaMemoria:
+                "flautaMemoria",
+
+            fragmento:
+                "fragmentoMemoria",
+
+            fragmento_memoria:
+                "fragmentoMemoria",
+
+            armaduraFolhas:
+                "armaduraFolha",
+
+            armaduraAlgodão:
+                "armaduraAlgodao"
+
+        };
+
+
+        Object
+            .entries(
+                aliases
+            )
+            .forEach(
+                ([
+                    oldId,
+                    newId
+                ]) => {
+
+                    if (
+
+                        (
+                            result[
+                                oldId
+                            ] ||
+                            0
+                        ) >
+                        0 &&
+
+                        !(
+                            result[
+                                newId
+                            ] >
+                            0
+                        )
+
+                    ) {
+
+                        result[
+                            newId
+                        ] =
+                            result[
+                                oldId
+                            ];
+
+                    }
+
+                }
+            );
+
+
+        return result;
+
+    }
+
+
+    /* =========================================================
+       REPARO DE SAVE ANTIGO
+       ========================================================= */
+
+    function repairLoadedPlayer(
+        character
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player
+        ) {
+
+            return;
+
+        }
+
+
+        player.characterId =
+            character.id;
+
+
+        player.name =
+            String(
+
+                player.name ||
+
+                character.name ||
+
+                "Viajante"
+
+            );
+
+
+        player.className =
+            character.className;
+
+
+        player.icon =
+            character.icon;
+
+
+        player.color =
+            character.color;
+
+
+        player.sprite = {
+
+            ...character.sprite,
+
+            ...(
+                player.sprite ||
+                {}
+            )
+
+        };
+
+
+        player.radius =
+            finiteNumber(
+
+                player.radius,
+
+                VISUAL_CONFIG
+                    .sprite
+                    .playerRadius
+
+            );
+
+
+        player.facing =
+            player.facing ||
+            "down";
+
+
+        player.walkTime =
+            0;
+
+
+        player.attackAnim =
+            0;
+
+
+        player.hurtAnim =
+            0;
+
+
+        player.baseMaxHp =
+            finiteNumber(
+
+                player.baseMaxHp,
+
+                character.hp
+
+            );
+
+
+        player.baseMaxMagic =
+            finiteNumber(
+
+                player.baseMaxMagic,
+
+                character.magic
+
+            );
+
+
+        player.baseMaxEnergy =
+            finiteNumber(
+
+                player.baseMaxEnergy,
+
+                character.energy
+
+            );
+
+
+        player.baseDamage =
+            finiteNumber(
+
+                player.baseDamage,
+
+                character.damage
+
+            );
+
+
+        player.baseDefense =
+            finiteNumber(
+
+                player.baseDefense,
+
+                character.defense
+
+            );
+
+
+        player.baseSpeed =
+            finiteNumber(
+
+                player.baseSpeed,
+
+                character.speed
+
+            );
+
+
+        const legacyInventory =
+            normalizeLegacyInventory(
+
+                player.inventory ||
+                {}
+
+            );
+
+
+        player.inventory =
+            {};
+
+
+        Object
+            .keys(
+                ITEMS
+            )
+            .forEach(
+                id => {
+
+                    player.inventory[
+                        id
+                    ] =
+                        Math.max(
+
+                            0,
+
+                            Math.floor(
+
+                                finiteNumber(
+
+                                    legacyInventory[
+                                        id
+                                    ],
+
+                                    0
+
+                                )
+
+                            )
+
+                        );
+
+                }
+            );
+
+
+        if (
+
+            !player.inventory
+                .espadaSimples &&
+
+            !player.equipment
+                ?.weapon
+
+        ) {
+
+            player.inventory
+                .espadaSimples =
+                1;
+
+        }
+
+
+        if (
+            !player.inventory
+                .machado
+        ) {
+
+            player.inventory
+                .machado =
+                1;
+
+        }
+
+
+        player.equipment = {
+
+            weapon:
+                "espadaSimples",
+
+            armor:
+                null,
+
+            tool:
+                "machado",
+
+            ...(
+                player.equipment ||
+                {}
+            )
+
+        };
+
+
+        if (
+
+            player.equipment
+                .weapon &&
+
+            !ITEMS[
+                player.equipment
+                    .weapon
+            ]
+
+        ) {
+
+            player.equipment
+                .weapon =
+                "espadaSimples";
+
+        }
+
+
+        if (
+
+            player.equipment
+                .armor &&
+
+            !ITEMS[
+                player.equipment
+                    .armor
+            ]
+
+        ) {
+
+            player.equipment
+                .armor =
+                null;
+
+        }
+
+
+        if (
+
+            player.equipment
+                .tool &&
+
+            !ITEMS[
+                player.equipment
+                    .tool
+            ]
+
+        ) {
+
+            player.equipment
+                .tool =
+                "machado";
+
+        }
+
+
+        if (
+            player.equipment
+                .weapon ===
+            "espadaSimples"
+        ) {
+
+            player.inventory
+                .espadaSimples =
+                Math.max(
+
+                    1,
+
+                    player.inventory
+                        .espadaSimples
+
+                );
+
+        }
+
+
+        if (
+            player.equipment
+                .tool ===
+            "machado"
+        ) {
+
+            player.inventory
+                .machado =
+                Math.max(
+
+                    1,
+
+                    player.inventory
+                        .machado
+
+                );
+
+        }
+
+
+        player.inventoryWeightLimit =
+            Math.max(
+
+                60,
+
+                finiteNumber(
+
+                    player.inventoryWeightLimit,
+
+                    100
+
+                )
+
+            );
+
+
+        player.level =
+            clamp(
+
+                Math.floor(
+
+                    finiteNumber(
+                        player.level,
+                        1
+                    )
+
+                ),
+
+                1,
+
+                MAX_LEVEL
+
+            );
+
+
+        player.xp =
+            Math.max(
+
+                0,
+
+                Math.floor(
+
+                    finiteNumber(
+                        player.xp,
+                        0
+                    )
+
+                )
+
+            );
+
+
+        player.xpToNext =
+            Math.max(
+
+                100,
+
+                Math.floor(
+
+                    finiteNumber(
+
+                        player.xpToNext,
+
+                        calculateXpToNext(
+                            player.level
+                        )
+
+                    )
+
+                )
+
+            );
+
+
+        player.statPoints =
+            Math.max(
+
+                0,
+
+                Math.floor(
+
+                    finiteNumber(
+                        player.statPoints,
+                        0
+                    )
+
+                )
+
+            );
+
+
+        player.money =
+            Math.max(
+
+                0,
+
+                Math.floor(
+
+                    finiteNumber(
+                        player.money,
+                        0
+                    )
+
+                )
+
+            );
+
+
+        player.memory =
+            clamp(
+
+                finiteNumber(
+                    player.memory,
+                    0
+                ),
+
+                0,
+
+                100
+
+            );
+
+
+        player.stats = {
+
+            strength:
+                0,
+
+            energy:
+                0,
+
+            fatigue:
+                0,
+
+            hunger:
+                0,
+
+            hp:
+                0,
+
+            ...(
+                player.stats ||
+                {}
+            )
+
+        };
+
+
+        Object
+            .keys(
+                STAT_CONFIG
+            )
+            .forEach(
+                key => {
+
+                    player.stats[
+                        key
+                    ] =
+                        clamp(
+
+                            Math.floor(
+
+                                finiteNumber(
+
+                                    player.stats[
+                                        key
+                                    ],
+
+                                    0
+
+                                )
+
+                            ),
+
+                            0,
+
+                            STAT_CONFIG[
+                                key
+                            ]
+                                .cap
+
+                        );
+
+                }
+            );
+
+
+        player.quest =
+            player.quest ||
+            {};
+
+
+        player.quest.wood = {
+
+            state:
+                "none",
+
+            need:
+                10,
+
+            rewardXP:
+                100,
+
+            rewardMoney:
+                80,
+
+            rewarded:
+                false,
+
+            ...(
+                player.quest
+                    .wood ||
+                {}
+            )
+
+        };
+
+
+        player.quest.coal = {
+
+            state:
+                "none",
+
+            need:
+                8,
+
+            rewardXP:
+                130,
+
+            rewardMoney:
+                110,
+
+            rewarded:
+                false,
+
+            ...(
+                player.quest
+                    .coal ||
+                {}
+            )
+
+        };
+
+
+        player.defeatedBosses =
+
+            Array.isArray(
+                player.defeatedBosses
+            )
+
+                ? player.defeatedBosses
+
+                : [];
+
+
+        player.discoveredBosses =
+
+            Array.isArray(
+                player.discoveredBosses
+            )
+
+                ? player.discoveredBosses
+
+                : [];
+
+
+        player.exploredAreas =
+
+            Array.isArray(
+                player.exploredAreas
+            )
+
+                ? player.exploredAreas
+
+                : [
+                    "village"
+                ];
+
+
+        player.unlockedAreas =
+
+            Array.isArray(
+                player.unlockedAreas
+            )
+
+                ? player.unlockedAreas
+
+                : [
+                    "village"
+                ];
+
+
+        player.hellTypesDefeated =
+            player.hellTypesDefeated ||
+            {};
+
+
+        player.secretsFound =
+
+            Array.isArray(
+                player.secretsFound
+            )
+
+                ? player.secretsFound
+
+                : [];
+
+
+        player.collected =
+            player.collected ||
+            {};
+
+
+        player.abilities = {
+
+            dash:
+                false,
+
+            route2:
+                false,
+
+            route3:
+                false,
+
+            ...(
+                player.abilities ||
+                {}
+            )
+
+        };
+
+
+        player.gateDialogueIndex = {
+
+            north:
+                0,
+
+            west:
+                0,
+
+            south:
+                0,
+
+            ...(
+                player.gateDialogueIndex ||
+                {}
+            )
+
+        };
+
+
+        player.gateUnlocks = {
+
+            north:
+                false,
+
+            west:
+                false,
+
+            south:
+                false,
+
+            ...(
+                player.gateUnlocks ||
+                {}
+            )
+
+        };
+
+
+        player.worldSeeds =
+            player.worldSeeds ||
+            {};
+
+
+        Object
+            .keys(
+                REGIONS
+            )
+            .forEach(
+                (
+                    area,
+                    index
+                ) => {
+
+                    if (
+                        !player.worldSeeds[
+                            area
+                        ]
+                    ) {
+
+                        player.worldSeeds[
+                            area
+                        ] =
+                            hashString(
+
+                                `${player.name}:${area}:${index}:v19`
+
+                            );
+
+                    }
+
+                }
+            );
+
+
+        player.skyTrial = {
+
+            started:
+                false,
+
+            wave:
+                0,
+
+            activeWave:
+                0,
+
+            complete:
+                false,
+
+            ...(
+                player.skyTrial ||
+                {}
+            )
+
+        };
+
+
+        player.monarchAwakened =
+            Boolean(
+                player.monarchAwakened
+            );
+
+
+        player.monarchDefeated =
+            Boolean(
+                player.monarchDefeated
+            );
+
+
+        player.dashPurchased =
+            Boolean(
+                player.dashPurchased
+            );
+
+
+        player.flutePlayed =
+            Boolean(
+                player.flutePlayed
+            );
+
+
+        player.fluteRewardGranted =
+            Boolean(
+                player.fluteRewardGranted
+            );
+
+
+        player.finalChoice =
+            player.finalChoice ||
+            null;
+
+
+        player.finalDefeated =
+            Boolean(
+                player.finalDefeated
+            );
+
+
+        player.minimapOwned =
+            Boolean(
+
+                player.minimapOwned ||
+
+                player.inventory
+                    .minimapa >
+                0
+
+            );
+
+
+        player.lanternOwned =
+            Boolean(
+
+                player.lanternOwned ||
+
+                player.inventory
+                    .lanterna >
+                0
+
+            );
+
+
+        player.checkpoint =
+            player.checkpoint ||
+
+            {
+
+                area:
+                    "village",
+
+                x:
+                    1510,
+
+                y:
+                    1180,
+
+                houseId:
+                    "home",
+
+                insideHouse:
+                    true
+
+            };
+
+
+        player.skillCooldowns = {
+
+            q:
+                0,
+
+            r:
+                0,
+
+            f:
+                0
+
+        };
+
+
+        player.itemCooldowns =
+            {};
+
+
+        player.activePotionBuffs =
+            [];
+
+
+        player.attackCooldown =
+            0;
+
+
+        player.dashCooldown =
+            0;
+
+
+        player.invincible =
+            0;
+
+
+        player.stunTimer =
+            0;
+
+
+        player.shieldTimer =
+            0;
+
+
+        player.damageReduction =
+            0;
+
+
+        player.adaptiveBuff =
+            false;
+
+
+        player.adaptiveTimer =
+            0;
+
+
+        player.playerDash =
+            null;
+
+
+        player.zephyrDash =
+            null;
+
+
+        player.dead =
+            false;
+
+
+        recalculatePlayerStats();
+
+
+        player.hp =
+            clamp(
+
+                finiteNumber(
+
+                    player.hp,
+
+                    player.maxHp
+
+                ),
+
+                1,
+
+                player.maxHp
+
+            );
+
+
+        player.magic =
+            clamp(
+
+                finiteNumber(
+
+                    player.magic,
+
+                    player.maxMagic
+
+                ),
+
+                0,
+
+                player.maxMagic
+
+            );
+
+
+        player.energy =
+            clamp(
+
+                finiteNumber(
+
+                    player.energy,
+
+                    player.maxEnergy
+
+                ),
+
+                0,
+
+                player.maxEnergy
+
+            );
+
+
+        player.hunger =
+            clamp(
+
+                finiteNumber(
+
+                    player.hunger,
+
+                    player.maxHunger
+
+                ),
+
+                0,
+
+                player.maxHunger
+
+            );
+
+
+        player.fatigue =
+            clamp(
+
+                finiteNumber(
+
+                    player.fatigue,
+
+                    player.maxFatigue
+
+                ),
+
+                0,
+
+                player.maxFatigue
+
+            );
+
+
+        sanitizeRuntimePlayer();
+
+    }
+
+
+    /* =========================================================
+       LOAD
+       ========================================================= */
+
+    function loadGame() {
+
+        const entry =
+            getSaveEntry();
+
+
+        if (
+            !entry
+        ) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            const save =
+                JSON.parse(
+                    entry.raw
+                );
+
+
+            if (
+                !save
+                    ?.player
+            ) {
+
+                return false;
+
+            }
+
+
+            const character =
+                CHARACTERS
+                    .find(
+                        item =>
+                            item.id ===
+                            save.player
+                                .characterId
+                    );
+
+
+            if (
+                !character
+            ) {
+
+                return false;
+
+            }
+
+
+            state.player =
+                save.player;
+
+
+            repairLoadedPlayer(
+                character
+            );
+
+
+            state.area =
+
+                REGIONS[
+                    save.area
+                ]
+
+                    ? save.area
+
+                    : "village";
+
+
+            state.houseMode =
+                false;
+
+
+            state.currentHouse =
+                null;
+
+
+            state.houseReturn =
+                null;
+
+
+            state.dialogue =
+                null;
+
+
+            state.travel =
+                null;
+
+
+            state.battle =
+                null;
+
+
+            state.questNPC =
+                null;
+
+
+            state.shopNPC =
+                null;
+
+
+            state.bossBarTarget =
+                null;
+
+
+            state.transition =
+                null;
+
+
+            state.transitionQueue =
+                [];
+
+
+            state.damageFlash =
+                0;
+
+
+            state.bloodMarks =
+                [];
+
+
+            state.keys.clear();
+
+
+            state.portalCooldown =
+                0;
+
+
+            state.holdAction =
+                null;
+
+
+            state.autosaveTimer =
+                0;
+
+
+            buildWorld();
+
+
+            if (
+
+                save.houseMode &&
+
+                state.area ===
+                "village" &&
+
+                save.currentHouseId
+
+            ) {
+
+                const building =
+                    state.world
+                        .buildings
+                        .find(
+                            item =>
+                                item.id ===
+                                save.currentHouseId
+                        );
+
+
+                if (
+                    building
+                        ?.enterable
+                ) {
+
+                    state.houseReturn =
+                        save.houseReturn ||
+                        null;
+
+
+                    enterHouseImmediate(
+
+                        building,
+
+                        false
+
+                    );
+
+                }
+
+            }
+
+
+            if (
+                !state.houseMode
+            ) {
+
+                state.player.x =
+                    clamp(
+
+                        finiteNumber(
+
+                            state.player.x,
+
+                            getDefaultSpawn(
+                                state.area
+                            ).x
+
+                        ),
+
+                        90,
+
+                        state.world.width -
+                        90
+
+                    );
+
+
+                state.player.y =
+                    clamp(
+
+                        finiteNumber(
+
+                            state.player.y,
+
+                            getDefaultSpawn(
+                                state.area
+                            ).y
+
+                        ),
+
+                        90,
+
+                        state.world.height -
+                        90
+
+                    );
+
+            }
+
+
+            showScreen(
+
+                "game",
+
+                {
+                    animate:
+                        false
+                }
+
+            );
+
+
+            state.running =
+                true;
+
+
+            state.paused =
+                false;
+
+
+            state.pauseReason =
+                null;
+
+
+            state.lastTime =
+                performance.now();
+
+
+            updateCamera(
+                0.016
+            );
+
+
+            updateHUD();
+
+
+            startTransition({
+
+                label:
+                    REGIONS[
+                        state.area
+                    ]
+                        .name,
+
+                startBlack:
+                    true,
+
+                hold:
+                    0.3,
+
+                fadeIn:
+                    0.7,
+
+                done:
+                    () => {
+
+                        if (
+                            entry.legacy
+                        ) {
+
+                            saveGame(
+                                false
+                            );
+
+
+                            showToast(
+
+                                "Save anterior carregado e atualizado para a V19.",
+
+                                3400
+
+                            );
+
+                        }
+
+                        else {
+
+                            showToast(
+                                "Jogo carregado."
+                            );
+
+                        }
+
+                    }
+
+            });
+
+
+            requestAnimationFrame(
+                gameLoop
+            );
+
+
+            return true;
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                "Save inválido:",
+                error
+            );
+
+
+            showToast(
+                "O save não pôde ser carregado."
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    function updateContinueButton() {
+
+        const button =
+            $("continueBtn");
+
+
+        const hint =
+            $("continueHint");
+
+
+        const exists =
+            hasSave();
+
+
+        if (
+            button
+        ) {
+
+            button.disabled =
+                !exists;
+
+        }
+
+
+        if (
+            hint
+        ) {
+
+            hint.textContent =
+
+                exists
+
+                    ? "Existe um jogo salvo neste navegador."
+
+                    : "Nenhum jogo salvo encontrado.";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       VOLTAR AO MENU
+       ========================================================= */
+
+    function returnToMenu() {
+
+        if (
+            state.player
+        ) {
+
+            saveGame(
+                false
+            );
+
+        }
+
+
+        state.running =
+            false;
+
+
+        state.paused =
+            false;
+
+
+        state.pauseReason =
+            null;
+
+
+        state.keys.clear();
+
+
+        state.pointer.down =
+            false;
+
+
+        cancelHoldInteraction();
+
+
+        state.dialogue =
+            null;
+
+
+        state.travel =
+            null;
+
+
+        state.battle =
+            null;
+
+
+        state.transition =
+            null;
+
+
+        state.transitionQueue =
+            [];
+
+
+        state.bossBarTarget =
+            null;
+
+
+        closeGameplayPanels();
+
+
+        $("dialogueBox")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        $("travelPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        $("battlePanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        $("deathPanel")
+            ?.classList
+            .add(
+                "hidden"
+            );
+
+
+        showScreen(
+            "menu"
+        );
+
+
+        updateContinueButton();
+
+    }
+
+
+    /* =========================================================
+       ESC
+       ========================================================= */
+
+    function closeTopOverlay() {
+
+        if (
+            state.dialogue
+        ) {
+
+            state.dialogue =
+                null;
+
+
+            $("dialogueBox")
+                ?.classList
+                .add(
+                    "hidden"
+                );
+
+
+            return true;
+
+        }
+
+
+        if (
+            state.battle
+        ) {
+
+            declineBattle();
+
+
+            return true;
+
+        }
+
+
+        if (
+            gameplayPanelOpen()
+        ) {
+
+            closeGameplayPanels();
+
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* =========================================================
+       MOUSE
+       ========================================================= */
+
+    function updatePointerPosition(
+        event
+    ) {
+
+        const rect =
+            canvas
+                .getBoundingClientRect();
+
+
+        state.pointer.x =
+
+            event.clientX -
+
+            rect.left;
+
+
+        state.pointer.y =
+
+            event.clientY -
+
+            rect.top;
+
+
+        state.pointer.worldX =
+
+            state.pointer.x +
+
+            state.camera.x;
+
+
+        state.pointer.worldY =
+
+            state.pointer.y +
+
+            state.camera.y;
+
+    }
+
+
+    function handlePointerDown(
+        event
+    ) {
+
+        if (
+            event.button !==
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        updatePointerPosition(
+            event
+        );
+
+
+        state.pointer.down =
+            true;
+
+
+        if (
+
+            !screens.game
+                .classList
+                .contains(
+                    "active"
+                ) ||
+
+            !state.player ||
+
+            state.transition ||
+
+            state.dialogue ||
+
+            state.battle ||
+
+            gameplayPanelOpen() ||
+
+            state.player
+                .dead
+
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            IMPORTANTE:
+            somente pointerdown.
+
+            Segurar mouse NÃO fica
+            atacando automaticamente.
+        */
+
+        performAttack();
+
+    }
+
+
+    /* =========================================================
+       TECLADO
+       ========================================================= */
+
+    function handleKeyDown(
+        event
+    ) {
+
+        const key =
+            event.key
+                .toLowerCase();
+
+
+        const movement = [
+
+            "w",
+
+            "a",
+
+            "s",
+
+            "d",
+
+            "arrowup",
+
+            "arrowdown",
+
+            "arrowleft",
+
+            "arrowright"
+
+        ];
+
+
+        if (
+            movement.includes(
+                key
+            )
+        ) {
+
+            event.preventDefault();
+
+
+            state.keys.add(
+                key
+            );
+
+
+            return;
+
+        }
+
+
+        if (
+            key ===
+            "escape"
+        ) {
+
+            event.preventDefault();
+
+
+            if (
+                closeTopOverlay()
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                screens.game
+                    .classList
+                    .contains(
+                        "active"
+                    )
+            ) {
+
+                returnToMenu();
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+
+            !screens.game
+                .classList
+                .contains(
+                    "active"
+                ) ||
+
+            !state.player
+
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            state.dialogue
+        ) {
+
+            if (
+
+                !event.repeat &&
+
+                [
+
+                    "enter",
+
+                    "e",
+
+                    " "
+
+                ]
+                    .includes(
+                        key
+                    )
+
+            ) {
+
+                event.preventDefault();
+
+
+                advanceDialogue();
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+
+            state.transition ||
+
+            state.player
+                .dead
+
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            key ===
+            "e"
+        ) {
+
+            if (
+                !event.repeat
+            ) {
+
+                state.keys.add(
+                    "e"
+                );
+
+
+                if (
+                    !beginHoldInteraction()
+                ) {
+
+                    playerAction();
+
+                }
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            event.repeat
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            key ===
+            "z"
+        ) {
+
+            handleZ();
+
+        }
+
+        else if (
+
+            key ===
+            "q" ||
+
+            key ===
+            "r" ||
+
+            key ===
+            "f"
+
+        ) {
+
+            useSkill(
+                key
+            );
+
+        }
+
+        else if (
+            key ===
+            " "
+        ) {
+
+            event.preventDefault();
+
+
+            attemptUniversalDash();
+
+        }
+
+        else if (
+            key ===
+            "i"
+        ) {
+
+            openInventoryPanel();
+
+        }
+
+        else if (
+            key ===
+            "m"
+        ) {
+
+            openMapPanel();
+
+        }
+
+        else if (
+            key ===
+            "l"
+        ) {
+
+            openBookPanel();
+
+        }
+
+        else if (
+            key ===
+            "p"
+        ) {
+
+            openStatusPanel();
+
+        }
+
+        else if (
+            key ===
+            "1"
+        ) {
+
+            useItem(
+                "pocao"
+            );
+
+        }
+
+        else if (
+            key ===
+            "2"
+        ) {
+
+            useItem(
+                "elixir"
+            );
+
+        }
+
+    }
+
+
+    function handleKeyUp(
+        event
+    ) {
+
+        const key =
+            event.key
+                .toLowerCase();
+
+
+        state.keys.delete(
+            key
+        );
+
+
+        if (
+
+            key ===
+            "e" &&
+
+            state.holdAction
+
+        ) {
+
+            cancelHoldInteraction();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       EVENTOS
+       ========================================================= */
+
+    function bindClick(
+        id,
+        callback
+    ) {
+
+        const element =
+            $(id);
+
+
+        if (
+            element
+        ) {
+
+            element.addEventListener(
+                "click",
+                callback
+            );
+
+        }
+
+    }
+
+
+    function bindInventoryTabs() {
+
+        document
+            .querySelectorAll(
+
+                "#inventoryTabs [data-cat], #inventoryTabs [data-category], #inventoryTabs .tab"
+
+            )
+            .forEach(
+                tab => {
+
+                    if (
+                        tab.dataset
+                            .v19Bound ===
+                        "1"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    tab.dataset
+                        .v19Bound =
+                        "1";
+
+
+                    tab.addEventListener(
+                        "click",
+                        () => {
+
+                            const category =
+
+                                tab.dataset
+                                    .cat ||
+
+                                tab.dataset
+                                    .category ||
+
+                                tab.textContent
+                                    .trim()
+                                    .toLowerCase();
+
+
+                            state.inventoryCategory =
+                                category ||
+                                "all";
+
+
+                            document
+                                .querySelectorAll(
+                                    "#inventoryTabs .tab"
+                                )
+                                .forEach(
+                                    item =>
+
+                                        item.classList
+                                            .toggle(
+                                                "active",
+                                                item ===
+                                                tab
+                                            )
+                                );
+
+
+                            renderInventory();
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    function bindShopTabs() {
+
+        document
+            .querySelectorAll(
+
+                "#shopTabs [data-shop], #shopTabs .tab"
+
+            )
+            .forEach(
+                tab => {
+
+                    if (
+                        tab.dataset
+                            .v19Bound ===
+                        "1"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    tab.dataset
+                        .v19Bound =
+                        "1";
+
+
+                    tab.addEventListener(
+                        "click",
+                        () => {
+
+                            const raw =
+                                (
+                                    tab.dataset
+                                        .shop ||
+
+                                    tab.textContent ||
+
+                                    ""
+                                )
+                                    .toLowerCase();
+
+
+                            setShopMode(
+
+                                raw.includes(
+                                    "vend"
+                                )
+
+                                    ? "sell"
+
+                                    : "buy"
+
+                            );
+
+
+                            document
+                                .querySelectorAll(
+                                    "#shopTabs .tab"
+                                )
+                                .forEach(
+                                    item =>
+
+                                        item.classList
+                                            .toggle(
+                                                "active",
+                                                item ===
+                                                tab
+                                            )
+                                );
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    function bindCloseButtons() {
+
+        document
+            .querySelectorAll(
+                "[data-close]"
+            )
+            .forEach(
+                button => {
+
+                    if (
+                        button.dataset
+                            .v19Bound ===
+                        "1"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    button.dataset
+                        .v19Bound =
+                        "1";
+
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const target =
+                                button.dataset
+                                    .close;
+
+
+                            if (
+                                target
+                            ) {
+
+                                $(target)
+                                    ?.classList
+                                    .add(
+                                        "hidden"
+                                    );
+
+                            }
+
+
+                            if (
+                                target ===
+                                "shopPanel"
+                            ) {
+
+                                closeShop();
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        [
+
+            "inventoryPanel",
+
+            "mapPanel",
+
+            "bookPanel",
+
+            "shopPanel",
+
+            "questPanel"
+
+        ]
+            .forEach(
+                panelId => {
+
+                    const panel =
+                        $(panelId);
+
+
+                    if (
+                        !panel
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    panel
+                        .querySelectorAll(
+                            ".panel-close, .close-btn"
+                        )
+                        .forEach(
+                            button => {
+
+                                if (
+                                    button.dataset
+                                        .v19FallbackBound ===
+                                    "1"
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                button.dataset
+                                    .v19FallbackBound =
+                                    "1";
+
+
+                                button.addEventListener(
+                                    "click",
+                                    () => {
+
+                                        panel.classList
+                                            .add(
+                                                "hidden"
+                                            );
+
+
+                                        if (
+                                            panelId ===
+                                            "shopPanel"
+                                        ) {
+
+                                            closeShop();
+
+                                        }
+
+                                    }
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+    }
+
+
+    function bindEvents() {
+
+        bindClick(
+            "newGameBtn",
+            startNewGame
+        );
+
+
+        bindClick(
+            "continueBtn",
+            () =>
+                loadGame()
+        );
+
+
+        bindClick(
+            "howToBtn",
+            () =>
+                showScreen(
+                    "how"
+                )
+        );
+
+
+        bindClick(
+            "creditsBtn",
+            () =>
+                showScreen(
+                    "credits"
+                )
+        );
+
+
+        bindClick(
+            "closeHowBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "closeCreditsBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "backMenuBtn",
+            () =>
+                showScreen(
+                    "menu"
+                )
+        );
+
+
+        bindClick(
+            "startGameBtn",
+            startGame
+        );
+
+
+        bindClick(
+            "saveBtn",
+            () =>
+                saveGame(
+                    true
+                )
+        );
+
+
+        bindClick(
+            "menuBtn",
+            returnToMenu
+        );
+
+
+        bindClick(
+            "inventoryBtn",
+            openInventoryPanel
+        );
+
+
+        bindClick(
+            "mapBtn",
+            openMapPanel
+        );
+
+
+        bindClick(
+            "bookBtn",
+            openBookPanel
+        );
+
+
+        bindClick(
+            "travelYes",
+            confirmTravel
+        );
+
+
+        bindClick(
+            "travelNo",
+            cancelTravel
+        );
+
+
+        bindClick(
+            "battleAccept",
+            acceptBattle
+        );
+
+
+        bindClick(
+            "battleDecline",
+            declineBattle
+        );
+
+
+        bindClick(
+            "respawnBtn",
+            respawnPlayer
+        );
+
+
+        bindClick(
+            "questActionBtn",
+            questAction
+        );
+
+
+        bindClick(
+            "dialogueBox",
+            advanceDialogue
+        );
+
+
+        $("playerName")
+            ?.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key ===
+                        "Enter"
+                    ) {
+
+                        startGame();
+
+                    }
+
+                }
+            );
+
+
+        bindInventoryTabs();
+
+        bindShopTabs();
+
+        bindCloseButtons();
+
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+
+        window.addEventListener(
+            "keyup",
+            handleKeyUp
+        );
+
+
+        window.addEventListener(
+            "blur",
+            () => {
+
+                state.keys.clear();
+
+
+                state.pointer.down =
+                    false;
+
+
+                cancelHoldInteraction();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            resizeCanvas
+        );
+
+
+        canvas.addEventListener(
+            "contextmenu",
+            event =>
+                event.preventDefault()
+        );
+
+
+        canvas.addEventListener(
+            "pointermove",
+            updatePointerPosition
+        );
+
+
+        canvas.addEventListener(
+            "pointerdown",
+            handlePointerDown
+        );
+
+
+        window.addEventListener(
+            "pointerup",
+            event => {
+
+                if (
+                    event.button ===
+                    0
+                ) {
+
+                    state.pointer.down =
+                        false;
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       PAUSA VISUAL
+       ========================================================= */
+
+    function modalFreezeActive() {
+
+        return Boolean(
+
+            state.dialogue ||
+
+            state.battle ||
+
+            state.travel ||
+
+            gameplayPanelOpen() ||
+
+            state.player
+                ?.dead
+
+        );
+
+    }
+
+
+    function updatePausedVisuals(
+        dt
+    ) {
+
+        updateParticlesAndEffects(
+            dt
+        );
+
+
+        updateDamageScreenEffect(
+            dt
+        );
+
+
+        updateScreenShake(
+            dt
+        );
+
+
+        updateTransition(
+            dt
+        );
+
+
+        updateCamera(
+            dt
+        );
+
+
+        updateDoors(
+            dt
+        );
+
+    }
+
+
+    /* =========================================================
+       UPDATE PRINCIPAL
+       ========================================================= */
+
+    function updateGame(
+        dt
+    ) {
+
+        if (
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        state.time +=
+            dt;
+
+
+        if (
+
+            modalFreezeActive() &&
+
+            !state.transition
+
+        ) {
+
+            updatePausedVisuals(
+                dt
+            );
+
+        }
+
+        else {
+
+            updatePartTwoSystems(
+                dt
+            );
+
+        }
+
+
+        if (
+
+            !state.paused &&
+
+            !state.transition &&
+
+            !modalFreezeActive()
+
+        ) {
+
+            state.autosaveTimer +=
+                dt;
+
+
+            if (
+                state.autosaveTimer >=
+                30
+            ) {
+
+                state.autosaveTimer =
+                    0;
+
+
+                saveGame(
+                    false
+                );
+
+            }
+
+        }
+
+
+        updateHUD();
+
+
+        if (
+            state.holdAction
+        ) {
+
+            updateHoldIndicator();
+
+        }
+
+
+        if (
+            isPanelVisible(
+                "mapPanel"
+            )
+        ) {
+
+            drawLargeMap();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOOP PRINCIPAL
+       ========================================================= */
+
+    function gameLoop(
+        timestamp
+    ) {
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        const dt =
+            Math.min(
+
+                0.05,
+
+                Math.max(
+
+                    0,
+
+                    (
+                        timestamp -
+                        state.lastTime
+                    ) /
+                    1000
+
+                )
+
+            );
+
+
+        state.lastTime =
+            timestamp;
+
+
+        updateGame(
+            dt
+        );
+
+
+        drawWorld();
+
+
+        requestAnimationFrame(
+            gameLoop
+        );
+
+    }
+
+
+    /* =========================================================
+       AUDITORIA
+       ========================================================= */
+
+    function runStartupAudit() {
+
+        const ids = [
+
+            "menuScreen",
+
+            "newGameBtn",
+
+            "continueBtn",
+
+            "howToBtn",
+
+            "creditsBtn",
+
+            "characterScreen",
+
+            "characterCards",
+
+            "playerName",
+
+            "startGameBtn",
+
+            "gameScreen",
+
+            "gameCanvas",
+
+            "inventoryBtn",
+
+            "mapBtn",
+
+            "bookBtn",
+
+            "saveBtn",
+
+            "menuBtn",
+
+            "interactionHint",
+
+            "dialogueBox",
+
+            "battlePanel",
+
+            "inventoryPanel",
+
+            "mapPanel",
+
+            "bookPanel",
+
+            "shopPanel",
+
+            "questPanel",
+
+            "deathPanel",
+
+            "miniCanvas",
+
+            "worldMapCanvas"
+
+        ];
+
+
+        const missing =
+            ids.filter(
+                id =>
+                    !$(id)
+            );
+
+
+        if (
+            missing.length
+        ) {
+
+            throw new Error(
+
+                `VEYRA V19: IDs ausentes no HTML: ${missing.join(", ")}`
+
+            );
+
+        }
+
+
+        const required = [
+
+            buildVillage,
+
+            buildForest,
+
+            buildGrove,
+
+            buildMountains,
+
+            buildIron,
+
+            buildRuby,
+
+            buildMonarchMaze,
+
+            buildShadow,
+
+            buildFairy,
+
+            buildSky,
+
+            buildHell,
+
+            buildFinal,
+
+            updatePartTwoSystems,
+
+            performAttack,
+
+            enterHouse,
+
+            exitHouse,
+
+            transitionToRegion
+
+        ];
+
+
+        if (
+            required.some(
+                fn =>
+                    typeof fn !==
+                    "function"
+            )
+        ) {
+
+            throw new Error(
+
+                "VEYRA V19: uma função obrigatória não foi carregada nas Partes 1/2."
+
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       INICIALIZAÇÃO
+       ========================================================= */
+
+    function initialize() {
+
+        runStartupAudit();
+
+
+        createCharacterCards();
+
+
+        resizeCanvas();
+
+
+        ensureStatusPanel();
+
+
+        ensureStatusButton();
+
+
+        removeOldRedAreaHowToEntry();
+
+
+        ensureCredits();
+
+
+        bindEvents();
+
+
+        updateContinueButton();
+
+
+        restoreIntroEffects();
+
+
+        /*
+            NÃO MUDA O LAYOUT DA CAPA.
+        */
+
+        showScreen(
+
+            "menu",
+
+            {
+                animate:
+                    false
+            }
+
+        );
+
+
+        state.lastTime =
+            performance.now();
+
+    }
+
+
+    initialize();
+
+
+})();
