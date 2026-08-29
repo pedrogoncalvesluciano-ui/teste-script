@@ -6307,3 +6307,9047 @@
        - posicionamentos seguros
        - nenhum Caminho 3 por enquanto
        ============================================================ */
+     /* ============================================================
+       VEYRA: A QUIETUDE
+       V30 — RECONSTRUÇÃO UNIFICADA
+
+       SCRIPT.JS — PARTE 2/5
+
+       MUNDO
+       REGIÕES
+       VILA
+       CASAS
+       INTERIORES
+       PORTAS
+       CAMINHO 1
+       CAMINHO 2
+       RECURSOS
+       CHAVE OBSCURA
+       PORTA SECRETA
+       DUNGEON DO VAZIO
+       ARENA DE VAELKOR
+
+       IMPORTANTE:
+       CONTINUA O MESMO IIFE DA PARTE 1.
+
+       NÃO COLOQUE (() => {
+       NÃO COLOQUE })();
+       ============================================================ */
+
+
+    /* ============================================================
+       DIMENSÕES DOS MAPAS
+       ============================================================ */
+
+    const WORLD_DIMENSIONS = Object.freeze({
+        village: Object.freeze({
+            width: 3200,
+            height: 2200
+        }),
+
+        forest: Object.freeze({
+            width: 3400,
+            height: 2300
+        }),
+
+        grove: Object.freeze({
+            width: 3500,
+            height: 2350
+        }),
+
+        mountains: Object.freeze({
+            width: 3500,
+            height: 2350
+        }),
+
+        iron: Object.freeze({
+            width: 3400,
+            height: 2250
+        }),
+
+        ruby: Object.freeze({
+            width: 3500,
+            height: 2300
+        }),
+
+        preMonarch: Object.freeze({
+            width: 3400,
+            height: 2250
+        }),
+
+        monarchMaze: Object.freeze({
+            width: 3600,
+            height: 2300
+        }),
+
+        gnomeGardens: Object.freeze({
+            width: 3500,
+            height: 2300
+        }),
+
+        fairyKingdom: Object.freeze({
+            width: 3600,
+            height: 2350
+        }),
+
+        celestialFrontier: Object.freeze({
+            width: 3900,
+            height: 2400
+        }),
+
+        celestialStair: Object.freeze({
+            width: 3200,
+            height: 2550
+        }),
+
+        sky1: Object.freeze({
+            width: 3500,
+            height: 2350
+        }),
+
+        sky2: Object.freeze({
+            width: 3550,
+            height: 2400
+        }),
+
+        sky3: Object.freeze({
+            width: 3700,
+            height: 2450
+        }),
+
+        voidDungeon: Object.freeze({
+            width: 3500,
+            height: 2300
+        }),
+
+        hell: Object.freeze({
+            width: 3700,
+            height: 2450
+        }),
+
+        final: Object.freeze({
+            width: 2200,
+            height: 1550
+        })
+    });
+
+
+    /* ============================================================
+       SPAWNS PADRÃO DAS REGIÕES
+       ============================================================ */
+
+    const REGION_SPAWNS = Object.freeze({
+        village: Object.freeze({
+            default: Object.freeze({
+                x: 1600,
+                y: 1180,
+                facing: "down"
+            }),
+
+            fromForest: Object.freeze({
+                x: 2960,
+                y: 1110,
+                facing: "left"
+            }),
+
+            fromNorth: Object.freeze({
+                x: 1600,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        forest: Object.freeze({
+            fromVillage: Object.freeze({
+                x: 180,
+                y: 1150,
+                facing: "right"
+            }),
+
+            fromGrove: Object.freeze({
+                x: 3170,
+                y: 1150,
+                facing: "left"
+            })
+        }),
+
+        grove: Object.freeze({
+            fromForest: Object.freeze({
+                x: 180,
+                y: 1180,
+                facing: "right"
+            }),
+
+            fromMountains: Object.freeze({
+                x: 3270,
+                y: 1170,
+                facing: "left"
+            })
+        }),
+
+        mountains: Object.freeze({
+            fromGrove: Object.freeze({
+                x: 180,
+                y: 1180,
+                facing: "right"
+            }),
+
+            fromIron: Object.freeze({
+                x: 3270,
+                y: 1170,
+                facing: "left"
+            })
+        }),
+
+        iron: Object.freeze({
+            fromMountains: Object.freeze({
+                x: 180,
+                y: 1120,
+                facing: "right"
+            }),
+
+            fromRuby: Object.freeze({
+                x: 3170,
+                y: 1120,
+                facing: "left"
+            })
+        }),
+
+        ruby: Object.freeze({
+            fromIron: Object.freeze({
+                x: 180,
+                y: 1140,
+                facing: "right"
+            }),
+
+            fromPreMonarch: Object.freeze({
+                x: 3270,
+                y: 1150,
+                facing: "left"
+            })
+        }),
+
+        preMonarch: Object.freeze({
+            fromRuby: Object.freeze({
+                x: 180,
+                y: 1120,
+                facing: "right"
+            }),
+
+            fromMaze: Object.freeze({
+                x: 3170,
+                y: 1120,
+                facing: "left"
+            }),
+
+            fromVoidDungeon: Object.freeze({
+                x: 1700,
+                y: 470,
+                facing: "down"
+            })
+        }),
+
+        monarchMaze: Object.freeze({
+            fromPreMonarch: Object.freeze({
+                x: 190,
+                y: 1150,
+                facing: "right"
+            })
+        }),
+
+        gnomeGardens: Object.freeze({
+            fromVillage: Object.freeze({
+                x: 1750,
+                y: 2110,
+                facing: "up"
+            }),
+
+            fromFairy: Object.freeze({
+                x: 1750,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        fairyKingdom: Object.freeze({
+            fromGnome: Object.freeze({
+                x: 1800,
+                y: 2180,
+                facing: "up"
+            }),
+
+            fromFrontier: Object.freeze({
+                x: 1800,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        celestialFrontier: Object.freeze({
+            fromFairy: Object.freeze({
+                x: 1950,
+                y: 2240,
+                facing: "up"
+            }),
+
+            fromStair: Object.freeze({
+                x: 1950,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        celestialStair: Object.freeze({
+            fromFrontier: Object.freeze({
+                x: 1600,
+                y: 2350,
+                facing: "up"
+            }),
+
+            fromSky1: Object.freeze({
+                x: 1600,
+                y: 220,
+                facing: "down"
+            })
+        }),
+
+        sky1: Object.freeze({
+            fromStair: Object.freeze({
+                x: 1750,
+                y: 2160,
+                facing: "up"
+            }),
+
+            fromSky2: Object.freeze({
+                x: 1750,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        sky2: Object.freeze({
+            fromSky1: Object.freeze({
+                x: 1775,
+                y: 2220,
+                facing: "up"
+            }),
+
+            fromSky3: Object.freeze({
+                x: 1775,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        sky3: Object.freeze({
+            fromSky2: Object.freeze({
+                x: 1850,
+                y: 2260,
+                facing: "up"
+            })
+        }),
+
+        voidDungeon: Object.freeze({
+            entrance: Object.freeze({
+                x: 1750,
+                y: 2130,
+                facing: "up"
+            })
+        })
+    });
+
+
+    /* ============================================================
+       INTERIORES DAS CASAS
+
+       TODOS POSSUEM IDENTIDADE PRÓPRIA.
+       ============================================================ */
+
+    const HOUSE_INTERIORS = Object.freeze({
+        home: Object.freeze({
+            id: "home",
+
+            name:
+                "CASA DO JOGADOR",
+
+            worldWidth: 1080,
+            worldHeight: 730,
+
+            room: Object.freeze({
+                x: 130,
+                y: 100,
+                w: 820,
+                h: 515
+            }),
+
+            playerSpawn: Object.freeze({
+                x: 540,
+                y: 515,
+                facing: "up"
+            }),
+
+            door: Object.freeze({
+                x: 495,
+                y: 560,
+                w: 90,
+                h: 55,
+                side: "bottom"
+            }),
+
+            style: Object.freeze({
+                floor: "#6b5744",
+                wall: "#49392e",
+                rug: "#715454",
+                accent: "#c39a68"
+            }),
+
+            furniture: Object.freeze([
+                Object.freeze({
+                    type: "bed",
+                    x: 205,
+                    y: 175,
+                    w: 165,
+                    h: 100
+                }),
+
+                Object.freeze({
+                    type: "table",
+                    x: 670,
+                    y: 260,
+                    w: 120,
+                    h: 86
+                }),
+
+                Object.freeze({
+                    type: "chest",
+                    x: 760,
+                    y: 455,
+                    w: 80,
+                    h: 60
+                }),
+
+                Object.freeze({
+                    type: "bookshelf",
+                    x: 450,
+                    y: 135,
+                    w: 160,
+                    h: 48
+                })
+            ])
+        }),
+
+        elianHome: Object.freeze({
+            id: "elianHome",
+
+            name:
+                "CASA DE ELIAN",
+
+            worldWidth: 1080,
+            worldHeight: 720,
+
+            room: Object.freeze({
+                x: 140,
+                y: 105,
+                w: 800,
+                h: 500
+            }),
+
+            playerSpawn: Object.freeze({
+                x: 540,
+                y: 510,
+                facing: "up"
+            }),
+
+            door: Object.freeze({
+                x: 500,
+                y: 552,
+                w: 80,
+                h: 53,
+                side: "bottom"
+            }),
+
+            style: Object.freeze({
+                floor: "#675848",
+                wall: "#4e4033",
+                rug: "#5b6870",
+                accent: "#a98c67"
+            }),
+
+            furniture: Object.freeze([
+                Object.freeze({
+                    type: "bookshelf",
+                    x: 235,
+                    y: 150,
+                    w: 170,
+                    h: 50
+                }),
+
+                Object.freeze({
+                    type: "desk",
+                    x: 655,
+                    y: 175,
+                    w: 145,
+                    h: 80
+                }),
+
+                Object.freeze({
+                    type: "bed",
+                    x: 225,
+                    y: 390,
+                    w: 150,
+                    h: 90
+                }),
+
+                Object.freeze({
+                    type: "chair",
+                    x: 685,
+                    y: 315,
+                    w: 48,
+                    h: 48
+                })
+            ])
+        }),
+
+        shop: Object.freeze({
+            id: "shop",
+
+            name:
+                "LOJA DE DORAN",
+
+            worldWidth: 1100,
+            worldHeight: 730,
+
+            room: Object.freeze({
+                x: 100,
+                y: 90,
+                w: 900,
+                h: 530
+            }),
+
+            playerSpawn: Object.freeze({
+                x: 550,
+                y: 535,
+                facing: "up"
+            }),
+
+            door: Object.freeze({
+                x: 505,
+                y: 565,
+                w: 90,
+                h: 55,
+                side: "bottom"
+            }),
+
+            style: Object.freeze({
+                floor: "#725b42",
+                wall: "#4c3829",
+                rug: "#70523c",
+                accent: "#d0a264"
+            }),
+
+            furniture: Object.freeze([
+                Object.freeze({
+                    type: "counter",
+                    x: 255,
+                    y: 260,
+                    w: 590,
+                    h: 70
+                }),
+
+                Object.freeze({
+                    type: "shelf",
+                    x: 185,
+                    y: 130,
+                    w: 190,
+                    h: 50
+                }),
+
+                Object.freeze({
+                    type: "shelf",
+                    x: 725,
+                    y: 130,
+                    w: 190,
+                    h: 50
+                }),
+
+                Object.freeze({
+                    type: "crate",
+                    x: 805,
+                    y: 430,
+                    w: 72,
+                    h: 64
+                })
+            ]),
+
+            npc: Object.freeze({
+                id: "doran",
+                x: 550,
+                y: 220,
+                facing: "down"
+            })
+        }),
+
+        forge: Object.freeze({
+            id: "forge",
+
+            name:
+                "FORJA DE BORIN",
+
+            worldWidth: 1100,
+            worldHeight: 740,
+
+            room: Object.freeze({
+                x: 95,
+                y: 85,
+                w: 910,
+                h: 545
+            }),
+
+            playerSpawn: Object.freeze({
+                x: 550,
+                y: 540,
+                facing: "up"
+            }),
+
+            door: Object.freeze({
+                x: 502,
+                y: 575,
+                w: 96,
+                h: 55,
+                side: "bottom"
+            }),
+
+            style: Object.freeze({
+                floor: "#504844",
+                wall: "#363230",
+                rug: "#67453c",
+                accent: "#b46342"
+            }),
+
+            furniture: Object.freeze([
+                Object.freeze({
+                    type: "forge",
+                    x: 710,
+                    y: 155,
+                    w: 170,
+                    h: 125
+                }),
+
+                Object.freeze({
+                    type: "anvil",
+                    x: 500,
+                    y: 280,
+                    w: 100,
+                    h: 75
+                }),
+
+                Object.freeze({
+                    type: "weaponRack",
+                    x: 180,
+                    y: 145,
+                    w: 185,
+                    h: 55
+                }),
+
+                Object.freeze({
+                    type: "coalPile",
+                    x: 770,
+                    y: 420,
+                    w: 115,
+                    h: 75
+                })
+            ]),
+
+            npc: Object.freeze({
+                id: "borin",
+                x: 550,
+                y: 210,
+                facing: "down"
+            })
+        }),
+
+        woodshop: Object.freeze({
+            id: "woodshop",
+
+            name:
+                "OFICINA DE BRAN",
+
+            worldWidth: 1080,
+            worldHeight: 720,
+
+            room: Object.freeze({
+                x: 115,
+                y: 95,
+                w: 850,
+                h: 515
+            }),
+
+            playerSpawn: Object.freeze({
+                x: 540,
+                y: 520,
+                facing: "up"
+            }),
+
+            door: Object.freeze({
+                x: 498,
+                y: 558,
+                w: 84,
+                h: 52,
+                side: "bottom"
+            }),
+
+            style: Object.freeze({
+                floor: "#765d3f",
+                wall: "#4c3927",
+                rug: "#5d593d",
+                accent: "#b99662"
+            }),
+
+            furniture: Object.freeze([
+                Object.freeze({
+                    type: "workbench",
+                    x: 440,
+                    y: 200,
+                    w: 210,
+                    h: 80
+                }),
+
+                Object.freeze({
+                    type: "logs",
+                    x: 190,
+                    y: 390,
+                    w: 150,
+                    h: 85
+                }),
+
+                Object.freeze({
+                    type: "tools",
+                    x: 700,
+                    y: 145,
+                    w: 165,
+                    h: 55
+                }),
+
+                Object.freeze({
+                    type: "crate",
+                    x: 760,
+                    y: 410,
+                    w: 80,
+                    h: 70
+                })
+            ]),
+
+            npc: Object.freeze({
+                id: "bran",
+                x: 540,
+                y: 210,
+                facing: "down"
+            })
+        })
+    });
+
+
+    /* ============================================================
+       CRIAÇÃO DE MUNDO VAZIO
+       ============================================================ */
+
+    function createEmptyWorld(
+        area,
+        width,
+        height
+    ) {
+        return {
+            id: area,
+
+            area,
+
+            width,
+            height,
+
+            obstacles: [],
+
+            softObstacles: [],
+
+            decorations: [],
+
+            paths: [],
+
+            protectedZones: [],
+
+            buildings: [],
+
+            doors: [],
+
+            npcs: [],
+
+            resources: [],
+
+            portals: [],
+
+            gates: [],
+
+            lights: [],
+
+            particles: [],
+
+            effects: [],
+
+            projectiles: [],
+
+            enemies: [],
+
+            enemySpawns: [],
+
+            bosses: [],
+
+            bossSpawns: [],
+
+            landmarks: [],
+
+            darknessZones: [],
+
+            specialColliders: [],
+
+            transitions: [],
+
+            secretDoor: null,
+
+            darkKey: null,
+
+            arena: null,
+
+            metadata: {}
+        };
+    }
+
+
+    /* ============================================================
+       SEED DO MUNDO
+       ============================================================ */
+
+    function ensurePlayerWorldSeed(
+        player = state.player
+    ) {
+        if (!player) {
+            return 123456789;
+        }
+
+        if (
+            !Number.isFinite(
+                player.worldSeed
+            )
+        ) {
+            player.worldSeed =
+                hashStringToSeed(
+                    `${player.name}_${player.characterId}_VEYRA`
+                );
+        }
+
+        return (
+            player.worldSeed >>> 0
+        );
+    }
+
+
+    function createRegionRandom(area) {
+        const playerSeed =
+            ensurePlayerWorldSeed();
+
+        const regionSeed =
+            hashStringToSeed(
+                `${playerSeed}_${area}`
+            );
+
+        return mulberry32(
+            regionSeed
+        );
+    }
+
+
+    /* ============================================================
+       HELPERS PARA ADICIONAR ELEMENTOS AO MUNDO
+       ============================================================ */
+
+    function addObstacle(
+        world,
+        obstacle
+    ) {
+        const entity = {
+            id:
+                obstacle.id ||
+                uid("obstacle"),
+
+            type:
+                obstacle.type ||
+                "solid",
+
+            blocksMovement:
+                obstacle.blocksMovement !== false,
+
+            blocksLight:
+                obstacle.blocksLight !== false,
+
+            ...obstacle
+        };
+
+        world.obstacles.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addDecoration(
+        world,
+        decoration
+    ) {
+        const entity = {
+            id:
+                decoration.id ||
+                uid("decor"),
+
+            ...decoration
+        };
+
+        world.decorations.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addPath(
+        world,
+        path
+    ) {
+        const entity = {
+            id:
+                path.id ||
+                uid("path"),
+
+            ...path
+        };
+
+        world.paths.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addProtectedZone(
+        world,
+        zone
+    ) {
+        const entity = {
+            id:
+                zone.id ||
+                uid("protected"),
+
+            ...zone
+        };
+
+        world.protectedZones.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addLandmark(
+        world,
+        landmark
+    ) {
+        const entity = {
+            id:
+                landmark.id ||
+                uid("landmark"),
+
+            ...landmark
+        };
+
+        world.landmarks.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addPortal(
+        world,
+        portal
+    ) {
+        const entity = {
+            id:
+                portal.id ||
+                uid("portal"),
+
+            radius:
+                portal.radius || 48,
+
+            active:
+                portal.active !== false,
+
+            ...portal
+        };
+
+        world.portals.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addGate(
+        world,
+        gate
+    ) {
+        const entity = {
+            id:
+                gate.id ||
+                uid("gate"),
+
+            open:
+                Boolean(
+                    gate.open
+                ),
+
+            ...gate
+        };
+
+        world.gates.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addEnemySpawn(
+        world,
+        spawn
+    ) {
+        const entity = {
+            id:
+                spawn.id ||
+                uid("enemySpawn"),
+
+            count:
+                spawn.count || 1,
+
+            respawn:
+                spawn.respawn !== false,
+
+            ...spawn
+        };
+
+        world.enemySpawns.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addBossSpawn(
+        world,
+        spawn
+    ) {
+        const entity = {
+            id:
+                spawn.id ||
+                uid("bossSpawn"),
+
+            ...spawn
+        };
+
+        world.bossSpawns.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addResource(
+        world,
+        resource
+    ) {
+        const entity = {
+            id:
+                resource.id ||
+                uid("resource"),
+
+            active:
+                resource.active !== false,
+
+            respawnTimer: 0,
+
+            respawnSeconds:
+                resource.respawnSeconds ||
+                35,
+
+            holdProgress: 0,
+
+            ...resource
+        };
+
+        world.resources.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    /* ============================================================
+       BORDAS
+       ============================================================ */
+
+    function addWorldBorders(
+        world,
+        thickness = 70
+    ) {
+        addObstacle(
+            world,
+            {
+                id: `${world.id}_wall_top`,
+                type: "boundary",
+                x: 0,
+                y: 0,
+                w: world.width,
+                h: thickness
+            }
+        );
+
+        addObstacle(
+            world,
+            {
+                id: `${world.id}_wall_bottom`,
+                type: "boundary",
+                x: 0,
+                y:
+                    world.height -
+                    thickness,
+                w: world.width,
+                h: thickness
+            }
+        );
+
+        addObstacle(
+            world,
+            {
+                id: `${world.id}_wall_left`,
+                type: "boundary",
+                x: 0,
+                y: 0,
+                w: thickness,
+                h: world.height
+            }
+        );
+
+        addObstacle(
+            world,
+            {
+                id: `${world.id}_wall_right`,
+                type: "boundary",
+                x:
+                    world.width -
+                    thickness,
+                y: 0,
+                w: thickness,
+                h: world.height
+            }
+        );
+    }
+
+
+    /* ============================================================
+       PORTA DA CONSTRUÇÃO
+
+       ESSA FUNÇÃO É A FONTE ÚNICA DE VERDADE.
+
+       O DESENHO E A INTERAÇÃO USARÃO EXATAMENTE
+       A MESMA GEOMETRIA.
+       ============================================================ */
+
+    function getBuildingDoorGeometry(
+        building
+    ) {
+        if (!building) {
+            return null;
+        }
+
+        const width =
+            building.doorWidth ||
+            Math.min(
+                92,
+                building.w * 0.24
+            );
+
+        const height =
+            building.doorHeight ||
+            54;
+
+        const side =
+            building.doorSide ||
+            "bottom";
+
+        let x;
+        let y;
+
+        if (side === "top") {
+            x =
+                building.x +
+                building.w / 2 -
+                width / 2;
+
+            y =
+                building.y -
+                5;
+        } else if (
+            side === "left"
+        ) {
+            x =
+                building.x -
+                5;
+
+            y =
+                building.y +
+                building.h / 2 -
+                width / 2;
+
+            return {
+                x,
+                y,
+                w: height,
+                h: width,
+                side,
+
+                centerX:
+                    x +
+                    height / 2,
+
+                centerY:
+                    y +
+                    width / 2
+            };
+        } else if (
+            side === "right"
+        ) {
+            x =
+                building.x +
+                building.w -
+                height +
+                5;
+
+            y =
+                building.y +
+                building.h / 2 -
+                width / 2;
+
+            return {
+                x,
+                y,
+                w: height,
+                h: width,
+                side,
+
+                centerX:
+                    x +
+                    height / 2,
+
+                centerY:
+                    y +
+                    width / 2
+            };
+        } else {
+            x =
+                building.x +
+                building.w / 2 -
+                width / 2;
+
+            y =
+                building.y +
+                building.h -
+                height +
+                8;
+        }
+
+        return {
+            x,
+            y,
+            w: width,
+            h: height,
+            side,
+
+            centerX:
+                x +
+                width / 2,
+
+            centerY:
+                y +
+                height / 2
+        };
+    }
+
+
+    function addBuilding(
+        world,
+        building
+    ) {
+        const entity = {
+            id:
+                building.id ||
+                uid("building"),
+
+            name:
+                building.name ||
+                "CONSTRUÇÃO",
+
+            roof:
+                building.roof ||
+                "#604738",
+
+            wall:
+                building.wall ||
+                "#81705d",
+
+            doorOpen: false,
+
+            doorOpenAmount: 0,
+
+            ...building
+        };
+
+        entity.door =
+            getBuildingDoorGeometry(
+                entity
+            );
+
+        world.buildings.push(
+            entity
+        );
+
+        world.doors.push({
+            id:
+                `${entity.id}_door`,
+
+            buildingId:
+                entity.id,
+
+            houseId:
+                entity.houseId ||
+                null,
+
+            x:
+                entity.door.x,
+
+            y:
+                entity.door.y,
+
+            w:
+                entity.door.w,
+
+            h:
+                entity.door.h,
+
+            side:
+                entity.door.side,
+
+            centerX:
+                entity.door.centerX,
+
+            centerY:
+                entity.door.centerY,
+
+            open: false,
+
+            openAmount: 0
+        });
+
+        /*
+            O corpo da casa é obstáculo.
+
+            A porta fica na borda inferior,
+            então não precisamos criar um
+            "buraco invisível" desalinhado.
+        */
+        addObstacle(
+            world,
+            {
+                id:
+                    `${entity.id}_body`,
+
+                type:
+                    "building",
+
+                x:
+                    entity.x,
+
+                y:
+                    entity.y,
+
+                w:
+                    entity.w,
+
+                h:
+                    entity.h - 25,
+
+                buildingId:
+                    entity.id,
+
+                blocksLight: true
+            }
+        );
+
+        addProtectedZone(
+            world,
+            {
+                id:
+                    `${entity.id}_safe`,
+
+                x:
+                    entity.x - 55,
+
+                y:
+                    entity.y - 55,
+
+                w:
+                    entity.w + 110,
+
+                h:
+                    entity.h + 110,
+
+                type:
+                    "building"
+            }
+        );
+
+        return entity;
+    }
+
+
+    function findBuilding(
+        id,
+        world = state.world
+    ) {
+        return (
+            world?.buildings?.find(
+                building =>
+                    building.id === id
+            ) ||
+            null
+        );
+    }
+
+
+    function findWorldDoor(
+        buildingId,
+        world = state.world
+    ) {
+        return (
+            world?.doors?.find(
+                door =>
+                    door.buildingId ===
+                    buildingId
+            ) ||
+            null
+        );
+    }
+
+
+    /* ============================================================
+       SPAWN EM FRENTE À CASA DO PLAYER
+       ============================================================ */
+
+    function calculateHomeRespawn(
+        world = null
+    ) {
+        let villageWorld =
+            world;
+
+        if (
+            !villageWorld ||
+            villageWorld.id !==
+                "village"
+        ) {
+            villageWorld =
+                buildVillageWorld();
+        }
+
+        const house =
+            villageWorld.buildings.find(
+                building =>
+                    building.id ===
+                    PLAYER_HOME.houseId
+            );
+
+        if (!house) {
+            return {
+                ...PLAYER_HOME
+                    .fallbackRespawn
+            };
+        }
+
+        const door =
+            getBuildingDoorGeometry(
+                house
+            );
+
+        if (!door) {
+            return {
+                ...PLAYER_HOME
+                    .fallbackRespawn
+            };
+        }
+
+        const offset = 74;
+
+        let x =
+            door.centerX;
+
+        let y =
+            door.centerY;
+
+        let facing =
+            "up";
+
+        if (
+            door.side === "bottom"
+        ) {
+            y += offset;
+            facing = "up";
+        } else if (
+            door.side === "top"
+        ) {
+            y -= offset;
+            facing = "down";
+        } else if (
+            door.side === "left"
+        ) {
+            x -= offset;
+            facing = "right";
+        } else if (
+            door.side === "right"
+        ) {
+            x += offset;
+            facing = "left";
+        }
+
+        return {
+            x,
+            y,
+            facing
+        };
+    }
+
+
+    /* ============================================================
+       NPC
+       ============================================================ */
+
+    function createNPC(
+        id,
+        x,
+        y,
+        options = {}
+    ) {
+        return {
+            id,
+
+            x,
+            y,
+
+            homeX: x,
+            homeY: y,
+
+            radius:
+                options.radius ||
+                18,
+
+            facing:
+                options.facing ||
+                "down",
+
+            name:
+                options.name ||
+                id.toUpperCase(),
+
+            role:
+                options.role ||
+                "",
+
+            color:
+                options.color ||
+                "#8b7d68",
+
+            accent:
+                options.accent ||
+                "#c7af81",
+
+            shop:
+                Boolean(
+                    options.shop
+                ),
+
+            quest:
+                options.quest ||
+                null,
+
+            movementRadius:
+                options.movementRadius ||
+                0,
+
+            movementTimer:
+                random(2, 6),
+
+            interactionDistance:
+                options.interactionDistance ||
+                GAME_CONFIG.interactDistance,
+
+            ...options
+        };
+    }
+
+
+    function addNPC(
+        world,
+        id,
+        x,
+        y,
+        options = {}
+    ) {
+        const npc =
+            createNPC(
+                id,
+                x,
+                y,
+                options
+            );
+
+        world.npcs.push(
+            npc
+        );
+
+        return npc;
+    }
+
+
+    /* ============================================================
+       RECURSOS
+       ============================================================ */
+
+    function createTreeResource(
+        x,
+        y,
+        options = {}
+    ) {
+        return {
+            type: "tree",
+
+            itemId:
+                "madeira",
+
+            x,
+            y,
+
+            radius:
+                options.radius ||
+                26,
+
+            quantity:
+                options.quantity ||
+                randomInt(1, 3),
+
+            magicCost:
+                options.magicCost ??
+                3,
+
+            holdSeconds:
+                GAME_CONFIG
+                    .treeHoldSeconds,
+
+            respawnSeconds:
+                options.respawnSeconds ||
+                random(34, 52),
+
+            variant:
+                options.variant ||
+                randomInt(0, 3)
+        };
+    }
+
+
+    function createOreResource(
+        itemId,
+        x,
+        y,
+        options = {}
+    ) {
+        return {
+            type: "ore",
+
+            itemId,
+
+            x,
+            y,
+
+            radius:
+                options.radius ||
+                22,
+
+            quantity:
+                options.quantity ||
+                1,
+
+            magicCost:
+                options.magicCost ??
+                2,
+
+            holdSeconds:
+                GAME_CONFIG
+                    .resourceHoldSeconds,
+
+            respawnSeconds:
+                options.respawnSeconds ||
+                random(40, 62),
+
+            variant:
+                options.variant ||
+                randomInt(0, 2)
+        };
+    }
+
+
+    function resourcePositionBlocked(
+        world,
+        x,
+        y,
+        radius = 28
+    ) {
+        for (
+            const zone of
+            world.protectedZones
+        ) {
+            const expanded = {
+                x:
+                    zone.x -
+                    radius,
+
+                y:
+                    zone.y -
+                    radius,
+
+                w:
+                    zone.w +
+                    radius * 2,
+
+                h:
+                    zone.h +
+                    radius * 2
+            };
+
+            if (
+                pointInRect(
+                    x,
+                    y,
+                    expanded
+                )
+            ) {
+                return true;
+            }
+        }
+
+        for (
+            const path of
+            world.paths
+        ) {
+            if (
+                pointInRect(
+                    x,
+                    y,
+                    {
+                        x:
+                            path.x -
+                            radius,
+
+                        y:
+                            path.y -
+                            radius,
+
+                        w:
+                            path.w +
+                            radius * 2,
+
+                        h:
+                            path.h +
+                            radius * 2
+                    }
+                )
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    function scatterTrees(
+        world,
+        count,
+        randomGenerator,
+        options = {}
+    ) {
+        const margin =
+            options.margin ||
+            100;
+
+        let generated = 0;
+
+        let attempts = 0;
+
+        const maxAttempts =
+            count * 30;
+
+        while (
+            generated < count &&
+            attempts <
+                maxAttempts
+        ) {
+            attempts += 1;
+
+            const x =
+                margin +
+                randomGenerator() *
+                (
+                    world.width -
+                    margin * 2
+                );
+
+            const y =
+                margin +
+                randomGenerator() *
+                (
+                    world.height -
+                    margin * 2
+                );
+
+            if (
+                resourcePositionBlocked(
+                    world,
+                    x,
+                    y,
+                    36
+                )
+            ) {
+                continue;
+            }
+
+            addResource(
+                world,
+                createTreeResource(
+                    x,
+                    y,
+                    {
+                        variant:
+                            Math.floor(
+                                randomGenerator() *
+                                4
+                            )
+                    }
+                )
+            );
+
+            generated += 1;
+        }
+    }
+
+
+    function scatterOre(
+        world,
+        itemId,
+        count,
+        randomGenerator,
+        options = {}
+    ) {
+        const margin =
+            options.margin ||
+            100;
+
+        let generated = 0;
+        let attempts = 0;
+
+        while (
+            generated < count &&
+            attempts <
+                count * 35
+        ) {
+            attempts += 1;
+
+            const x =
+                margin +
+                randomGenerator() *
+                (
+                    world.width -
+                    margin * 2
+                );
+
+            const y =
+                margin +
+                randomGenerator() *
+                (
+                    world.height -
+                    margin * 2
+                );
+
+            if (
+                resourcePositionBlocked(
+                    world,
+                    x,
+                    y,
+                    31
+                )
+            ) {
+                continue;
+            }
+
+            addResource(
+                world,
+                createOreResource(
+                    itemId,
+                    x,
+                    y,
+                    options
+                )
+            );
+
+            generated += 1;
+        }
+    }
+
+
+    /* ============================================================
+       COLISÃO DO MUNDO
+       ============================================================ */
+
+    function getBlockingObstacles(
+        world = state.world
+    ) {
+        if (!world) {
+            return [];
+        }
+
+        return world.obstacles.filter(
+            obstacle =>
+                obstacle
+                    .blocksMovement !==
+                false
+        );
+    }
+
+
+    function isCircleBlocked(
+        x,
+        y,
+        radius,
+        world = state.world,
+        options = {}
+    ) {
+        if (!world) {
+            return false;
+        }
+
+        if (
+            x - radius <
+                GAME_CONFIG.worldMargin ||
+            y - radius <
+                GAME_CONFIG.worldMargin ||
+            x + radius >
+                world.width -
+                GAME_CONFIG.worldMargin ||
+            y + radius >
+                world.height -
+                GAME_CONFIG.worldMargin
+        ) {
+            return true;
+        }
+
+        for (
+            const obstacle of
+            getBlockingObstacles(
+                world
+            )
+        ) {
+            if (
+                options.ignoreId &&
+                obstacle.id ===
+                    options.ignoreId
+            ) {
+                continue;
+            }
+
+            if (
+                circleRectCollision(
+                    x,
+                    y,
+                    radius,
+                    obstacle
+                )
+            ) {
+                return true;
+            }
+        }
+
+        if (
+            world.arena &&
+            world.arena.activeBoundary
+        ) {
+            const arena =
+                world.arena;
+
+            const dist =
+                distance(
+                    x,
+                    y,
+                    arena.x,
+                    arena.y
+                );
+
+            if (
+                dist + radius >
+                arena.radius -
+                arena.wallThickness
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    function findSafePosition(
+        desiredX,
+        desiredY,
+        radius,
+        world = state.world
+    ) {
+        if (!world) {
+            return {
+                x: desiredX,
+                y: desiredY
+            };
+        }
+
+        if (
+            !isCircleBlocked(
+                desiredX,
+                desiredY,
+                radius,
+                world
+            )
+        ) {
+            return {
+                x: desiredX,
+                y: desiredY
+            };
+        }
+
+        const maxRadius =
+            GAME_CONFIG
+                .safeSpawnSearchRadius;
+
+        const step =
+            GAME_CONFIG
+                .safeSpawnStep;
+
+        for (
+            let searchRadius =
+                step;
+            searchRadius <=
+                maxRadius;
+            searchRadius +=
+                step
+        ) {
+            const circumference =
+                Math.max(
+                    8,
+                    Math.ceil(
+                        Math.PI *
+                        searchRadius /
+                        step
+                    )
+                );
+
+            for (
+                let index = 0;
+                index < circumference;
+                index += 1
+            ) {
+                const angle =
+                    (
+                        index /
+                        circumference
+                    ) *
+                    Math.PI *
+                    2;
+
+                const x =
+                    desiredX +
+                    Math.cos(angle) *
+                    searchRadius;
+
+                const y =
+                    desiredY +
+                    Math.sin(angle) *
+                    searchRadius;
+
+                if (
+                    !isCircleBlocked(
+                        x,
+                        y,
+                        radius,
+                        world
+                    )
+                ) {
+                    return {
+                        x,
+                        y
+                    };
+                }
+            }
+        }
+
+        return {
+            x:
+                clamp(
+                    desiredX,
+                    100,
+                    world.width - 100
+                ),
+
+            y:
+                clamp(
+                    desiredY,
+                    100,
+                    world.height - 100
+                )
+        };
+    }
+
+
+    /* ============================================================
+       CAMINHOS
+       ============================================================ */
+
+    function addHorizontalRoad(
+        world,
+        x,
+        y,
+        w,
+        h = 115
+    ) {
+        return addPath(
+            world,
+            {
+                type:
+                    "horizontalRoad",
+
+                x,
+                y,
+                w,
+                h
+            }
+        );
+    }
+
+
+    function addVerticalRoad(
+        world,
+        x,
+        y,
+        w = 115,
+        h
+    ) {
+        return addPath(
+            world,
+            {
+                type:
+                    "verticalRoad",
+
+                x,
+                y,
+                w,
+                h
+            }
+        );
+    }
+
+
+    /* ============================================================
+       VILA DO CREPÚSCULO
+       ============================================================ */
+
+    function buildVillageWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.village;
+
+        const world =
+            createEmptyWorld(
+                "village",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+        /*
+            ESTRADA PRINCIPAL LESTE/OESTE
+        */
+        addHorizontalRoad(
+            world,
+            95,
+            1040,
+            3010,
+            165
+        );
+
+        /*
+            ESTRADA PRINCIPAL NORTE/SUL
+        */
+        addVerticalRoad(
+            world,
+            1518,
+            85,
+            165,
+            2030
+        );
+
+        /*
+            CAMINHO PARA A CASA DO PLAYER
+        */
+        addVerticalRoad(
+            world,
+            545,
+            1185,
+            100,
+            610
+        );
+
+        /*
+            CAMINHO PARA ELIAN
+        */
+        addVerticalRoad(
+            world,
+            588,
+            645,
+            90,
+            395
+        );
+
+        /*
+            CAMINHO PARA LOJA
+        */
+        addVerticalRoad(
+            world,
+            2530,
+            640,
+            90,
+            400
+        );
+
+        /*
+            CAMINHO PARA FORJA
+        */
+        addVerticalRoad(
+            world,
+            2540,
+            1190,
+            90,
+            450
+        );
+
+        /*
+            CAMINHO PARA OFICINA
+        */
+        addVerticalRoad(
+            world,
+            1175,
+            1185,
+            90,
+            555
+        );
+
+
+        /* ========================================================
+           CASAS
+
+           POSIÇÕES PRESERVADAS DA BASE APROVADA.
+           ======================================================== */
+
+        addBuilding(
+            world,
+            {
+                id: "home",
+
+                houseId: "home",
+
+                name:
+                    "CASA DO JOGADOR",
+
+                x: 365,
+                y: 1510,
+
+                w: 460,
+                h: 330,
+
+                roof:
+                    "#724838",
+
+                wall:
+                    "#94745b",
+
+                doorWidth: 92
+            }
+        );
+
+
+        addBuilding(
+            world,
+            {
+                id: "elianHome",
+
+                houseId:
+                    "elianHome",
+
+                name:
+                    "CASA DE ELIAN",
+
+                x: 420,
+                y: 370,
+
+                w: 435,
+                h: 310,
+
+                roof:
+                    "#665142",
+
+                wall:
+                    "#8f755e",
+
+                doorWidth: 84
+            }
+        );
+
+
+        addBuilding(
+            world,
+            {
+                id: "shop",
+
+                houseId: "shop",
+
+                name:
+                    "LOJA DE DORAN",
+
+                x: 2365,
+                y: 360,
+
+                w: 470,
+                h: 325,
+
+                roof:
+                    "#684636",
+
+                wall:
+                    "#927057",
+
+                doorWidth: 96
+            }
+        );
+
+
+        addBuilding(
+            world,
+            {
+                id: "forge",
+
+                houseId: "forge",
+
+                name:
+                    "FORJA DE BORIN",
+
+                x: 2395,
+                y: 1490,
+
+                w: 470,
+                h: 335,
+
+                roof:
+                    "#4b4240",
+
+                wall:
+                    "#716561",
+
+                doorWidth: 96
+            }
+        );
+
+
+        addBuilding(
+            world,
+            {
+                id: "woodshop",
+
+                houseId:
+                    "woodshop",
+
+                name:
+                    "OFICINA DE BRAN",
+
+                x: 1000,
+                y: 1585,
+
+                w: 440,
+                h: 300,
+
+                roof:
+                    "#75583c",
+
+                wall:
+                    "#967652",
+
+                doorWidth: 88
+            }
+        );
+
+
+        /* ========================================================
+           FONTE
+           ======================================================== */
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "villageFountain",
+
+                type:
+                    "fountain",
+
+                name:
+                    "FONTE DA MEMÓRIA",
+
+                x: 1600,
+                y: 1115,
+
+                radius: 105,
+
+                mapVisible: true
+            }
+        );
+
+
+        addProtectedZone(
+            world,
+            {
+                id:
+                    "fountain_safe",
+
+                x: 1450,
+                y: 965,
+
+                w: 300,
+                h: 300,
+
+                type:
+                    "landmark"
+            }
+        );
+
+
+        /*
+            Colisão central da fonte.
+        */
+        addObstacle(
+            world,
+            {
+                id:
+                    "fountain_collision",
+
+                type:
+                    "fountain",
+
+                x: 1534,
+                y: 1049,
+
+                w: 132,
+                h: 132,
+
+                blocksLight: false
+            }
+        );
+
+
+        /* ========================================================
+           NPCs EXTERNOS
+           ======================================================== */
+
+        addNPC(
+            world,
+            "elian",
+            950,
+            900,
+            {
+                name: "ELIAN",
+                role: "Morador",
+                color: "#6d594b",
+                accent: "#c0a67d",
+                facing: "right"
+            }
+        );
+
+
+        addNPC(
+            world,
+            "mara",
+            1840,
+            1360,
+            {
+                name: "MARA",
+                role: "Pesquisadora",
+                color: "#665c72",
+                accent: "#b6a8c4",
+                facing: "left"
+            }
+        );
+
+
+        addNPC(
+            world,
+            "miguel",
+            2770,
+            790,
+            {
+                name: "MIGUEL",
+                role: "???",
+                color: "#555059",
+                accent: "#a38eaa",
+                facing: "left"
+            }
+        );
+
+
+        /*
+            Doran, Bran e Borin ficam
+            fisicamente dentro de seus interiores.
+        */
+
+
+        /* ========================================================
+           PORTÕES
+           ======================================================== */
+
+        addGate(
+            world,
+            {
+                id:
+                    "eastGate",
+
+                type:
+                    "progression",
+
+                x: 3010,
+                y: 980,
+
+                w: 92,
+                h: 275,
+
+                side:
+                    "east",
+
+                destination:
+                    "forest",
+
+                bossRequirement:
+                    "road_guardian",
+
+                open:
+                    hasDefeatedBoss(
+                        "road_guardian"
+                    )
+            }
+        );
+
+
+        addGate(
+            world,
+            {
+                id:
+                    "northGate",
+
+                type:
+                    "northProgression",
+
+                x: 1460,
+                y: 68,
+
+                w: 280,
+                h: 95,
+
+                side:
+                    "north",
+
+                destination:
+                    "gnomeGardens",
+
+                requiresDashV1:
+                    true,
+
+                materialCost:
+                    NORTH_GATE_COST,
+
+                open:
+                    Boolean(
+                        state.player
+                            ?.gateUnlocks
+                            ?.north
+                    )
+            }
+        );
+
+
+        /*
+            O Guardião da Estrada fica
+            próximo do portão leste.
+        */
+        if (
+            !hasDefeatedBoss(
+                "road_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    id:
+                        "road_guardian_spawn",
+
+                    bossId:
+                        "road_guardian",
+
+                    x: 2800,
+                    y: 1110,
+
+                    arenaRadius:
+                        310
+                }
+            );
+        }
+
+
+        /*
+            DECORAÇÃO GERAL
+        */
+        const rng =
+            createRegionRandom(
+                "village"
+            );
+
+        for (
+            let index = 0;
+            index < 75;
+            index += 1
+        ) {
+            const x =
+                100 +
+                rng() *
+                3000;
+
+            const y =
+                100 +
+                rng() *
+                2000;
+
+            if (
+                resourcePositionBlocked(
+                    world,
+                    x,
+                    y,
+                    26
+                )
+            ) {
+                continue;
+            }
+
+            addDecoration(
+                world,
+                {
+                    type:
+                        rng() < 0.65
+                            ? "grass"
+                            : "flower",
+
+                    x,
+                    y,
+
+                    variant:
+                        Math.floor(
+                            rng() * 4
+                        )
+                }
+            );
+        }
+
+
+        scatterTrees(
+            world,
+            38,
+            rng,
+            {
+                margin: 105
+            }
+        );
+
+
+        world.metadata.homeRespawn =
+            calculateHomeRespawn(
+                world
+            );
+
+        return world;
+    }
+
+
+    /* ============================================================
+       INTERIOR
+       ============================================================ */
+
+    function buildHouseInterior(
+        houseId
+    ) {
+        const definition =
+            HOUSE_INTERIORS[
+                houseId
+            ];
+
+        if (!definition) {
+            return null;
+        }
+
+        const world =
+            createEmptyWorld(
+                `interior_${houseId}`,
+                definition.worldWidth,
+                definition.worldHeight
+            );
+
+        world.metadata.isInterior =
+            true;
+
+        world.metadata.houseId =
+            houseId;
+
+        world.metadata.definition =
+            definition;
+
+
+        /*
+            Colisões externas do cômodo.
+        */
+        const room =
+            definition.room;
+
+        const wallThickness = 36;
+
+        addObstacle(
+            world,
+            {
+                id:
+                    `${houseId}_top_wall`,
+
+                type:
+                    "interiorWall",
+
+                x:
+                    room.x,
+
+                y:
+                    room.y,
+
+                w:
+                    room.w,
+
+                h:
+                    wallThickness
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    `${houseId}_left_wall`,
+
+                type:
+                    "interiorWall",
+
+                x:
+                    room.x,
+
+                y:
+                    room.y,
+
+                w:
+                    wallThickness,
+
+                h:
+                    room.h
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    `${houseId}_right_wall`,
+
+                type:
+                    "interiorWall",
+
+                x:
+                    room.x +
+                    room.w -
+                    wallThickness,
+
+                y:
+                    room.y,
+
+                w:
+                    wallThickness,
+
+                h:
+                    room.h
+            }
+        );
+
+
+        /*
+            Parede inferior dividida em 2
+            para deixar a porta física aberta.
+        */
+        const door =
+            definition.door;
+
+        addObstacle(
+            world,
+            {
+                id:
+                    `${houseId}_bottom_left`,
+
+                type:
+                    "interiorWall",
+
+                x:
+                    room.x,
+
+                y:
+                    room.y +
+                    room.h -
+                    wallThickness,
+
+                w:
+                    Math.max(
+                        0,
+                        door.x -
+                        room.x
+                    ),
+
+                h:
+                    wallThickness
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    `${houseId}_bottom_right`,
+
+                type:
+                    "interiorWall",
+
+                x:
+                    door.x +
+                    door.w,
+
+                y:
+                    room.y +
+                    room.h -
+                    wallThickness,
+
+                w:
+                    Math.max(
+                        0,
+                        room.x +
+                        room.w -
+                        (
+                            door.x +
+                            door.w
+                        )
+                    ),
+
+                h:
+                    wallThickness
+            }
+        );
+
+
+        /*
+            Móveis que realmente bloqueiam.
+        */
+        for (
+            const furniture of
+            definition.furniture
+        ) {
+            addDecoration(
+                world,
+                {
+                    ...furniture,
+                    interior:
+                        true
+                }
+            );
+
+            const blockingTypes =
+                new Set([
+                    "bed",
+                    "table",
+                    "desk",
+                    "counter",
+                    "forge",
+                    "anvil",
+                    "workbench",
+                    "bookshelf",
+                    "shelf",
+                    "chest",
+                    "crate"
+                ]);
+
+            if (
+                blockingTypes.has(
+                    furniture.type
+                )
+            ) {
+                addObstacle(
+                    world,
+                    {
+                        id:
+                            `${houseId}_${furniture.type}_${furniture.x}_${furniture.y}`,
+
+                        type:
+                            "furniture",
+
+                        x:
+                            furniture.x,
+
+                        y:
+                            furniture.y,
+
+                        w:
+                            furniture.w,
+
+                        h:
+                            furniture.h,
+
+                        blocksLight:
+                            false
+                    }
+                );
+            }
+        }
+
+
+        /*
+            Porta de saída.
+        */
+        world.doors.push({
+            id:
+                `${houseId}_exit`,
+
+            buildingId:
+                houseId,
+
+            houseId,
+
+            x:
+                door.x,
+
+            y:
+                door.y,
+
+            w:
+                door.w,
+
+            h:
+                door.h,
+
+            centerX:
+                door.x +
+                door.w / 2,
+
+            centerY:
+                door.y +
+                door.h / 2,
+
+            side:
+                door.side,
+
+            interiorExit:
+                true,
+
+            open:
+                true,
+
+            openAmount:
+                1
+        });
+
+
+        if (
+            definition.npc
+        ) {
+            const npc =
+                definition.npc;
+
+            const styles = {
+                doran: {
+                    name: "DORAN",
+                    role: "Comerciante",
+                    color: "#71533f",
+                    accent: "#d7aa66",
+                    shop: true
+                },
+
+                bran: {
+                    name: "BRAN",
+                    role: "Carpinteiro",
+                    color: "#6e583e",
+                    accent: "#c39b62",
+                    quest: "wood"
+                },
+
+                borin: {
+                    name: "BORIN",
+                    role: "Ferreiro",
+                    color: "#534b48",
+                    accent: "#c46c45",
+                    shop: true,
+                    quest: "coal"
+                }
+            };
+
+            addNPC(
+                world,
+                npc.id,
+                npc.x,
+                npc.y,
+                {
+                    facing:
+                        npc.facing,
+
+                    ...(
+                        styles[npc.id] ||
+                        {}
+                    )
+                }
+            );
+        }
+
+
+        if (
+            houseId ===
+            "home"
+        ) {
+            addLandmark(
+                world,
+                {
+                    id:
+                        "home_rest_bed",
+
+                    type:
+                        "rest",
+
+                    name:
+                        "DESCANSAR",
+
+                    x: 285,
+                    y: 230,
+
+                    radius: 72
+                }
+            );
+        }
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       FLORESTA — CAMINHO 1
+       ============================================================ */
+
+    function buildForestWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.forest;
+
+        const world =
+            createEmptyWorld(
+                "forest",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+        addHorizontalRoad(
+            world,
+            90,
+            1070,
+            3220,
+            155
+        );
+
+
+        addProtectedZone(
+            world,
+            {
+                id: "forest_entry",
+                x: 90,
+                y: 970,
+                w: 360,
+                h: 350
+            }
+        );
+
+
+        addProtectedZone(
+            world,
+            {
+                id: "forest_exit",
+                x: 3000,
+                y: 970,
+                w: 330,
+                h: 350
+            }
+        );
+
+
+        addNPC(
+            world,
+            "nara",
+            1180,
+            830,
+            {
+                name: "NARA",
+                role:
+                    "Guardadora da Floresta",
+                color: "#46614b",
+                accent: "#93b280"
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "forest_wolves_1",
+
+                species:
+                    "wolf",
+
+                count: 4,
+
+                x: 800,
+                y: 1540,
+
+                radius: 430
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "forest_boars",
+
+                species:
+                    "boar",
+
+                count: 3,
+
+                x: 1700,
+                y: 650,
+
+                radius: 370
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "forest_thornlings",
+
+                species:
+                    "thornling",
+
+                count: 3,
+
+                x: 2450,
+                y: 1550,
+
+                radius: 360
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "forest_warden"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    id:
+                        "forest_warden_spawn",
+
+                    bossId:
+                        "forest_warden",
+
+                    x: 2920,
+                    y: 1150,
+
+                    arenaRadius:
+                        320
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "forest_to_village",
+
+                x: 125,
+                y: 1150,
+
+                destination:
+                    "village",
+
+                destinationSpawn:
+                    "fromForest"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "forest_to_grove",
+
+                x: 3270,
+                y: 1150,
+
+                destination:
+                    "grove",
+
+                destinationSpawn:
+                    "fromForest",
+
+                requirementBoss:
+                    "forest_warden"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "forest"
+            );
+
+        scatterTrees(
+            world,
+            118,
+            rng
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       BOSQUE
+       ============================================================ */
+
+    function buildGroveWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.grove;
+
+        const world =
+            createEmptyWorld(
+                "grove",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+        addHorizontalRoad(
+            world,
+            90,
+            1085,
+            3320,
+            155
+        );
+
+
+        addVerticalRoad(
+            world,
+            1650,
+            380,
+            120,
+            705
+        );
+
+
+        addNPC(
+            world,
+            "lyra",
+            1570,
+            770,
+            {
+                name: "LYRA",
+                role:
+                    "Guardiã do Bosque",
+                color: "#806581",
+                accent: "#e0a9d1"
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "thornling",
+
+                count: 5,
+
+                x: 960,
+                y: 1610,
+
+                radius: 500
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "wolf",
+
+                count: 4,
+
+                x: 2360,
+                y: 630,
+
+                radius: 430
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "spider",
+
+                count: 4,
+
+                x: 2500,
+                y: 1650,
+
+                radius: 420
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "grove_heart"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "grove_heart",
+
+                    x: 3080,
+                    y: 1170,
+
+                    arenaRadius:
+                        330
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "grove_to_forest",
+
+                x: 125,
+                y: 1170,
+
+                destination:
+                    "forest",
+
+                destinationSpawn:
+                    "fromGrove"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "grove_to_mountains",
+
+                x: 3370,
+                y: 1170,
+
+                destination:
+                    "mountains",
+
+                destinationSpawn:
+                    "fromGrove",
+
+                requirementBoss:
+                    "grove_heart"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "grove"
+            );
+
+        scatterTrees(
+            world,
+            105,
+            rng
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       MONTANHAS
+       ============================================================ */
+
+    function buildMountainsWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.mountains;
+
+        const world =
+            createEmptyWorld(
+                "mountains",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addHorizontalRoad(
+            world,
+            90,
+            1090,
+            3310,
+            145
+        );
+
+
+        addNPC(
+            world,
+            "kael",
+            970,
+            855,
+            {
+                name: "KAEL",
+                role:
+                    "Viajante da Montanha",
+                color: "#687073",
+                accent: "#bdc7c9"
+            }
+        );
+
+
+        for (
+            let index = 0;
+            index < 22;
+            index += 1
+        ) {
+            const x =
+                450 +
+                (
+                    index %
+                    7
+                ) *
+                410;
+
+            const y =
+                index % 2 === 0
+                    ? 480
+                    : 1730;
+
+            addObstacle(
+                world,
+                {
+                    type: "rock",
+
+                    x:
+                        x -
+                        45,
+
+                    y:
+                        y -
+                        45,
+
+                    w: 90,
+                    h: 90,
+
+                    blocksLight: true
+                }
+            );
+
+            addDecoration(
+                world,
+                {
+                    type:
+                        "mountainRock",
+
+                    x,
+                    y,
+
+                    size:
+                        random(
+                            34,
+                            58
+                        )
+                }
+            );
+        }
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "stoneCrawler",
+
+                count: 5,
+
+                x: 1150,
+                y: 1650,
+
+                radius: 430
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "bat",
+
+                count: 5,
+
+                x: 2150,
+                y: 620,
+
+                radius: 500
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "mountain_titan"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "mountain_titan",
+
+                    x: 3020,
+                    y: 1160,
+
+                    arenaRadius:
+                        340
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "mountain_to_grove",
+
+                x: 125,
+                y: 1170,
+
+                destination:
+                    "grove",
+
+                destinationSpawn:
+                    "fromMountains"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "mountain_to_iron",
+
+                x: 3370,
+                y: 1160,
+
+                destination:
+                    "iron",
+
+                destinationSpawn:
+                    "fromMountains",
+
+                requirementBoss:
+                    "mountain_titan"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "mountains"
+            );
+
+        scatterOre(
+            world,
+            "carvao",
+            25,
+            rng
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       TERRAS DE FERRO
+       ============================================================ */
+
+    function buildIronWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.iron;
+
+        const world =
+            createEmptyWorld(
+                "iron",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addHorizontalRoad(
+            world,
+            90,
+            1040,
+            3220,
+            150
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "mineCrawler",
+
+                count: 6,
+
+                x: 1000,
+                y: 1600,
+
+                radius: 470
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "stoneCrawler",
+
+                count: 4,
+
+                x: 2300,
+                y: 650,
+
+                radius: 450
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "iron_colossus"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "iron_colossus",
+
+                    x: 2950,
+                    y: 1120,
+
+                    arenaRadius:
+                        345
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "iron_to_mountains",
+
+                x: 125,
+                y: 1120,
+
+                destination:
+                    "mountains",
+
+                destinationSpawn:
+                    "fromIron"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "iron_to_ruby",
+
+                x: 3270,
+                y: 1120,
+
+                destination:
+                    "ruby",
+
+                destinationSpawn:
+                    "fromIron",
+
+                requirementBoss:
+                    "iron_colossus"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "iron"
+            );
+
+        scatterOre(
+            world,
+            "ferro",
+            38,
+            rng,
+            {
+                quantity: 1
+            }
+        );
+
+
+        scatterOre(
+            world,
+            "carvao",
+            20,
+            rng
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       TERRAS RUBI
+       ============================================================ */
+
+    function buildRubyWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.ruby;
+
+        const world =
+            createEmptyWorld(
+                "ruby",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addHorizontalRoad(
+            world,
+            90,
+            1065,
+            3310,
+            150
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "rubyHound",
+
+                count: 6,
+
+                x: 1180,
+                y: 650,
+
+                radius: 460
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "scorpion",
+
+                count: 5,
+
+                x: 2100,
+                y: 1650,
+
+                radius: 470
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "ruby_chimera"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "ruby_chimera",
+
+                    x: 3050,
+                    y: 1150,
+
+                    arenaRadius:
+                        355
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "ruby_to_iron",
+
+                x: 125,
+                y: 1140,
+
+                destination:
+                    "iron",
+
+                destinationSpawn:
+                    "fromRuby"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "ruby_to_pre_monarch",
+
+                x: 3370,
+                y: 1150,
+
+                destination:
+                    "preMonarch",
+
+                destinationSpawn:
+                    "fromRuby",
+
+                requirementBoss:
+                    "ruby_chimera"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "ruby"
+            );
+
+        scatterOre(
+            world,
+            "ouro",
+            24,
+            rng
+        );
+
+
+        scatterOre(
+            world,
+            "rubi",
+            36,
+            rng
+        );
+
+
+        scatterOre(
+            world,
+            "diamante",
+            18,
+            rng
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       PRÉ-LABIRINTO
+
+       A PORTA SECRETA DO VAZIO FICA AQUI.
+       ============================================================ */
+
+    function buildPreMonarchWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .preMonarch;
+
+        const world =
+            createEmptyWorld(
+                "preMonarch",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addHorizontalRoad(
+            world,
+            90,
+            1050,
+            3220,
+            145
+        );
+
+
+        /*
+            Caminhos secundários escondidos:
+            um superior e um inferior.
+
+            A porta real será escolhida de forma
+            determinística pela seed.
+        */
+        addVerticalRoad(
+            world,
+            1640,
+            340,
+            120,
+            710
+        );
+
+
+        addVerticalRoad(
+            world,
+            1640,
+            1195,
+            120,
+            690
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "preMonarch_secret"
+            );
+
+        const secretSide =
+            rng() < 0.5
+                ? "top"
+                : "bottom";
+
+
+        const secretDoor =
+            secretSide === "top"
+                ? {
+                    x: 1600,
+                    y: 205,
+                    w: 200,
+                    h: 58,
+                    side: "top"
+                }
+                : {
+                    x: 1600,
+                    y: 1980,
+                    w: 200,
+                    h: 58,
+                    side: "bottom"
+                };
+
+
+        world.secretDoor = {
+            id:
+                "voidSecretDoor",
+
+            type:
+                "voidDoor",
+
+            x:
+                secretDoor.x,
+
+            y:
+                secretDoor.y,
+
+            w:
+                secretDoor.w,
+
+            h:
+                secretDoor.h,
+
+            side:
+                secretDoor.side,
+
+            open:
+                Boolean(
+                    state.player
+                        ?.miguelQuest
+                        ?.secretDoorOpened
+                ),
+
+            discovered:
+                Boolean(
+                    state.player
+                        ?.miguelQuest
+                        ?.secretDoorFound
+                ),
+
+            destination:
+                "voidDungeon",
+
+            requiresItem:
+                "chaveObscura"
+        };
+
+
+        /*
+            A porta fechada possui colisão.
+        */
+        if (
+            !world.secretDoor.open
+        ) {
+            addObstacle(
+                world,
+                {
+                    id:
+                        "void_secret_door_block",
+
+                    type:
+                        "secretDoor",
+
+                    x:
+                        secretDoor.x,
+
+                    y:
+                        secretDoor.y,
+
+                    w:
+                        secretDoor.w,
+
+                    h:
+                        secretDoor.h,
+
+                    blocksLight:
+                        true
+                }
+            );
+        }
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "voidSecretDoorMarker",
+
+                type:
+                    "secretDoor",
+
+                x:
+                    secretDoor.x +
+                    secretDoor.w / 2,
+
+                y:
+                    secretDoor.y +
+                    secretDoor.h / 2,
+
+                mapVisible:
+                    Boolean(
+                        state.player
+                            ?.miguelQuest
+                            ?.secretDoorFound
+                    )
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "pre_monarch_to_ruby",
+
+                x: 125,
+                y: 1120,
+
+                destination:
+                    "ruby",
+
+                destinationSpawn:
+                    "fromPreMonarch"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "pre_monarch_to_maze",
+
+                x: 3270,
+                y: 1120,
+
+                destination:
+                    "monarchMaze",
+
+                destinationSpawn:
+                    "fromPreMonarch"
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "spider",
+
+                count: 4,
+
+                x: 1050,
+                y: 580,
+
+                radius: 390
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "bat",
+
+                count: 4,
+
+                x: 2250,
+                y: 1650,
+
+                radius: 420
+            }
+        );
+
+
+        /*
+            ZONA ESCURA.
+        */
+        world.darknessZones.push({
+            id:
+                "pre_monarch_darkness",
+
+            x: 0,
+            y: 0,
+
+            w:
+                world.width,
+
+            h:
+                world.height,
+
+            requiresLantern:
+                true,
+
+            barrierText:
+                "Está muito escuro, não podes continuar."
+        });
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       LABIRINTO DO MONARCA
+       ============================================================ */
+
+    function buildMonarchMazeWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .monarchMaze;
+
+        const world =
+            createEmptyWorld(
+                "monarchMaze",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        /*
+            CORREDOR PRINCIPAL
+        */
+        addHorizontalRoad(
+            world,
+            90,
+            1080,
+            3410,
+            130
+        );
+
+
+        /*
+            PAREDES DO LABIRINTO
+        */
+        const walls = [
+            [450, 340, 70, 660],
+            [450, 1320, 70, 590],
+
+            [780, 500, 70, 840],
+            [780, 1590, 70, 380],
+
+            [1120, 280, 70, 620],
+            [1120, 1190, 70, 680],
+
+            [1470, 500, 70, 770],
+            [1470, 1520, 70, 500],
+
+            [1820, 260, 70, 590],
+            [1820, 1140, 70, 720],
+
+            [2170, 520, 70, 720],
+            [2170, 1510, 70, 480],
+
+            [2520, 300, 70, 650],
+            [2520, 1240, 70, 620],
+
+            [2870, 520, 70, 720],
+            [2870, 1510, 70, 450]
+        ];
+
+
+        walls.forEach(
+            (
+                [
+                    x,
+                    y,
+                    w,
+                    h
+                ],
+                index
+            ) => {
+                addObstacle(
+                    world,
+                    {
+                        id:
+                            `maze_wall_${index}`,
+
+                        type:
+                            "mazeWall",
+
+                        x,
+                        y,
+                        w,
+                        h,
+
+                        blocksLight:
+                            true
+                    }
+                );
+            }
+        );
+
+
+        /*
+            Inimigos do labirinto também
+            podem derrubar Essência Sombria
+            DEPOIS da missão de Miguel ser iniciada.
+        */
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "maze_spiders",
+
+                species:
+                    "spider",
+
+                count: 7,
+
+                x: 1050,
+                y: 680,
+
+                radius: 690,
+
+                dropTable:
+                    Object.freeze([
+                        Object.freeze({
+                            item:
+                                "essenciaSombria",
+
+                            chance:
+                                0.68,
+
+                            min:
+                                1,
+
+                            max:
+                                2,
+
+                            requiresQuest:
+                                "voidTrial"
+                        })
+                    ])
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "maze_scorpions",
+
+                species:
+                    "scorpion",
+
+                count: 6,
+
+                x: 2100,
+                y: 1630,
+
+                radius: 710,
+
+                dropTable:
+                    Object.freeze([
+                        Object.freeze({
+                            item:
+                                "essenciaSombria",
+
+                            chance:
+                                0.72,
+
+                            min:
+                                1,
+
+                            max:
+                                2,
+
+                            requiresQuest:
+                                "voidTrial"
+                        })
+                    ])
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "maze_bats",
+
+                species:
+                    "bat",
+
+                count: 6,
+
+                x: 2860,
+                y: 710,
+
+                radius: 560,
+
+                dropTable:
+                    Object.freeze([
+                        Object.freeze({
+                            item:
+                                "essenciaSombria",
+
+                            chance:
+                                0.62,
+
+                            min:
+                                1,
+
+                            max:
+                                2,
+
+                            requiresQuest:
+                                "voidTrial"
+                        })
+                    ])
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "monarch"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    id:
+                        "monarch_spawn",
+
+                    bossId:
+                        "monarch",
+
+                    x: 3310,
+                    y: 1150,
+
+                    arenaRadius:
+                        360,
+
+                    altarX:
+                        3175,
+
+                    altarY:
+                        1150
+                }
+            );
+        }
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "dashAltar",
+
+                type:
+                    "dashAltar",
+
+                x: 3150,
+                y: 1150,
+
+                radius: 70,
+
+                mapVisible:
+                    true
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "maze_to_pre_monarch",
+
+                x: 125,
+                y: 1150,
+
+                destination:
+                    "preMonarch",
+
+                destinationSpawn:
+                    "fromMaze"
+            }
+        );
+
+
+        world.darknessZones.push({
+            id:
+                "monarch_maze_darkness",
+
+            x: 0,
+            y: 0,
+
+            w:
+                world.width,
+
+            h:
+                world.height,
+
+            requiresLantern:
+                true,
+
+            barrier:
+                Object.freeze({
+                    x: 370,
+                    y: 985,
+                    w: 80,
+                    h: 330
+                }),
+
+            barrierText:
+                "Está muito escuro, não podes continuar."
+        });
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       JARDINS DOS GNOMOS — CAMINHO 2
+       ============================================================ */
+
+    function buildGnomeGardensWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .gnomeGardens;
+
+        const world =
+            createEmptyWorld(
+                "gnomeGardens",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1680,
+            110,
+            140,
+            2090
+        );
+
+
+        /*
+            CAMINHOS LATERAIS ORGÂNICOS
+        */
+        addHorizontalRoad(
+            world,
+            500,
+            1420,
+            2500,
+            100
+        );
+
+
+        addHorizontalRoad(
+            world,
+            720,
+            720,
+            2050,
+            90
+        );
+
+
+        /*
+            Pequenas casas de gnomos
+            apenas decorativas.
+        */
+        const gnomeHomes = [
+            [580, 1650],
+            [930, 1780],
+            [2450, 1660],
+            [2750, 1510],
+            [710, 450],
+            [2610, 430]
+        ];
+
+
+        gnomeHomes.forEach(
+            (
+                [
+                    x,
+                    y
+                ],
+                index
+            ) => {
+                addDecoration(
+                    world,
+                    {
+                        id:
+                            `gnome_home_${index}`,
+
+                        type:
+                            "gnomeHome",
+
+                        x,
+                        y,
+
+                        size:
+                            70 +
+                            (
+                                index %
+                                3
+                            ) *
+                            10
+                    }
+                );
+
+                addProtectedZone(
+                    world,
+                    {
+                        x:
+                            x - 70,
+
+                        y:
+                            y - 70,
+
+                        w: 140,
+                        h: 140
+                    }
+                );
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "goblin",
+
+                count: 5,
+
+                x: 850,
+                y: 1170,
+
+                radius: 460
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "wolf",
+
+                count: 4,
+
+                x: 2500,
+                y: 1100,
+
+                radius: 470
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "gnome_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "gnome_guardian",
+
+                    x: 1750,
+                    y: 430,
+
+                    arenaRadius:
+                        340
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "gnome_to_village",
+
+                x: 1750,
+                y: 2215,
+
+                destination:
+                    "village",
+
+                destinationSpawn:
+                    "fromNorth"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "gnome_to_fairy",
+
+                x: 1750,
+                y: 105,
+
+                destination:
+                    "fairyKingdom",
+
+                destinationSpawn:
+                    "fromGnome",
+
+                requirementBoss:
+                    "gnome_guardian"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "gnomeGardens"
+            );
+
+        scatterTrees(
+            world,
+            88,
+            rng
+        );
+
+
+        for (
+            let index = 0;
+            index < 90;
+            index += 1
+        ) {
+            addDecoration(
+                world,
+                {
+                    type:
+                        index % 3 === 0
+                            ? "mushroom"
+                            : "flower",
+
+                    x:
+                        150 +
+                        rng() *
+                        3200,
+
+                    y:
+                        150 +
+                        rng() *
+                        2000,
+
+                    variant:
+                        Math.floor(
+                            rng() *
+                            5
+                        )
+                }
+            );
+        }
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       REINO FEÉRICO
+       ============================================================ */
+
+    function buildFairyKingdomWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .fairyKingdom;
+
+        const world =
+            createEmptyWorld(
+                "fairyKingdom",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1730,
+            100,
+            140,
+            2160
+        );
+
+
+        addHorizontalRoad(
+            world,
+            720,
+            1270,
+            2160,
+            95
+        );
+
+
+        /*
+            Lago brilhante.
+        */
+        addLandmark(
+            world,
+            {
+                id:
+                    "fairyLake",
+
+                type:
+                    "fairyLake",
+
+                x: 920,
+                y: 850,
+
+                radius: 250,
+
+                mapVisible:
+                    true
+            }
+        );
+
+
+        /*
+            Árvore feérica gigante.
+        */
+        addLandmark(
+            world,
+            {
+                id:
+                    "fairyAncientTree",
+
+                type:
+                    "ancientFairyTree",
+
+                x: 2700,
+                y: 870,
+
+                radius: 180,
+
+                mapVisible:
+                    true
+            }
+        );
+
+
+        addProtectedZone(
+            world,
+            {
+                x: 660,
+                y: 590,
+
+                w: 520,
+                h: 520
+            }
+        );
+
+
+        addProtectedZone(
+            world,
+            {
+                x: 2500,
+                y: 660,
+
+                w: 400,
+                h: 430
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "thornling",
+
+                count: 5,
+
+                x: 900,
+                y: 1660,
+
+                radius: 470
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "spider",
+
+                count: 5,
+
+                x: 2700,
+                y: 1650,
+
+                radius: 470
+            }
+        );
+
+
+        if (
+            !hasDefeatedBoss(
+                "fairy_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "fairy_guardian",
+
+                    x: 1800,
+                    y: 430,
+
+                    arenaRadius:
+                        350
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "fairy_to_gnome",
+
+                x: 1800,
+                y: 2240,
+
+                destination:
+                    "gnomeGardens",
+
+                destinationSpawn:
+                    "fromFairy"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "fairy_to_frontier",
+
+                x: 1800,
+                y: 100,
+
+                destination:
+                    "celestialFrontier",
+
+                destinationSpawn:
+                    "fromFairy",
+
+                requirementBoss:
+                    "fairy_guardian"
+            }
+        );
+
+
+        const rng =
+            createRegionRandom(
+                "fairyKingdom"
+            );
+
+        scatterTrees(
+            world,
+            76,
+            rng
+        );
+
+
+        for (
+            let index = 0;
+            index < 125;
+            index += 1
+        ) {
+            addDecoration(
+                world,
+                {
+                    type:
+                        rng() < 0.55
+                            ? "fairyFlower"
+                            : "fairyLight",
+
+                    x:
+                        120 +
+                        rng() *
+                        3360,
+
+                    y:
+                        120 +
+                        rng() *
+                        2100,
+
+                    variant:
+                        Math.floor(
+                            rng() *
+                            5
+                        )
+                }
+            );
+        }
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       FRONTEIRA CELESTIAL
+
+       TRANSIÇÃO AMBIENTAL REAL.
+       ============================================================ */
+
+    function getCelestialFrontierBlend(
+        y,
+        worldHeight =
+            WORLD_DIMENSIONS
+                .celestialFrontier
+                .height
+    ) {
+        /*
+            Sul = Fada
+            Norte = Céu
+
+            NÃO é transição de tela.
+        */
+        const normalized =
+            1 -
+            clamp(
+                y /
+                worldHeight,
+                0,
+                1
+            );
+
+        return clamp(
+            (
+                normalized -
+                0.18
+            ) /
+            0.66,
+            0,
+            1
+        );
+    }
+
+
+    function buildCelestialFrontierWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .celestialFrontier;
+
+        const world =
+            createEmptyWorld(
+                "celestialFrontier",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1875,
+            100,
+            150,
+            2210
+        );
+
+
+        /*
+            Trilhas feéricas no sul.
+        */
+        addHorizontalRoad(
+            world,
+            850,
+            1750,
+            2200,
+            90
+        );
+
+
+        /*
+            Estruturas celestiais no norte.
+        */
+        addHorizontalRoad(
+            world,
+            1100,
+            620,
+            1700,
+            100
+        );
+
+
+        world.transitions.push({
+            id:
+                "fairy_to_sky_environment",
+
+            type:
+                "environmentBlend",
+
+            axis:
+                "y",
+
+            from:
+                "fairy",
+
+            to:
+                "sky",
+
+            blendFunction:
+                "getCelestialFrontierBlend"
+        });
+
+
+        /*
+            LOCAL ESCONDIDO DA CHAVE OBSCURA.
+
+            Ele é colocado afastado do caminho
+            principal e nunca recebe marcador
+            antes de ser encontrado.
+        */
+        const keyAlreadyCollected =
+            Boolean(
+                state.player
+                    ?.miguelQuest
+                    ?.keyCollected ||
+                state.player
+                    ?.miguelQuest
+                    ?.keyConsumed
+            );
+
+
+        if (
+            !keyAlreadyCollected
+        ) {
+            world.darkKey = {
+                id:
+                    "darkKeyEntity",
+
+                type:
+                    "darkKey",
+
+                itemId:
+                    "chaveObscura",
+
+                /*
+                    Fica escondida antes do
+                    portão definitivo do céu.
+                */
+                x: 630,
+                y: 610,
+
+                radius: 28,
+
+                holdSeconds:
+                    VOID_MISSION_CONFIG
+                        .keyHoldSeconds,
+
+                requiresMission:
+                    true,
+
+                requiredEssence:
+                    VOID_MISSION_CONFIG
+                        .shadowEssenceRequired,
+
+                visible:
+                    Boolean(
+                        state.player
+                            ?.miguelQuest
+                            ?.missionAccepted
+                    ),
+
+                collected:
+                    false
+            };
+
+
+            addProtectedZone(
+                world,
+                {
+                    id:
+                        "dark_key_hidden_area",
+
+                    x: 465,
+                    y: 440,
+
+                    w: 350,
+                    h: 350,
+
+                    type:
+                        "questSecret"
+                }
+            );
+        }
+
+
+        /*
+            BOSS QUE TESTA DASH V1.
+        */
+        if (
+            !hasDefeatedBoss(
+                "celestial_dash_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "celestial_dash_guardian",
+
+                    x: 1950,
+                    y: 890,
+
+                    arenaRadius:
+                        390,
+
+                    requiresDash:
+                        true
+                }
+            );
+        }
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "goblin",
+
+                count: 4,
+
+                x: 900,
+                y: 1570,
+
+                radius: 470
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                species:
+                    "bat",
+
+                count: 5,
+
+                x: 2920,
+                y: 1200,
+
+                radius: 520
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "frontier_to_fairy",
+
+                x: 1950,
+                y: 2310,
+
+                destination:
+                    "fairyKingdom",
+
+                destinationSpawn:
+                    "fromFrontier"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "frontier_to_stair",
+
+                x: 1950,
+                y: 95,
+
+                destination:
+                    "celestialStair",
+
+                destinationSpawn:
+                    "fromFrontier",
+
+                requirementBoss:
+                    "celestial_dash_guardian"
+            }
+        );
+
+
+        /*
+            DECORAÇÃO EM GRADIENTE:
+            sul = flores/raízes
+            norte = nuvens/pedras claras
+        */
+        const rng =
+            createRegionRandom(
+                "celestialFrontier"
+            );
+
+        for (
+            let index = 0;
+            index < 155;
+            index += 1
+        ) {
+            const x =
+                120 +
+                rng() *
+                (
+                    world.width -
+                    240
+                );
+
+            const y =
+                120 +
+                rng() *
+                (
+                    world.height -
+                    240
+                );
+
+            const blend =
+                getCelestialFrontierBlend(
+                    y,
+                    world.height
+                );
+
+            let type;
+
+            if (
+                blend < 0.3
+            ) {
+                type =
+                    rng() < 0.6
+                        ? "fairyFlower"
+                        : "fairyLight";
+            } else if (
+                blend < 0.7
+            ) {
+                type =
+                    rng() < 0.5
+                        ? "paleFlower"
+                        : "celestialGrass";
+            } else {
+                type =
+                    rng() < 0.55
+                        ? "cloudTuft"
+                        : "celestialStone";
+            }
+
+            addDecoration(
+                world,
+                {
+                    type,
+                    x,
+                    y,
+
+                    blend
+                }
+            );
+        }
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       ESCADARIA CELESTIAL
+       ============================================================ */
+
+    function buildCelestialStairWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .celestialStair;
+
+        const world =
+            createEmptyWorld(
+                "celestialStair",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        /*
+            Grande escadaria central.
+        */
+        for (
+            let index = 0;
+            index < 18;
+            index += 1
+        ) {
+            addDecoration(
+                world,
+                {
+                    id:
+                        `celestial_step_${index}`,
+
+                    type:
+                        "celestialStep",
+
+                    x:
+                        1120 +
+                        index * 9,
+
+                    y:
+                        2150 -
+                        index * 104,
+
+                    w:
+                        960 -
+                        index * 18,
+
+                    h: 78
+                }
+            );
+        }
+
+
+        addVerticalRoad(
+            world,
+            1500,
+            100,
+            200,
+            2320
+        );
+
+
+        /*
+            Boss no topo da escadaria.
+        */
+        if (
+            !hasDefeatedBoss(
+                "stair_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "stair_guardian",
+
+                    x: 1600,
+                    y: 460,
+
+                    arenaRadius:
+                        400,
+
+                    requiresDash:
+                        true
+                }
+            );
+        }
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "stair_to_frontier",
+
+                x: 1600,
+                y: 2450,
+
+                destination:
+                    "celestialFrontier",
+
+                destinationSpawn:
+                    "fromStair"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "stair_to_sky1",
+
+                x: 1600,
+                y: 95,
+
+                destination:
+                    "sky1",
+
+                destinationSpawn:
+                    "fromStair",
+
+                requirementBoss:
+                    "stair_guardian"
+            }
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       CÉU I
+       ============================================================ */
+
+    function buildSky1World() {
+        const dimensions =
+            WORLD_DIMENSIONS.sky1;
+
+        const world =
+            createEmptyWorld(
+                "sky1",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1675,
+            110,
+            150,
+            2130
+        );
+
+
+        addHorizontalRoad(
+            world,
+            700,
+            1280,
+            2100,
+            100
+        );
+
+
+        /*
+            HORDAS 1 E 2
+        */
+        world.metadata.skyTrialWaves =
+            Object.freeze([
+                Object.freeze({
+                    wave: 1,
+
+                    spawns:
+                        Object.freeze([
+                            Object.freeze({
+                                species:
+                                    "bat",
+
+                                count: 5
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "goblin",
+
+                                count: 3
+                            })
+                        ])
+                }),
+
+                Object.freeze({
+                    wave: 2,
+
+                    spawns:
+                        Object.freeze([
+                            Object.freeze({
+                                species:
+                                    "wolf",
+
+                                count: 4
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "thornling",
+
+                                count: 4
+                            })
+                        ])
+                })
+            ]);
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "skyTrialOne",
+
+                type:
+                    "trialArena",
+
+                x: 1750,
+                y: 1180,
+
+                radius: 440,
+
+                waves:
+                    Object.freeze([
+                        1,
+                        2
+                    ])
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "sky1_to_stair",
+
+                x: 1750,
+                y: 2240,
+
+                destination:
+                    "celestialStair",
+
+                destinationSpawn:
+                    "fromSky1"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "sky1_to_sky2",
+
+                x: 1750,
+                y: 95,
+
+                destination:
+                    "sky2",
+
+                destinationSpawn:
+                    "fromSky1",
+
+                requiresSkyWave:
+                    2
+            }
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       CÉU II
+       ============================================================ */
+
+    function buildSky2World() {
+        const dimensions =
+            WORLD_DIMENSIONS.sky2;
+
+        const world =
+            createEmptyWorld(
+                "sky2",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1705,
+            105,
+            145,
+            2180
+        );
+
+
+        /*
+            HORDAS 3 E 4
+        */
+        world.metadata.skyTrialWaves =
+            Object.freeze([
+                Object.freeze({
+                    wave: 3,
+
+                    spawns:
+                        Object.freeze([
+                            Object.freeze({
+                                species:
+                                    "stoneCrawler",
+
+                                count: 4
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "bat",
+
+                                count: 5
+                            })
+                        ])
+                }),
+
+                Object.freeze({
+                    wave: 4,
+
+                    spawns:
+                        Object.freeze([
+                            Object.freeze({
+                                species:
+                                    "rubyHound",
+
+                                count: 4
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "scorpion",
+
+                                count: 4
+                            })
+                        ])
+                })
+            ]);
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "skyTrialTwo",
+
+                type:
+                    "trialArena",
+
+                x: 1775,
+                y: 1200,
+
+                radius: 445,
+
+                waves:
+                    Object.freeze([
+                        3,
+                        4
+                    ])
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "sky2_to_sky1",
+
+                x: 1775,
+                y: 2310,
+
+                destination:
+                    "sky1",
+
+                destinationSpawn:
+                    "fromSky2"
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "sky2_to_sky3",
+
+                x: 1775,
+                y: 95,
+
+                destination:
+                    "sky3",
+
+                destinationSpawn:
+                    "fromSky2",
+
+                requiresSkyWave:
+                    4
+            }
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       CÉU III
+
+       HABILIDADE FUTURA NÃO INVENTADA.
+       ============================================================ */
+
+    function buildSky3World() {
+        const dimensions =
+            WORLD_DIMENSIONS.sky3;
+
+        const world =
+            createEmptyWorld(
+                "sky3",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+
+        addVerticalRoad(
+            world,
+            1780,
+            120,
+            150,
+            2200
+        );
+
+
+        /*
+            QUINTA E ÚLTIMA HORDA.
+        */
+        world.metadata.skyTrialWaves =
+            Object.freeze([
+                Object.freeze({
+                    wave: 5,
+
+                    spawns:
+                        Object.freeze([
+                            Object.freeze({
+                                species:
+                                    "rubyHound",
+
+                                count: 3
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "mineCrawler",
+
+                                count: 3
+                            }),
+
+                            Object.freeze({
+                                species:
+                                    "bat",
+
+                                count: 4
+                            })
+                        ])
+                })
+            ]);
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "skyTrialFinal",
+
+                type:
+                    "trialArena",
+
+                x: 1850,
+                y: 1420,
+
+                radius: 470,
+
+                waves:
+                    Object.freeze([
+                        5
+                    ])
+            }
+        );
+
+
+        /*
+            GUARDIÃO DO CAMINHO
+            aparece após as CINCO hordas.
+        */
+        if (
+            state.player
+                ?.skyTrial
+                ?.complete &&
+            !hasDefeatedBoss(
+                "path_guardian"
+            )
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    bossId:
+                        "path_guardian",
+
+                    x: 1850,
+                    y: 520,
+
+                    arenaRadius:
+                        430
+                }
+            );
+        }
+
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "futureSkyThreeMystery",
+
+                type:
+                    "sealedMystery",
+
+                x: 3020,
+                y: 550,
+
+                radius: 115,
+
+                /*
+                    NÃO TEM HABILIDADE DEFINIDA.
+                */
+                futureContent:
+                    true,
+
+                mapVisible:
+                    false
+            }
+        );
+
+
+        addPortal(
+            world,
+            {
+                id:
+                    "sky3_to_sky2",
+
+                x: 1850,
+                y: 2350,
+
+                destination:
+                    "sky2",
+
+                destinationSpawn:
+                    "fromSky3"
+            }
+        );
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       DUNGEON DO VAZIO
+       ============================================================ */
+
+    function buildVoidDungeonWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS
+                .voidDungeon;
+
+        const world =
+            createEmptyWorld(
+                "voidDungeon",
+                dimensions.width,
+                dimensions.height
+            );
+
+
+        world.metadata.secret =
+            true;
+
+        world.metadata.minimap =
+            "NO_SIGNAL";
+
+        world.metadata.requiresLanternAtStart =
+            true;
+
+
+        /*
+            Aqui NÃO usamos bordas simples
+            como as regiões abertas.
+
+            A dungeon será desenhada como
+            uma estrutura fechada.
+        */
+
+
+        /* ========================================================
+           CORREDOR ESCURO PRINCIPAL
+           ======================================================== */
+
+        const corridorLeft = 1550;
+        const corridorRight = 1950;
+
+        const corridorTop = 1030;
+        const corridorBottom = 2220;
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_corridor_left",
+
+                type:
+                    "dungeonWall",
+
+                x: 1330,
+                y: 950,
+
+                w: 220,
+                h: 1350,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_corridor_right",
+
+                type:
+                    "dungeonWall",
+
+                x: 1950,
+                y: 950,
+
+                w: 220,
+                h: 1350,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_bottom_wall_left",
+
+                type:
+                    "dungeonWall",
+
+                x: 0,
+                y: 2200,
+
+                w:
+                    corridorLeft,
+
+                h: 100,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_bottom_wall_right",
+
+                type:
+                    "dungeonWall",
+
+                x:
+                    corridorRight,
+
+                y: 2200,
+
+                w:
+                    world.width -
+                    corridorRight,
+
+                h: 100,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        /*
+            Corredor estreito.
+        */
+        addPath(
+            world,
+            {
+                id:
+                    "void_corridor",
+
+                type:
+                    "voidCorridor",
+
+                x:
+                    corridorLeft,
+
+                y:
+                    corridorTop,
+
+                w:
+                    corridorRight -
+                    corridorLeft,
+
+                h:
+                    corridorBottom -
+                    corridorTop
+            }
+        );
+
+
+        /*
+            Trecho inicial escuro.
+        */
+        world.darknessZones.push({
+            id:
+                "void_corridor_darkness",
+
+            x: 1360,
+            y: 1000,
+
+            w: 780,
+            h: 1300,
+
+            requiresLantern:
+                true,
+
+            intensity:
+                0.96
+        });
+
+
+        /* ========================================================
+           SALAS LATERAIS / RUÍNAS
+           ======================================================== */
+
+        const ruinWalls = [
+            [1030, 1680, 300, 70],
+            [2170, 1680, 300, 70],
+
+            [900, 1300, 430, 70],
+            [2170, 1300, 430, 70],
+
+            [860, 970, 470, 70],
+            [2170, 970, 470, 70],
+
+            [650, 700, 800, 70],
+            [2050, 700, 800, 70]
+        ];
+
+
+        ruinWalls.forEach(
+            (
+                [
+                    x,
+                    y,
+                    w,
+                    h
+                ],
+                index
+            ) => {
+                addObstacle(
+                    world,
+                    {
+                        id:
+                            `void_ruin_wall_${index}`,
+
+                        type:
+                            "dungeonWall",
+
+                        x,
+                        y,
+                        w,
+                        h,
+
+                        blocksLight:
+                            true
+                    }
+                );
+            }
+        );
+
+
+        /*
+            Símbolos e estruturas.
+        */
+        for (
+            let index = 0;
+            index < 18;
+            index += 1
+        ) {
+            addDecoration(
+                world,
+                {
+                    type:
+                        "voidRune",
+
+                    x:
+                        index % 2 === 0
+                            ? 1455
+                            : 2045,
+
+                    y:
+                        1120 +
+                        (
+                            index % 9
+                        ) *
+                        115,
+
+                    size:
+                        16 +
+                        (
+                            index %
+                            3
+                        ) *
+                        5
+                }
+            );
+        }
+
+
+        /* ========================================================
+           INIMIGOS DA DUNGEON
+           ======================================================== */
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "void_corridor_spiders",
+
+                species:
+                    "voidSpider",
+
+                count: 4,
+
+                x: 1750,
+                y: 1850,
+
+                radius: 230,
+
+                respawn: false
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "void_corrupted_goblins",
+
+                species:
+                    "voidGoblin",
+
+                count: 3,
+
+                x: 1750,
+                y: 1430,
+
+                radius: 240,
+
+                respawn: false
+            }
+        );
+
+
+        addEnemySpawn(
+            world,
+            {
+                id:
+                    "void_stalkers",
+
+                species:
+                    "voidStalker",
+
+                count: 2,
+
+                x: 1750,
+                y: 1080,
+
+                radius: 230,
+
+                respawn: false
+            }
+        );
+
+
+        /* ========================================================
+           ENTRADA
+           ======================================================== */
+
+        addPortal(
+            world,
+            {
+                id:
+                    "void_dungeon_exit",
+
+                x: 1750,
+                y: 2220,
+
+                destination:
+                    "preMonarch",
+
+                destinationSpawn:
+                    "fromVoidDungeon",
+
+                /*
+                    Permitido enquanto Vaelkor
+                    ainda NÃO começou.
+
+                    Quando a arena fechar,
+                    esse portal será bloqueado
+                    pela lógica da Parte 3.
+                */
+                dungeonExit:
+                    true
+            }
+        );
+
+
+        /* ========================================================
+           ANTECÂMARA
+           ======================================================== */
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "voidArenaEntrance",
+
+                type:
+                    "arenaEntrance",
+
+                x: 1750,
+                y: 850,
+
+                radius: 95
+            }
+        );
+
+
+        /*
+            Porta da arena.
+        */
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_arena_left_neck",
+
+                type:
+                    "dungeonWall",
+
+                x: 950,
+                y: 720,
+
+                w: 650,
+                h: 120,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        addObstacle(
+            world,
+            {
+                id:
+                    "void_arena_right_neck",
+
+                type:
+                    "dungeonWall",
+
+                x: 1900,
+                y: 720,
+
+                w: 650,
+                h: 120,
+
+                blocksLight:
+                    true
+            }
+        );
+
+
+        /* ========================================================
+           ARENA CIRCULAR
+           ======================================================== */
+
+        world.arena = {
+            id:
+                "vaelkorArena",
+
+            type:
+                "circularBossArena",
+
+            x: 1750,
+
+            y: 470,
+
+            radius: 520,
+
+            wallThickness: 42,
+
+            entranceX: 1750,
+
+            entranceY: 820,
+
+            entranceWidth: 300,
+
+            activeBoundary: false,
+
+            locked: false,
+
+            naturallyLit:
+                true,
+
+            lanternRequired:
+                false,
+
+            bossCenter: Object.freeze({
+                x: 1750,
+                y: 470
+            })
+        };
+
+
+        /*
+            Parede circular será desenhada
+            visualmente na Parte 4.
+
+            As colisões laterais são aproximadas
+            aqui por blocos externos.
+        */
+        const arenaBlocks = [
+            [750, 0, 430, 720],
+            [2320, 0, 430, 720],
+
+            [1050, 0, 1400, 120],
+
+            [650, 580, 610, 140],
+            [2240, 580, 610, 140]
+        ];
+
+
+        arenaBlocks.forEach(
+            (
+                [
+                    x,
+                    y,
+                    w,
+                    h
+                ],
+                index
+            ) => {
+                addObstacle(
+                    world,
+                    {
+                        id:
+                            `void_arena_outer_${index}`,
+
+                        type:
+                            "dungeonWall",
+
+                        x,
+                        y,
+                        w,
+                        h,
+
+                        blocksLight:
+                            false
+                    }
+                );
+            }
+        );
+
+
+        /*
+            A arena é naturalmente iluminada
+            pela própria energia do Vazio.
+        */
+        world.lights.push({
+            id:
+                "vaelkor_arena_ambient",
+
+            type:
+                "voidAmbient",
+
+            x:
+                world.arena.x,
+
+            y:
+                world.arena.y,
+
+            radius:
+                620,
+
+            intensity:
+                0.68,
+
+            color:
+                "#725889"
+        });
+
+
+        /*
+            Boss só existe se ainda não derrotado.
+        */
+        if (
+            !state.player
+                ?.miguelQuest
+                ?.vaelkorDefeated
+        ) {
+            addBossSpawn(
+                world,
+                {
+                    id:
+                        "vaelkor_spawn",
+
+                    bossId:
+                        "vaelkor",
+
+                    x:
+                        world.arena.x,
+
+                    y:
+                        world.arena.y,
+
+                    dormant:
+                        true,
+
+                    cutsceneRequired:
+                        true
+                }
+            );
+        }
+
+
+        /*
+            Fragmento só existe se:
+            - Vaelkor morreu
+            - fragmento ainda não foi coletado
+        */
+        if (
+            canSpawnVoidFragment()
+        ) {
+            world.metadata.spawnVoidFragment =
+                true;
+
+            world.metadata.voidFragmentPosition = {
+                x:
+                    world.arena.x,
+
+                y:
+                    world.arena.y
+            };
+        }
+
+
+        return world;
+    }
+
+
+    /* ============================================================
+       REGIÕES FUTURAS PARCIAIS
+
+       Existem apenas como suporte de save/progressão.
+       Caminhos 3 e 4 NÃO estão sendo criados agora.
+       ============================================================ */
+
+    function buildHellWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.hell;
+
+        const world =
+            createEmptyWorld(
+                "hell",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+        world.metadata.futureRegion =
+            true;
+
+        return world;
+    }
+
+
+    function buildFinalWorld() {
+        const dimensions =
+            WORLD_DIMENSIONS.final;
+
+        const world =
+            createEmptyWorld(
+                "final",
+                dimensions.width,
+                dimensions.height
+            );
+
+        addWorldBorders(
+            world
+        );
+
+        world.metadata.futureRegion =
+            true;
+
+        return world;
+    }
+
+
+    /* ============================================================
+       CONSTRUTOR CENTRAL DE REGIÃO
+       ============================================================ */
+
+    function createWorldForArea(
+        area
+    ) {
+        switch (area) {
+            case "village":
+                return buildVillageWorld();
+
+            case "forest":
+                return buildForestWorld();
+
+            case "grove":
+                return buildGroveWorld();
+
+            case "mountains":
+                return buildMountainsWorld();
+
+            case "iron":
+                return buildIronWorld();
+
+            case "ruby":
+                return buildRubyWorld();
+
+            case "preMonarch":
+                return buildPreMonarchWorld();
+
+            case "monarchMaze":
+                return buildMonarchMazeWorld();
+
+            case "gnomeGardens":
+                return buildGnomeGardensWorld();
+
+            case "fairyKingdom":
+                return buildFairyKingdomWorld();
+
+            case "celestialFrontier":
+                return buildCelestialFrontierWorld();
+
+            case "celestialStair":
+                return buildCelestialStairWorld();
+
+            case "sky1":
+                return buildSky1World();
+
+            case "sky2":
+                return buildSky2World();
+
+            case "sky3":
+                return buildSky3World();
+
+            case "voidDungeon":
+                return buildVoidDungeonWorld();
+
+            case "hell":
+                return buildHellWorld();
+
+            case "final":
+                return buildFinalWorld();
+
+            default:
+                console.warn(
+                    "VEYRA: região desconhecida:",
+                    area
+                );
+
+                return buildVillageWorld();
+        }
+    }
+
+
+    /* ============================================================
+       RECONSTRUIR MUNDO
+       ============================================================ */
+
+    function rebuildWorld(
+        area = state.area
+    ) {
+        const world =
+            createWorldForArea(
+                area
+            );
+
+        state.area =
+            area;
+
+        state.world =
+            world;
+
+        return world;
+    }
+
+
+    /* ============================================================
+       ENTRAR EM INTERIOR
+       ============================================================ */
+
+    function createHouseWorld(
+        houseId
+    ) {
+        const interior =
+            buildHouseInterior(
+                houseId
+            );
+
+        if (!interior) {
+            console.warn(
+                "VEYRA: interior inexistente:",
+                houseId
+            );
+
+            return null;
+        }
+
+        return interior;
+    }
+
+
+    function getHouseSpawn(
+        houseId
+    ) {
+        const interior =
+            HOUSE_INTERIORS[
+                houseId
+            ];
+
+        if (!interior) {
+            return null;
+        }
+
+        return {
+            ...interior.playerSpawn
+        };
+    }
+
+
+    /* ============================================================
+       SPAWN DE REGIÃO
+       ============================================================ */
+
+    function getRegionSpawn(
+        area,
+        spawnName = "default"
+    ) {
+        const region =
+            REGION_SPAWNS[
+                area
+            ];
+
+        if (!region) {
+            const dimensions =
+                WORLD_DIMENSIONS[
+                    area
+                ] ||
+                WORLD_DIMENSIONS
+                    .village;
+
+            return {
+                x:
+                    dimensions.width /
+                    2,
+
+                y:
+                    dimensions.height /
+                    2,
+
+                facing:
+                    "down"
+            };
+        }
+
+        const selected =
+            region[spawnName] ||
+            region.default ||
+            Object.values(
+                region
+            )[0];
+
+        return {
+            ...selected
+        };
+    }
+
+
+    /* ============================================================
+       PROXIMIDADE DE PORTAS
+       ============================================================ */
+
+    function getNearestDoor(
+        player = state.player,
+        world = state.world
+    ) {
+        if (
+            !player ||
+            !world ||
+            !Array.isArray(
+                world.doors
+            )
+        ) {
+            return null;
+        }
+
+        let nearest = null;
+        let nearestDistance = Infinity;
+
+        for (
+            const door of
+            world.doors
+        ) {
+            const dist =
+                distance(
+                    player.x,
+                    player.y,
+                    door.centerX,
+                    door.centerY
+                );
+
+            if (
+                dist <
+                nearestDistance
+            ) {
+                nearestDistance =
+                    dist;
+
+                nearest =
+                    door;
+            }
+        }
+
+        if (!nearest) {
+            return null;
+        }
+
+        return {
+            door:
+                nearest,
+
+            distance:
+                nearestDistance
+        };
+    }
+
+
+    function updateAutomaticDoors(
+        dt
+    ) {
+        const player =
+            state.player;
+
+        const world =
+            state.world;
+
+        if (
+            !player ||
+            !world
+        ) {
+            return;
+        }
+
+        for (
+            const door of
+            world.doors
+        ) {
+            if (
+                door.interiorExit
+            ) {
+                door.open = true;
+                door.openAmount = 1;
+                continue;
+            }
+
+            const dist =
+                distance(
+                    player.x,
+                    player.y,
+                    door.centerX,
+                    door.centerY
+                );
+
+            const shouldOpen =
+                dist <=
+                GAME_CONFIG
+                    .doorOpenDistance;
+
+            door.open =
+                shouldOpen;
+
+            const target =
+                shouldOpen
+                    ? 1
+                    : 0;
+
+            door.openAmount =
+                lerp(
+                    finiteNumber(
+                        door.openAmount,
+                        0
+                    ),
+                    target,
+                    clamp(
+                        dt *
+                        GAME_CONFIG
+                            .doorAnimationSpeed,
+                        0,
+                        1
+                    )
+                );
+
+            const building =
+                findBuilding(
+                    door.buildingId,
+                    world
+                );
+
+            if (building) {
+                building.doorOpen =
+                    shouldOpen;
+
+                building.doorOpenAmount =
+                    door.openAmount;
+            }
+        }
+    }
+
+
+    /* ============================================================
+       PORTA SECRETA DO VAZIO
+       ============================================================ */
+
+    function isPlayerNearSecretDoor() {
+        const player =
+            state.player;
+
+        const door =
+            state.world
+                ?.secretDoor;
+
+        if (
+            !player ||
+            !door
+        ) {
+            return false;
+        }
+
+        const centerX =
+            door.x +
+            door.w / 2;
+
+        const centerY =
+            door.y +
+            door.h / 2;
+
+        return (
+            distance(
+                player.x,
+                player.y,
+                centerX,
+                centerY
+            ) <=
+            110
+        );
+    }
+
+
+    function canOpenSecretVoidDoor() {
+        const player =
+            state.player;
+
+        const door =
+            state.world
+                ?.secretDoor;
+
+        if (
+            !player ||
+            !door
+        ) {
+            return false;
+        }
+
+        if (
+            player.miguelQuest
+                .secretDoorOpened
+        ) {
+            return false;
+        }
+
+        return (
+            getRealItemCount(
+                "chaveObscura"
+            ) >= 1
+        );
+    }
+
+
+    function markSecretDoorDiscovered() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return false;
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        if (
+            !quest.secretDoorFound
+        ) {
+            quest.secretDoorFound =
+                true;
+
+            markMapLocationDiscovered(
+                "voidSecretDoor"
+            );
+        }
+
+        return true;
+    }
+
+
+    function openSecretVoidDoor() {
+        const player =
+            state.player;
+
+        const world =
+            state.world;
+
+        const door =
+            world?.secretDoor;
+
+        if (
+            !player ||
+            !door
+        ) {
+            return false;
+        }
+
+        markSecretDoorDiscovered();
+
+        if (
+            player.miguelQuest
+                .secretDoorOpened
+        ) {
+            door.open = true;
+            return true;
+        }
+
+        if (
+            !canOpenSecretVoidDoor()
+        ) {
+            return false;
+        }
+
+        const removed =
+            removeItem(
+                "chaveObscura",
+                1
+            );
+
+        if (!removed) {
+            return false;
+        }
+
+        player.miguelQuest
+            .keyConsumed =
+            true;
+
+        player.miguelQuest
+            .secretDoorOpened =
+            true;
+
+        player.miguelQuest
+            .secretDoorFound =
+            true;
+
+        door.open = true;
+
+        /*
+            Remove a colisão física da porta.
+        */
+        world.obstacles =
+            world.obstacles.filter(
+                obstacle =>
+                    obstacle.id !==
+                    "void_secret_door_block"
+            );
+
+        setMiguelQuestStage(
+            MIGUEL_QUEST_STAGE
+                .SECRET_DOOR_OPENED
+        );
+
+        return true;
+    }
+
+
+    /* ============================================================
+       CHAVE OBSCURA
+       ============================================================ */
+
+    function isDarkKeyVisible(
+        world = state.world
+    ) {
+        if (
+            !world ||
+            !world.darkKey ||
+            !state.player
+        ) {
+            return false;
+        }
+
+        return Boolean(
+            state.player
+                .miguelQuest
+                .missionAccepted &&
+            !state.player
+                .miguelQuest
+                .keyCollected &&
+            !state.player
+                .miguelQuest
+                .keyConsumed
+        );
+    }
+
+
+    function getDarkKeyDistance() {
+        const player =
+            state.player;
+
+        const key =
+            state.world
+                ?.darkKey;
+
+        if (
+            !player ||
+            !key
+        ) {
+            return Infinity;
+        }
+
+        return distance(
+            player.x,
+            player.y,
+            key.x,
+            key.y
+        );
+    }
+
+
+    function discoverDarkKeyLocation() {
+        const player =
+            state.player;
+
+        const key =
+            state.world
+                ?.darkKey;
+
+        if (
+            !player ||
+            !key ||
+            !isDarkKeyVisible()
+        ) {
+            return false;
+        }
+
+        if (
+            getDarkKeyDistance() >
+            135
+        ) {
+            return false;
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        if (
+            !quest.keyLocationDiscovered
+        ) {
+            quest.keyLocationDiscovered =
+                true;
+
+            if (
+                !hasEnoughShadowEssence()
+            ) {
+                setMiguelQuestStage(
+                    MIGUEL_QUEST_STAGE
+                        .KEY_FOUND_NEEDS_ESSENCE
+                );
+            }
+        }
+
+        return true;
+    }
+
+
+    /* ============================================================
+       MINIMAPA / MAPA
+       ============================================================ */
+
+    function getWorldMapMarkers(
+        world = state.world,
+        player = state.player
+    ) {
+        if (
+            !world ||
+            !player
+        ) {
+            return [];
+        }
+
+        if (
+            world.id ===
+                "voidDungeon"
+        ) {
+            return [];
+        }
+
+        const markers = [];
+
+
+        for (
+            const building of
+            world.buildings
+        ) {
+            markers.push({
+                id:
+                    `map_${building.id}`,
+
+                type:
+                    "building",
+
+                name:
+                    building.name,
+
+                x:
+                    building.x +
+                    building.w / 2,
+
+                y:
+                    building.y +
+                    building.h / 2
+            });
+        }
+
+
+        for (
+            const landmark of
+            world.landmarks
+        ) {
+            if (
+                landmark.mapVisible ===
+                false
+            ) {
+                continue;
+            }
+
+            markers.push({
+                id:
+                    `map_${landmark.id}`,
+
+                type:
+                    landmark.type,
+
+                name:
+                    landmark.name ||
+                    landmark.id,
+
+                x:
+                    landmark.x,
+
+                y:
+                    landmark.y
+            });
+        }
+
+
+        for (
+            const gate of
+            world.gates
+        ) {
+            markers.push({
+                id:
+                    `map_${gate.id}`,
+
+                type:
+                    "gate",
+
+                name:
+                    gate.id,
+
+                x:
+                    gate.x +
+                    gate.w / 2,
+
+                y:
+                    gate.y +
+                    gate.h / 2
+            });
+        }
+
+
+        /*
+            A porta secreta só aparece
+            depois de ser descoberta.
+        */
+        if (
+            world.secretDoor &&
+            player.miguelQuest
+                .secretDoorFound
+        ) {
+            markers.push({
+                id:
+                    "map_void_door",
+
+                type:
+                    "secret",
+
+                name:
+                    "PASSAGEM DO VAZIO",
+
+                x:
+                    world.secretDoor.x +
+                    world.secretDoor.w / 2,
+
+                y:
+                    world.secretDoor.y +
+                    world.secretDoor.h / 2
+            });
+        }
+
+
+        return markers;
+    }
+
+
+    function isMinimapSignalAvailable() {
+        if (
+            state.area ===
+            "voidDungeon"
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /* ============================================================
+       LANTERNA
+       ============================================================ */
+
+    function playerHasLantern(
+        player = state.player
+    ) {
+        return Boolean(
+            player &&
+            (
+                player.lanternOwned ||
+                player.inventory
+                    ?.lanterna > 0
+            )
+        );
+    }
+
+
+    function isPointInsideDarknessZone(
+        x,
+        y,
+        world = state.world
+    ) {
+        if (!world) {
+            return null;
+        }
+
+        for (
+            const zone of
+            world.darknessZones
+        ) {
+            if (
+                pointInRect(
+                    x,
+                    y,
+                    zone
+                )
+            ) {
+                return zone;
+            }
+        }
+
+        return null;
+    }
+
+
+    function getPlayerVisionRadius() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return VISUAL_CONFIG
+                .lantern
+                .noLanternRadius;
+        }
+
+        const zone =
+            isPointInsideDarknessZone(
+                player.x,
+                player.y
+            );
+
+        /*
+            Arena de Vaelkor possui
+            iluminação própria.
+        */
+        if (
+            state.area ===
+                "voidDungeon" &&
+            state.world?.arena &&
+            distance(
+                player.x,
+                player.y,
+                state.world.arena.x,
+                state.world.arena.y
+            ) <
+                state.world
+                    .arena
+                    .radius -
+                30
+        ) {
+            return 9999;
+        }
+
+        if (!zone) {
+            return 9999;
+        }
+
+        return playerHasLantern()
+            ? VISUAL_CONFIG
+                .lantern
+                .radius
+            : VISUAL_CONFIG
+                .lantern
+                .noLanternRadius;
+    }
+
+
+    /* ============================================================
+       PROGRESSÃO DA DUNGEON
+       ============================================================ */
+
+    function markVoidDungeonDiscovered() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        if (
+            !player
+                .miguelQuest
+                .dungeonDiscovered
+        ) {
+            player
+                .miguelQuest
+                .dungeonDiscovered =
+                true;
+
+            unlockArea(
+                "voidDungeon"
+            );
+
+            discoverArea(
+                "voidDungeon"
+            );
+
+            if (
+                player
+                    .miguelQuest
+                    .stage ===
+                MIGUEL_QUEST_STAGE
+                    .SECRET_DOOR_OPENED
+            ) {
+                setMiguelQuestStage(
+                    MIGUEL_QUEST_STAGE
+                        .DUNGEON_DISCOVERED
+                );
+            }
+        }
+    }
+
+
+    function revealVoidDungeonOnMapAfterVictory() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        if (
+            player
+                .miguelQuest
+                .vaelkorDefeated
+        ) {
+            markMapLocationDiscovered(
+                "voidDungeon"
+            );
+
+            player
+                .miguelQuest
+                .dungeonExitedAfterVictory =
+                true;
+        }
+    }
+
+
+    /* ============================================================
+       ARENA DE VAELKOR
+       ============================================================ */
+
+    function isPlayerInsideVaelkorArena() {
+        const player =
+            state.player;
+
+        const arena =
+            state.world?.arena;
+
+        if (
+            !player ||
+            !arena
+        ) {
+            return false;
+        }
+
+        return (
+            distance(
+                player.x,
+                player.y,
+                arena.x,
+                arena.y
+            ) <
+            arena.radius - 65
+        );
+    }
+
+
+    function lockVaelkorArena() {
+        const world =
+            state.world;
+
+        const arena =
+            world?.arena;
+
+        if (
+            !arena ||
+            state.area !==
+                "voidDungeon"
+        ) {
+            return false;
+        }
+
+        arena.locked = true;
+
+        arena.activeBoundary = true;
+
+        state.voidRuntime
+            .arenaLocked =
+            true;
+
+        /*
+            Bloqueia fisicamente o pescoço
+            da arena depois que a cutscene começa.
+        */
+        if (
+            !world.obstacles.some(
+                obstacle =>
+                    obstacle.id ===
+                    "vaelkor_arena_gate"
+            )
+        ) {
+            addObstacle(
+                world,
+                {
+                    id:
+                        "vaelkor_arena_gate",
+
+                    type:
+                        "bossGate",
+
+                    x: 1600,
+                    y: 760,
+
+                    w: 300,
+                    h: 90,
+
+                    blocksLight:
+                        false
+                }
+            );
+        }
+
+        return true;
+    }
+
+
+    function unlockVaelkorArena() {
+        const world =
+            state.world;
+
+        const arena =
+            world?.arena;
+
+        if (!arena) {
+            return false;
+        }
+
+        arena.locked = false;
+
+        arena.activeBoundary = false;
+
+        state.voidRuntime
+            .arenaLocked =
+            false;
+
+        world.obstacles =
+            world.obstacles.filter(
+                obstacle =>
+                    obstacle.id !==
+                    "vaelkor_arena_gate"
+            );
+
+        return true;
+    }
+
+
+    function resetVoidAttemptRuntime() {
+        state.voidRuntime = {
+            inside:
+                state.area ===
+                "voidDungeon",
+
+            arenaEntered:
+                false,
+
+            arenaLocked:
+                false,
+
+            vaelkorIntroPlayedThisAttempt:
+                false,
+
+            vaelkorFightStarted:
+                false,
+
+            fragmentEntityCreated:
+                false,
+
+            respawnAttempt:
+                state.voidRuntime
+                    ?.respawnAttempt ||
+                0
+        };
+    }
+
+
+    /* ============================================================
+       WORLD ENTRY
+       ============================================================ */
+
+    function prepareAreaWorld(
+        area,
+        spawnName
+    ) {
+        const world =
+            rebuildWorld(
+                area
+            );
+
+        if (!state.player) {
+            return world;
+        }
+
+        const spawn =
+            getRegionSpawn(
+                area,
+                spawnName
+            );
+
+        const safe =
+            findSafePosition(
+                spawn.x,
+                spawn.y,
+                state.player.radius,
+                world
+            );
+
+        state.player.x =
+            safe.x;
+
+        state.player.y =
+            safe.y;
+
+        state.player.facing =
+            spawn.facing ||
+            "down";
+
+        state.houseMode =
+            false;
+
+        state.currentHouse =
+            null;
+
+        discoverArea(
+            area
+        );
+
+        if (
+            area ===
+            "voidDungeon"
+        ) {
+            markVoidDungeonDiscovered();
+
+            resetVoidAttemptRuntime();
+
+            state.voidRuntime.inside =
+                true;
+        } else {
+            state.voidRuntime.inside =
+                false;
+        }
+
+        return world;
+    }
+
+
+    /* ============================================================
+       PROTECTED ZONE CHECK
+       ============================================================ */
+
+    function isPointProtected(
+        world,
+        x,
+        y,
+        padding = 0
+    ) {
+        if (!world) {
+            return false;
+        }
+
+        return world
+            .protectedZones
+            .some(
+                zone =>
+                    pointInRect(
+                        x,
+                        y,
+                        {
+                            x:
+                                zone.x -
+                                padding,
+
+                            y:
+                                zone.y -
+                                padding,
+
+                            w:
+                                zone.w +
+                                padding * 2,
+
+                            h:
+                                zone.h +
+                                padding * 2
+                        }
+                    )
+            );
+    }
+
+
+    /* ============================================================
+       SPAWN DE INIMIGO — BASE
+
+       IA e combate entram na Parte 3.
+       ============================================================ */
+
+    function createEnemyFromSpecies(
+        speciesId,
+        x,
+        y,
+        options = {}
+    ) {
+        const species =
+            ENEMY_SPECIES[
+                speciesId
+            ];
+
+        if (!species) {
+            console.warn(
+                "VEYRA: espécie inexistente:",
+                speciesId
+            );
+
+            return null;
+        }
+
+        return {
+            id:
+                options.id ||
+                uid(speciesId),
+
+            speciesId,
+
+            name:
+                species.name,
+
+            x,
+            y,
+
+            homeX: x,
+            homeY: y,
+
+            radius:
+                species.radius,
+
+            hp:
+                species.hp,
+
+            maxHp:
+                species.hp,
+
+            damage:
+                species.damage,
+
+            defense:
+                species.defense,
+
+            speed:
+                species.speed,
+
+            vision:
+                species.vision,
+
+            attackRange:
+                species.attackRange,
+
+            xp:
+                species.xp,
+
+            money:
+                species.money,
+
+            color:
+                species.color,
+
+            aura:
+                species.aura ||
+                null,
+
+            spriteType:
+                species.spriteType,
+
+            ability:
+                species.ability
+                    ? {
+                        ...species.ability
+                    }
+                    : null,
+
+            abilityCooldown: 0,
+
+            attackCooldown: 0,
+
+            state:
+                "idle",
+
+            stateTimer: 0,
+
+            targetX: x,
+            targetY: y,
+
+            facing:
+                "down",
+
+            aggro: false,
+
+            dead: false,
+
+            hurtTimer: 0,
+
+            charge: null,
+
+            summonOwner: null,
+
+            dropTable:
+                options.dropTable ||
+                null,
+
+            spawnId:
+                options.spawnId ||
+                null,
+
+            persistentKillId:
+                options.persistentKillId ||
+                null,
+
+            ...options
+        };
+    }
+
+
+    function findSpawnPointNear(
+        world,
+        centerX,
+        centerY,
+        radius,
+        entityRadius,
+        randomGenerator
+    ) {
+        for (
+            let attempt = 0;
+            attempt < 50;
+            attempt += 1
+        ) {
+            const angle =
+                randomGenerator() *
+                Math.PI *
+                2;
+
+            const distanceFromCenter =
+                randomGenerator() *
+                radius;
+
+            const x =
+                centerX +
+                Math.cos(angle) *
+                distanceFromCenter;
+
+            const y =
+                centerY +
+                Math.sin(angle) *
+                distanceFromCenter;
+
+            if (
+                !isCircleBlocked(
+                    x,
+                    y,
+                    entityRadius,
+                    world
+                )
+            ) {
+                return {
+                    x,
+                    y
+                };
+            }
+        }
+
+        return findSafePosition(
+            centerX,
+            centerY,
+            entityRadius,
+            world
+        );
+    }
+
+
+    function populateWorldEnemies(
+        world = state.world
+    ) {
+        if (!world) {
+            return;
+        }
+
+        world.enemies = [];
+
+        const rng =
+            createRegionRandom(
+                `${world.id}_enemies`
+            );
+
+        for (
+            const spawn of
+            world.enemySpawns
+        ) {
+            for (
+                let index = 0;
+                index <
+                    spawn.count;
+                index += 1
+            ) {
+                const persistentKillId =
+                    spawn.respawn === false
+                        ? `${spawn.id}_${index}`
+                        : null;
+
+                if (
+                    persistentKillId &&
+                    state.player
+                        ?.miguelQuest
+                        ?.clearedDungeonEnemyIds
+                        ?.includes(
+                            persistentKillId
+                        )
+                ) {
+                    continue;
+                }
+
+                const species =
+                    ENEMY_SPECIES[
+                        spawn.species
+                    ];
+
+                if (!species) {
+                    continue;
+                }
+
+                const position =
+                    findSpawnPointNear(
+                        world,
+                        spawn.x,
+                        spawn.y,
+                        spawn.radius ||
+                            250,
+                        species.radius,
+                        rng
+                    );
+
+                const enemy =
+                    createEnemyFromSpecies(
+                        spawn.species,
+                        position.x,
+                        position.y,
+                        {
+                            spawnId:
+                                spawn.id,
+
+                            persistentKillId,
+
+                            dropTable:
+                                spawn.dropTable ||
+                                null
+                        }
+                    );
+
+                if (enemy) {
+                    world.enemies.push(
+                        enemy
+                    );
+                }
+            }
+        }
+    }
+
+
+    /* ============================================================
+       SPAWN DE BOSS — BASE
+       ============================================================ */
+
+    function createBossEntity(
+        bossId,
+        x,
+        y,
+        options = {}
+    ) {
+        const definition =
+            BOSS_REGISTRY[
+                bossId
+            ];
+
+        if (!definition) {
+            return null;
+        }
+
+        const defaultHp =
+            definition.hp ||
+            (
+                420 +
+                (
+                    REGION_META[
+                        state.area
+                    ]?.order ||
+                    1
+                ) *
+                190
+            );
+
+        const defaultDamage =
+            definition.damage ||
+            (
+                24 +
+                (
+                    REGION_META[
+                        state.area
+                    ]?.order ||
+                    1
+                ) *
+                4
+            );
+
+        return {
+            id:
+                bossId,
+
+            entityId:
+                uid(
+                    `boss_${bossId}`
+                ),
+
+            name:
+                definition.name,
+
+            subtitle:
+                definition.subtitle,
+
+            x,
+            y,
+
+            homeX: x,
+            homeY: y,
+
+            radius:
+                definition.radius ||
+                46,
+
+            hp:
+                defaultHp,
+
+            maxHp:
+                defaultHp,
+
+            damage:
+                defaultDamage,
+
+            defense:
+                definition.defense ||
+                15,
+
+            speed:
+                definition.moveSpeed ??
+                72,
+
+            color:
+                definition.color,
+
+            aura:
+                definition.aura,
+
+            coreColor:
+                definition.coreColor ||
+                definition.aura,
+
+            bodyStyle:
+                definition.bodyStyle,
+
+            topBar:
+                definition.topBar,
+
+            requiresDash:
+                Boolean(
+                    definition
+                        .requiresDash
+                ),
+
+            usesDash:
+                Boolean(
+                    definition.usesDash
+                ),
+
+            state:
+                options.dormant
+                    ? "dormant"
+                    : "idle",
+
+            stateTimer: 0,
+
+            attackCooldown:
+                random(
+                    1.5,
+                    2.5
+                ),
+
+            hurtTimer: 0,
+
+            dead: false,
+
+            phase: 1,
+
+            phaseTransition:
+                false,
+
+            cutsceneRequired:
+                Boolean(
+                    options
+                        .cutsceneRequired
+                ),
+
+            arenaRadius:
+                options.arenaRadius ||
+                350,
+
+            ...options
+        };
+    }
+
+
+    function populateWorldBosses(
+        world = state.world
+    ) {
+        if (!world) {
+            return;
+        }
+
+        world.bosses = [];
+
+        for (
+            const spawn of
+            world.bossSpawns
+        ) {
+            if (
+                hasDefeatedBoss(
+                    spawn.bossId
+                )
+            ) {
+                continue;
+            }
+
+            /*
+                Vaelkor possui flag própria.
+            */
+            if (
+                spawn.bossId ===
+                    "vaelkor" &&
+                state.player
+                    ?.miguelQuest
+                    ?.vaelkorDefeated
+            ) {
+                continue;
+            }
+
+            const boss =
+                createBossEntity(
+                    spawn.bossId,
+                    spawn.x,
+                    spawn.y,
+                    spawn
+                );
+
+            if (boss) {
+                world.bosses.push(
+                    boss
+                );
+            }
+        }
+    }
+
+
+    /* ============================================================
+       FINALIZAÇÃO DE BUILD DO MUNDO
+       ============================================================ */
+
+    function finalizeWorldBuild(
+        world = state.world
+    ) {
+        if (!world) {
+            return null;
+        }
+
+        populateWorldEnemies(
+            world
+        );
+
+        populateWorldBosses(
+            world
+        );
+
+        return world;
+    }
+
+
+    function loadWorld(
+        area,
+        spawnName
+    ) {
+        prepareAreaWorld(
+            area,
+            spawnName
+        );
+
+        finalizeWorldBuild(
+            state.world
+        );
+
+        return state.world;
+    }
+
+
+    /* ============================================================
+       SPAWN INICIAL NOVO JOGO
+
+       Começa dentro da casa do jogador.
+       ============================================================ */
+
+    function prepareNewGameWorld() {
+        if (!state.player) {
+            return false;
+        }
+
+        const interior =
+            createHouseWorld(
+                "home"
+            );
+
+        if (!interior) {
+            return false;
+        }
+
+        state.houseMode =
+            true;
+
+        state.currentHouse =
+            "home";
+
+        state.houseReturn = {
+            area:
+                "village",
+
+            buildingId:
+                "home"
+        };
+
+        state.area =
+            "village";
+
+        state.world =
+            interior;
+
+        const spawn =
+            HOUSE_INTERIORS
+                .home
+                .playerSpawn;
+
+        state.player.x =
+            spawn.x;
+
+        state.player.y =
+            spawn.y;
+
+        state.player.facing =
+            spawn.facing;
+
+        return true;
+    }
+
+
+    /* ============================================================
+       RESET DE DUNGEON APÓS MORTE
+
+       Vaelkor volta a 100%.
+       ============================================================ */
+
+    function resetVoidDungeonAfterDeath() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        state.voidRuntime
+            .respawnAttempt +=
+            1;
+
+        state.voidRuntime
+            .arenaEntered =
+            false;
+
+        state.voidRuntime
+            .arenaLocked =
+            false;
+
+        state.voidRuntime
+            .vaelkorIntroPlayedThisAttempt =
+            false;
+
+        state.voidRuntime
+            .vaelkorFightStarted =
+            false;
+
+        /*
+            Não marca Vaelkor como morto.
+
+            Ao voltar para a dungeon,
+            ele será criado novamente com
+            100% de vida.
+        */
+
+        if (
+            !player
+                .miguelQuest
+                .vaelkorDefeated &&
+            player
+                .miguelQuest
+                .missionAccepted
+        ) {
+            if (
+                player
+                    .miguelQuest
+                    .dungeonDiscovered
+            ) {
+                player
+                    .miguelQuest
+                    .stage =
+                    MIGUEL_QUEST_STAGE
+                        .DUNGEON_DISCOVERED;
+
+                player
+                    .miguelQuest
+                    .trackerObjective =
+                    "Explore a Dungeon do Vazio.";
+            }
+        }
+    }
+
+
+    /* ============================================================
+       MAPA GLOBAL — DESCOBERTAS
+       ============================================================ */
+
+    function getGlobalMapLocations(
+        player = state.player
+    ) {
+        if (!player) {
+            return [];
+        }
+
+        const result = [
+            {
+                id: "village",
+                name:
+                    "VILA DO CREPÚSCULO",
+                discovered: true
+            }
+        ];
+
+
+        for (
+            const area of
+            player.exploredAreas
+        ) {
+            if (
+                area === "village"
+            ) {
+                continue;
+            }
+
+            const meta =
+                REGION_META[area];
+
+            if (!meta) {
+                continue;
+            }
+
+            result.push({
+                id:
+                    meta.id,
+
+                name:
+                    meta.name,
+
+                route:
+                    meta.route,
+
+                discovered:
+                    true
+            });
+        }
+
+
+        if (
+            player
+                .miguelQuest
+                .keyCollected ||
+            player
+                .miguelQuest
+                .keyConsumed
+        ) {
+            result.push({
+                id:
+                    "dark_key_location",
+
+                name:
+                    "LOCAL DA CHAVE OBSCURA",
+
+                discovered:
+                    true,
+
+                secret:
+                    true
+            });
+        }
+
+
+        if (
+            player
+                .discoveredMapLocations
+                .includes(
+                    "voidDungeon"
+                )
+        ) {
+            result.push({
+                id:
+                    "voidDungeon",
+
+                name:
+                    "DUNGEON DO VAZIO",
+
+                discovered:
+                    true,
+
+                secret:
+                    true
+            });
+        }
+
+
+        return result;
+    }
+
+
+    /* ============================================================
+       VALIDAÇÃO DA PARTE 2
+       ============================================================ */
+
+    function validatePart2Data() {
+        const errors = [];
+
+
+        const requiredAreas = [
+            "village",
+            "forest",
+            "grove",
+            "mountains",
+            "iron",
+            "ruby",
+            "preMonarch",
+            "monarchMaze",
+            "gnomeGardens",
+            "fairyKingdom",
+            "celestialFrontier",
+            "celestialStair",
+            "sky1",
+            "sky2",
+            "sky3",
+            "voidDungeon"
+        ];
+
+
+        for (
+            const area of
+            requiredAreas
+        ) {
+            if (
+                !WORLD_DIMENSIONS[
+                    area
+                ]
+            ) {
+                errors.push(
+                    `Dimensão ausente para ${area}.`
+                );
+            }
+        }
+
+
+        const village =
+            buildVillageWorld();
+
+
+        const requiredBuildings = [
+            "home",
+            "elianHome",
+            "shop",
+            "forge",
+            "woodshop"
+        ];
+
+
+        for (
+            const buildingId of
+            requiredBuildings
+        ) {
+            const building =
+                village
+                    .buildings
+                    .find(
+                        item =>
+                            item.id ===
+                            buildingId
+                    );
+
+            if (!building) {
+                errors.push(
+                    `Construção ausente: ${buildingId}.`
+                );
+
+                continue;
+            }
+
+            const door =
+                village
+                    .doors
+                    .find(
+                        item =>
+                            item.buildingId ===
+                            buildingId
+                    );
+
+            if (!door) {
+                errors.push(
+                    `Porta ausente para ${buildingId}.`
+                );
+
+                continue;
+            }
+
+            const geometry =
+                getBuildingDoorGeometry(
+                    building
+                );
+
+            if (
+                Math.abs(
+                    geometry.centerX -
+                    door.centerX
+                ) > 0.01 ||
+                Math.abs(
+                    geometry.centerY -
+                    door.centerY
+                ) > 0.01
+            ) {
+                errors.push(
+                    `Porta desalinhada em ${buildingId}.`
+                );
+            }
+        }
+
+
+        const homeRespawn =
+            calculateHomeRespawn(
+                village
+            );
+
+
+        const home =
+            village
+                .buildings
+                .find(
+                    building =>
+                        building.id ===
+                        "home"
+                );
+
+
+        const homeDoor =
+            getBuildingDoorGeometry(
+                home
+            );
+
+
+        if (
+            homeRespawn.y <=
+            homeDoor.centerY
+        ) {
+            errors.push(
+                "Respawn da casa não está em frente à porta."
+            );
+        }
+
+
+        const preMonarch =
+            buildPreMonarchWorld();
+
+
+        if (
+            !preMonarch.secretDoor
+        ) {
+            errors.push(
+                "Porta secreta do Vazio ausente."
+            );
+        } else if (
+            ![
+                "top",
+                "bottom"
+            ].includes(
+                preMonarch
+                    .secretDoor
+                    .side
+            )
+        ) {
+            errors.push(
+                "A porta secreta só pode ficar na parte de cima ou de baixo."
+            );
+        }
+
+
+        const frontier =
+            buildCelestialFrontierWorld();
+
+
+        if (
+            !state.player
+                ?.miguelQuest
+                ?.keyCollected &&
+            !state.player
+                ?.miguelQuest
+                ?.keyConsumed &&
+            !frontier.darkKey
+        ) {
+            errors.push(
+                "Chave Obscura deveria existir na Fronteira Celestial."
+            );
+        }
+
+
+        const voidWorld =
+            buildVoidDungeonWorld();
+
+
+        if (
+            voidWorld
+                .metadata
+                .minimap !==
+            "NO_SIGNAL"
+        ) {
+            errors.push(
+                "Dungeon do Vazio deve ficar sem sinal no minimapa."
+            );
+        }
+
+
+        if (
+            !voidWorld.arena
+        ) {
+            errors.push(
+                "Arena de Vaelkor ausente."
+            );
+        }
+
+
+        const vaelkorSpawn =
+            voidWorld
+                .bossSpawns
+                .find(
+                    spawn =>
+                        spawn.bossId ===
+                        "vaelkor"
+                );
+
+
+        if (
+            !state.player
+                ?.miguelQuest
+                ?.vaelkorDefeated &&
+            !vaelkorSpawn
+        ) {
+            errors.push(
+                "Spawn de Vaelkor ausente."
+            );
+        }
+
+
+        const routeSequence =
+            ROUTE_TWO.sequence;
+
+
+        const expectedRoute = [
+            "gnomeGardens",
+            "fairyKingdom",
+            "celestialFrontier",
+            "celestialStair",
+            "sky1",
+            "sky2",
+            "sky3"
+        ];
+
+
+        if (
+            JSON.stringify(
+                routeSequence
+            ) !==
+            JSON.stringify(
+                expectedRoute
+            )
+        ) {
+            errors.push(
+                "Caminho 2 perdeu sua ordem aprovada."
+            );
+        }
+
+
+        /*
+            Confirma as 5 hordas.
+        */
+        const sky1 =
+            buildSky1World();
+
+        const sky2 =
+            buildSky2World();
+
+        const sky3 =
+            buildSky3World();
+
+
+        const waveCount =
+            (
+                sky1.metadata
+                    .skyTrialWaves
+                    ?.length ||
+                0
+            ) +
+            (
+                sky2.metadata
+                    .skyTrialWaves
+                    ?.length ||
+                0
+            ) +
+            (
+                sky3.metadata
+                    .skyTrialWaves
+                    ?.length ||
+                0
+            );
+
+
+        if (
+            waveCount !== 5
+        ) {
+            errors.push(
+                "O Céu deve possuir exatamente 5 hordas."
+            );
+        }
+
+
+        if (
+            errors.length > 0
+        ) {
+            console.error(
+                "VEYRA V30 — ERROS NA PARTE 2:",
+                errors
+            );
+
+            return {
+                ok: false,
+                errors
+            };
+        }
+
+
+        return {
+            ok: true,
+            errors: []
+        };
+    }
+
+
+    /* ============================================================
+       FIM DA PARTE 2/5
+
+       NÃO FECHE O IIFE.
+
+       PARTE 3 TERÁ:
+
+       - movimentação completa
+       - colisão
+       - ataque básico
+       - 1 clique = 1 ataque
+       - Q / R / F
+       - Dash V1
+       - Dash V2
+       - timing de atravessar projétil no V2
+       - inimigos
+       - lobo
+       - javali
+       - habilidades específicas
+       - IA independente de WASD
+       - bosses
+       - Guardião da Estrada
+       - bosses do Caminho 1
+       - bosses do Caminho 2
+       - Vaelkor completo
+       - Rajada do Vazio
+       - Feixe do Vazio
+       - Invocação Sombria
+       - Fase II
+       - morte cinematográfica
+       - fragmentação
+       - minigame do Fragmento
+       - dano
+       - sangue
+       - morte do jogador
+       - perda parcial de materiais
+       - respawn na frente da casa
+       - fome/cansaço
+       - drops
+       - 15 Essências Sombrias
+       - coleta segurando E
+       - árvore
+       - minério
+       - Chave Obscura
+       ============================================================ */
