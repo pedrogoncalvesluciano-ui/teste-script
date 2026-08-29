@@ -45141,3 +45141,10428 @@
        - ÚNICO FECHAMENTO })();
 
        ============================================================ */
+     /* ============================================================
+       VEYRA: A QUIETUDE
+       V30 — RECONSTRUÇÃO UNIFICADA
+
+       SCRIPT.JS — PARTE 5/5
+
+       INTEGRAÇÃO FINAL
+
+       - IDs reais do HTML
+       - compatibilidade com IDs antigos
+       - menu
+       - novo jogo
+       - continuar
+       - como jogar
+       - créditos
+       - seleção de personagem
+       - HUD
+       - inventário
+       - status
+       - mapa
+       - livro
+       - loja
+       - venda
+       - quests
+       - battle confirm
+       - teclado
+       - mouse
+       - Dash
+       - E / Z
+       - Q / R / F
+       - save
+       - load
+       - autosave
+       - migração
+       - comandos X+Y
+       - cheats
+       - loop
+       - inicialização
+       - auditoria
+       - fechamento do ÚNICO IIFE
+       ============================================================ */
+
+
+    /* ============================================================
+       RUNTIME FINAL DA INTERFACE
+       ============================================================ */
+
+    const finalUIRuntime = {
+
+        initialized:
+            false,
+
+        eventsBound:
+            false,
+
+        selectedCharacterId:
+            null,
+
+        inventoryCategory:
+            "all",
+
+        lastHudRefresh:
+            0,
+
+        lastMiniMapRefresh:
+            0,
+
+        lastWorldMapRefresh:
+            0,
+
+        lastPanelRefresh:
+            0,
+
+        autosaveElapsed:
+            0,
+
+        toastTimer:
+            null,
+
+        panelSnapshot:
+            null,
+
+        lastArea:
+            null,
+
+        lastQuestRevision:
+            -1,
+
+        lastMoney:
+            null,
+
+        lastInventorySignature:
+            "",
+
+        refs:
+            {}
+
+    };
+
+
+    /* ============================================================
+       BUSCA SEGURA DE ELEMENTOS
+
+       IMPORTANTE:
+
+       O PRIMEIRO ID de cada lista é o ID
+       OFICIAL DO HTML ATUAL.
+
+       Os seguintes são apenas aliases
+       para impedir quebra caso ainda exista
+       algum HTML antigo em cache.
+       ============================================================ */
+
+    function resolveElementByIds(
+        ...ids
+    ) {
+
+        for (
+            const id of
+            ids
+        ) {
+
+            if (!id) {
+                continue;
+            }
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+            if (element) {
+
+                return element;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+
+    function resolveCurrentUI() {
+
+        const refs = {
+
+            app:
+                resolveElementByIds(
+                    "app"
+                ),
+
+
+            /* ====================================================
+               TELAS
+               ==================================================== */
+
+            menuScreen:
+                resolveElementByIds(
+                    "menuScreen"
+                ),
+
+            howScreen:
+                resolveElementByIds(
+                    "howScreen"
+                ),
+
+            creditsScreen:
+                resolveElementByIds(
+                    "creditsScreen"
+                ),
+
+            characterScreen:
+                resolveElementByIds(
+                    "characterScreen"
+                ),
+
+            gameScreen:
+                resolveElementByIds(
+                    "gameScreen"
+                ),
+
+
+            /* ====================================================
+               MENU
+               ==================================================== */
+
+            newGameBtn:
+                resolveElementByIds(
+                    "newGameBtn"
+                ),
+
+            continueBtn:
+                resolveElementByIds(
+                    "continueBtn"
+                ),
+
+            howToBtn:
+                resolveElementByIds(
+                    "howToBtn",
+                    "howBtn",
+                    "btnHow"
+                ),
+
+            creditsBtn:
+                resolveElementByIds(
+                    "creditsBtn",
+                    "btnCredits"
+                ),
+
+            closeHowBtn:
+                resolveElementByIds(
+                    "closeHowBtn"
+                ),
+
+            closeCreditsBtn:
+                resolveElementByIds(
+                    "closeCreditsBtn"
+                ),
+
+            continueHint:
+                resolveElementByIds(
+                    "continueHint"
+                ),
+
+
+            /* ====================================================
+               PERSONAGEM
+               ==================================================== */
+
+            characterCards:
+                resolveElementByIds(
+                    "characterCards"
+                ),
+
+            playerName:
+                resolveElementByIds(
+                    "playerName",
+                    "playerNameInput"
+                ),
+
+            nameError:
+                resolveElementByIds(
+                    "nameError"
+                ),
+
+            startGameBtn:
+                resolveElementByIds(
+                    "startGameBtn",
+                    "startCharacterBtn"
+                ),
+
+            backMenuBtn:
+                resolveElementByIds(
+                    "backMenuBtn"
+                ),
+
+
+            /* ====================================================
+               CANVAS
+               ==================================================== */
+
+            gameCanvas:
+                resolveElementByIds(
+                    "gameCanvas"
+                ),
+
+            miniCanvas:
+                resolveElementByIds(
+                    "miniCanvas"
+                ),
+
+            worldMapCanvas:
+                resolveElementByIds(
+                    "worldMapCanvas"
+                ),
+
+
+            /* ====================================================
+               HUD
+               ==================================================== */
+
+            hud:
+                resolveElementByIds(
+                    "hud"
+                ),
+
+            hudAvatar:
+                resolveElementByIds(
+                    "hudAvatar"
+                ),
+
+            hudClass:
+                resolveElementByIds(
+                    "hudClass"
+                ),
+
+            hudName:
+                resolveElementByIds(
+                    "hudName"
+                ),
+
+            moneyText:
+                resolveElementByIds(
+                    "moneyText"
+                ),
+
+            hpBar:
+                resolveElementByIds(
+                    "hpBar"
+                ),
+
+            hpText:
+                resolveElementByIds(
+                    "hpText"
+                ),
+
+            magicBar:
+                resolveElementByIds(
+                    "magicBar"
+                ),
+
+            magicText:
+                resolveElementByIds(
+                    "magicText"
+                ),
+
+            energyBar:
+                resolveElementByIds(
+                    "energyBar"
+                ),
+
+            energyText:
+                resolveElementByIds(
+                    "energyText"
+                ),
+
+            hungerText:
+                resolveElementByIds(
+                    "hungerText"
+                ),
+
+            fatigueText:
+                resolveElementByIds(
+                    "fatigueText"
+                ),
+
+            levelText:
+                resolveElementByIds(
+                    "levelText"
+                ),
+
+            xpText:
+                resolveElementByIds(
+                    "xpText"
+                ),
+
+            locationLabel:
+                resolveElementByIds(
+                    "locationLabel"
+                ),
+
+            minimap:
+                resolveElementByIds(
+                    "minimap"
+                ),
+
+
+            /* ====================================================
+               HUD BUTTONS
+               ==================================================== */
+
+            inventoryBtn:
+                resolveElementByIds(
+                    "inventoryBtn"
+                ),
+
+            mapBtn:
+                resolveElementByIds(
+                    "mapBtn"
+                ),
+
+            bookBtn:
+                resolveElementByIds(
+                    "bookBtn"
+                ),
+
+            saveBtn:
+                resolveElementByIds(
+                    "saveBtn"
+                ),
+
+            menuBtn:
+                resolveElementByIds(
+                    "menuBtn"
+                ),
+
+
+            /* ====================================================
+               INTERAÇÃO LEGACY
+
+               O desenho principal agora acontece
+               no canvas, mas mantemos as refs.
+               ==================================================== */
+
+            interactionHint:
+                resolveElementByIds(
+                    "interactionHint"
+                ),
+
+            interactionKey:
+                resolveElementByIds(
+                    "interactionKey"
+                ),
+
+            interactionText:
+                resolveElementByIds(
+                    "interactionText"
+                ),
+
+            dialogueBox:
+                resolveElementByIds(
+                    "dialogueBox",
+                    "dialoguePanel"
+                ),
+
+            dialogueSpeaker:
+                resolveElementByIds(
+                    "dialogueSpeaker",
+                    "dialogueName"
+                ),
+
+            dialogueText:
+                resolveElementByIds(
+                    "dialogueText"
+                ),
+
+
+            /* ====================================================
+               VIAGEM
+               ==================================================== */
+
+            travelPanel:
+                resolveElementByIds(
+                    "travelPanel"
+                ),
+
+            travelText:
+                resolveElementByIds(
+                    "travelText"
+                ),
+
+            travelYes:
+                resolveElementByIds(
+                    "travelYes"
+                ),
+
+            travelNo:
+                resolveElementByIds(
+                    "travelNo"
+                ),
+
+
+            /* ====================================================
+               BATALHA
+               ==================================================== */
+
+            battlePanel:
+                resolveElementByIds(
+                    "battlePanel",
+                    "battleConfirmPanel"
+                ),
+
+            battleIcon:
+                resolveElementByIds(
+                    "battleIcon"
+                ),
+
+            battleTitle:
+                resolveElementByIds(
+                    "battleTitle"
+                ),
+
+            battleText:
+                resolveElementByIds(
+                    "battleText"
+                ),
+
+            battleAccept:
+                resolveElementByIds(
+                    "battleAccept"
+                ),
+
+            battleDecline:
+                resolveElementByIds(
+                    "battleDecline"
+                ),
+
+
+            /* ====================================================
+               INVENTÁRIO
+               ==================================================== */
+
+            inventoryPanel:
+                resolveElementByIds(
+                    "inventoryPanel"
+                ),
+
+            inventoryTabs:
+                resolveElementByIds(
+                    "inventoryTabs"
+                ),
+
+            inventoryGrid:
+                resolveElementByIds(
+                    "inventoryGrid"
+                ),
+
+            equipmentGrid:
+                resolveElementByIds(
+                    "equipmentGrid"
+                ),
+
+            weightText:
+                resolveElementByIds(
+                    "weightText"
+                ),
+
+
+            /* ====================================================
+               MAPA
+               ==================================================== */
+
+            mapPanel:
+                resolveElementByIds(
+                    "mapPanel"
+                ),
+
+
+            /* ====================================================
+               LIVRO
+               ==================================================== */
+
+            bookPanel:
+                resolveElementByIds(
+                    "bookPanel"
+                ),
+
+            bossBook:
+                resolveElementByIds(
+                    "bossBook"
+                ),
+
+
+            /* ====================================================
+               LOJA
+               ==================================================== */
+
+            shopPanel:
+                resolveElementByIds(
+                    "shopPanel"
+                ),
+
+            shopTitle:
+                resolveElementByIds(
+                    "shopTitle"
+                ),
+
+            shopTabs:
+                resolveElementByIds(
+                    "shopTabs"
+                ),
+
+            shopGrid:
+                resolveElementByIds(
+                    "shopGrid"
+                ),
+
+
+            /* ====================================================
+               QUEST
+               ==================================================== */
+
+            questPanel:
+                resolveElementByIds(
+                    "questPanel"
+                ),
+
+            questTitle:
+                resolveElementByIds(
+                    "questTitle"
+                ),
+
+            questText:
+                resolveElementByIds(
+                    "questText"
+                ),
+
+            questStatus:
+                resolveElementByIds(
+                    "questStatus"
+                ),
+
+            questActionBtn:
+                resolveElementByIds(
+                    "questActionBtn"
+                ),
+
+
+            /* ====================================================
+               MORTE
+               ==================================================== */
+
+            deathPanel:
+                resolveElementByIds(
+                    "deathPanel"
+                ),
+
+            respawnBtn:
+                resolveElementByIds(
+                    "respawnBtn"
+                ),
+
+
+            /* ====================================================
+               TRANSIÇÃO
+               ==================================================== */
+
+            transitionScreen:
+                resolveElementByIds(
+                    "transitionScreen"
+                ),
+
+            transitionMessage:
+                resolveElementByIds(
+                    "transitionMessage"
+                ),
+
+
+            /* ====================================================
+               TOAST
+               ==================================================== */
+
+            saveMessage:
+                resolveElementByIds(
+                    "saveMessage",
+                    "gameToast"
+                )
+
+        };
+
+
+        finalUIRuntime.refs =
+            refs;
+
+
+        return refs;
+
+    }
+
+
+    /* ============================================================
+       HELPERS DOM
+       ============================================================ */
+
+    function setHidden(
+        element,
+        hidden
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+
+        if (hidden) {
+
+            element
+                .classList
+                .add(
+                    "hidden"
+                );
+
+        } else {
+
+            element
+                .classList
+                .remove(
+                    "hidden"
+                );
+
+        }
+
+    }
+
+
+    function isScreenActive(
+        screen
+    ) {
+
+        return Boolean(
+            screen &&
+            screen
+                .classList
+                .contains(
+                    "active"
+                )
+        );
+
+    }
+
+
+    function showScreen(
+        target
+    ) {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        const screens = [
+
+            refs.menuScreen,
+            refs.howScreen,
+            refs.creditsScreen,
+            refs.characterScreen,
+            refs.gameScreen
+
+        ];
+
+
+        for (
+            const screen of
+            screens
+        ) {
+
+            if (!screen) {
+                continue;
+            }
+
+
+            screen
+                .classList
+                .remove(
+                    "active"
+                );
+
+        }
+
+
+        if (target) {
+
+            target
+                .classList
+                .add(
+                    "active"
+                );
+
+        }
+
+    }
+
+
+    function safeCall(
+        callback,
+        label = "ação"
+    ) {
+
+        try {
+
+            return callback();
+
+        } catch (error) {
+
+            console.error(
+                `VEYRA — erro em ${label}:`,
+                error
+            );
+
+
+            showToast(
+                "Ocorreu um erro interno. Veja o console.",
+                "error",
+                3500
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       TOAST DOM
+       ============================================================ */
+
+    function showToast(
+        message,
+        type = "info",
+        duration = 2200
+    ) {
+
+        const toast =
+            finalUIRuntime
+                .refs
+                .saveMessage;
+
+
+        if (!toast) {
+
+            console.log(
+                `[VEYRA] ${message}`
+            );
+
+            return;
+
+        }
+
+
+        if (
+            finalUIRuntime.toastTimer
+        ) {
+
+            clearTimeout(
+                finalUIRuntime
+                    .toastTimer
+            );
+
+            finalUIRuntime.toastTimer =
+                null;
+
+        }
+
+
+        toast.textContent =
+            String(
+                message ||
+                ""
+            );
+
+
+        toast.dataset.type =
+            type;
+
+
+        toast
+            .classList
+            .add(
+                "show"
+            );
+
+
+        finalUIRuntime.toastTimer =
+            setTimeout(
+                () => {
+
+                    toast
+                        .classList
+                        .remove(
+                            "show"
+                        );
+
+                },
+                Math.max(
+                    500,
+                    duration
+                )
+            );
+
+    }
+
+
+    /* ============================================================
+       STATUS PANEL DINÂMICO
+
+       O HTML antigo não possuía botão/painel próprio
+       de STATUS.
+
+       Não mudamos a capa nem reconstruímos o HTML.
+
+       Criamos SOMENTE o elemento que falta.
+       ============================================================ */
+
+    function ensureStatusInterface() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !refs.gameScreen
+        ) {
+            return;
+        }
+
+
+        let panel =
+            document.getElementById(
+                "statusPanel"
+            );
+
+
+        if (!panel) {
+
+            panel =
+                document.createElement(
+                    "div"
+                );
+
+
+            panel.id =
+                "statusPanel";
+
+
+            panel.className =
+                "modal hidden";
+
+
+            panel.innerHTML = `
+                <div class="wide-panel">
+
+                    <button
+                        class="close-btn panel-close"
+                        type="button"
+                        data-close="statusPanel"
+                        aria-label="Fechar"
+                    >
+                        ×
+                    </button>
+
+                    <p class="eyebrow">
+                        EVOLUÇÃO
+                    </p>
+
+                    <h2>
+                        STATUS
+                    </h2>
+
+                    <div id="statusContent"></div>
+
+                </div>
+            `;
+
+
+            refs.gameScreen
+                .appendChild(
+                    panel
+                );
+
+        }
+
+
+        refs.statusPanel =
+            panel;
+
+
+        refs.statusContent =
+            panel.querySelector(
+                "#statusContent"
+            );
+
+
+        /*
+            Botão STATUS no HUD.
+        */
+        let statusBtn =
+            document.getElementById(
+                "statusBtn"
+            );
+
+
+        if (!statusBtn) {
+
+            const hudRight =
+                refs.hud
+                    ?.querySelector(
+                        ".hud-right"
+                    );
+
+
+            if (hudRight) {
+
+                statusBtn =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                statusBtn.id =
+                    "statusBtn";
+
+
+                statusBtn.type =
+                    "button";
+
+
+                statusBtn.className =
+                    "hud-btn";
+
+
+                statusBtn.title =
+                    "Status";
+
+
+                statusBtn.textContent =
+                    "📊";
+
+
+                const saveBtn =
+                    refs.saveBtn;
+
+
+                if (
+                    saveBtn &&
+                    saveBtn.parentNode ===
+                        hudRight
+                ) {
+
+                    hudRight.insertBefore(
+                        statusBtn,
+                        saveBtn
+                    );
+
+                } else {
+
+                    hudRight.appendChild(
+                        statusBtn
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        refs.statusBtn =
+            statusBtn;
+
+    }
+
+
+    /* ============================================================
+       HUD:
+
+       Mantemos o HUD HTML existente porque:
+       - já possui os botões aprovados;
+       - evita duplicação;
+       - preserva o visual atual.
+
+       O Canvas continua desenhando:
+       - habilidades;
+       - Dash;
+       - missão;
+       - boss;
+       - prompts;
+       - notificações.
+       ============================================================ */
+
+    drawHUD =
+        function finalCanvasHUD() {
+
+            if (
+                !state.player ||
+                !state.running
+            ) {
+                return;
+            }
+
+
+            drawSkillHUD();
+
+            drawDashHUD();
+
+            drawMissionTracker();
+
+            drawStatusPointIndicator();
+
+            drawHoldProgress();
+
+            drawInteractionPrompt();
+
+            drawNotifications();
+
+            drawBossTopBar();
+
+        };
+
+
+    /* ============================================================
+       HUD DOM
+       ============================================================ */
+
+    function setBarWidth(
+        element,
+        current,
+        max
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+
+        const ratio =
+            max > 0
+                ? clamp(
+                    current /
+                    max,
+                    0,
+                    1
+                )
+                : 0;
+
+
+        element.style.width =
+            `${ratio * 100}%`;
+
+    }
+
+
+    function updateHudDOM(
+        force = false
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return;
+        }
+
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !force &&
+            state.time -
+                finalUIRuntime
+                    .lastHudRefresh <
+                0.06
+        ) {
+            return;
+        }
+
+
+        finalUIRuntime
+            .lastHudRefresh =
+            state.time;
+
+
+        const character =
+            getCharacterById(
+                player.characterId
+            );
+
+
+        if (
+            refs.hudAvatar
+        ) {
+
+            refs.hudAvatar.textContent =
+                character?.icon ||
+                player.icon ||
+                "?";
+
+        }
+
+
+        if (
+            refs.hudClass
+        ) {
+
+            refs.hudClass.textContent =
+                character?.className ||
+                character?.class ||
+                player.className ||
+                "Aventureiro";
+
+        }
+
+
+        if (
+            refs.hudName
+        ) {
+
+            refs.hudName.textContent =
+                player.name ||
+                "Viajante";
+
+        }
+
+
+        if (
+            refs.moneyText
+        ) {
+
+            refs.moneyText.textContent =
+                getMoneyDisplay();
+
+        }
+
+
+        setBarWidth(
+            refs.hpBar,
+            player.hp,
+            player.maxHp
+        );
+
+
+        setBarWidth(
+            refs.magicBar,
+            player.magic,
+            player.maxMagic
+        );
+
+
+        setBarWidth(
+            refs.energyBar,
+            player.energy,
+            player.maxEnergy
+        );
+
+
+        if (
+            refs.hpText
+        ) {
+
+            refs.hpText.textContent =
+                `${Math.ceil(player.hp)}/${Math.ceil(player.maxHp)}`;
+
+        }
+
+
+        if (
+            refs.magicText
+        ) {
+
+            refs.magicText.textContent =
+                `${Math.ceil(player.magic)}/${Math.ceil(player.maxMagic)}`;
+
+        }
+
+
+        if (
+            refs.energyText
+        ) {
+
+            refs.energyText.textContent =
+                `${Math.ceil(player.energy)}/${Math.ceil(player.maxEnergy)}`;
+
+        }
+
+
+        if (
+            refs.hungerText
+        ) {
+
+            refs.hungerText.textContent =
+                Math.ceil(
+                    player.hunger
+                );
+
+        }
+
+
+        if (
+            refs.fatigueText
+        ) {
+
+            refs.fatigueText.textContent =
+                Math.ceil(
+                    player.fatigue
+                );
+
+        }
+
+
+        if (
+            refs.levelText
+        ) {
+
+            refs.levelText.textContent =
+                player.level;
+
+        }
+
+
+        if (
+            refs.xpText
+        ) {
+
+            refs.xpText.textContent =
+                player.level >=
+                    MAX_LEVEL
+                    ? "MÁXIMO"
+                    : `${Math.floor(player.xp)} / ${Math.floor(player.xpToNext)}`;
+
+        }
+
+
+        if (
+            refs.locationLabel
+        ) {
+
+            refs.locationLabel.textContent =
+                getCurrentLocationName();
+
+        }
+
+
+        if (
+            refs.weightText
+        ) {
+
+            refs.weightText.textContent =
+                `${getInventoryWeight().toFixed(1)}/${player.inventoryWeightLimit}`;
+
+        }
+
+
+        if (
+            refs.minimap
+        ) {
+
+            refs.minimap.style.display =
+                player.minimapOwned
+                    ? ""
+                    : "none";
+
+        }
+
+    }
+
+
+    function getCurrentLocationName() {
+
+        if (
+            state.houseMode &&
+            state.currentHouse
+        ) {
+
+            const interior =
+                typeof HOUSE_INTERIORS !==
+                    "undefined"
+                    ? HOUSE_INTERIORS[
+                        state.currentHouse
+                    ]
+                    : null;
+
+
+            if (
+                interior?.name
+            ) {
+
+                return interior.name;
+
+            }
+
+        }
+
+
+        if (
+            typeof REGION_META !==
+                "undefined" &&
+            REGION_META[
+                state.area
+            ]?.name
+        ) {
+
+            return REGION_META[
+                state.area
+            ].name;
+
+        }
+
+
+        if (
+            state.world?.name
+        ) {
+
+            return state.world.name;
+
+        }
+
+
+        return String(
+            state.area ||
+            "VEYRA"
+        )
+            .replaceAll(
+                "_",
+                " "
+            )
+            .toUpperCase();
+
+    }
+
+
+    /* ============================================================
+       PERSONAGENS
+       ============================================================ */
+
+    function getCharacterCollection() {
+
+        if (
+            typeof CHARACTERS ===
+                "undefined"
+        ) {
+
+            return [];
+
+        }
+
+
+        if (
+            Array.isArray(
+                CHARACTERS
+            )
+        ) {
+
+            return CHARACTERS;
+
+        }
+
+
+        return Object.values(
+            CHARACTERS
+        );
+
+    }
+
+
+    function getCharacterValue(
+        character,
+        stat
+    ) {
+
+        return finiteNumber(
+            character?.[stat],
+            0
+        );
+
+    }
+
+
+    function getCharacterBarPercentage(
+        character,
+        stat
+    ) {
+
+        if (
+            typeof getCharacterStatBarValue ===
+                "function"
+        ) {
+
+            try {
+
+                return clamp(
+                    getCharacterStatBarValue(
+                        character,
+                        stat
+                    ),
+                    0,
+                    100
+                );
+
+            } catch {
+                /* fallback abaixo */
+            }
+
+        }
+
+
+        const collection =
+            getCharacterCollection();
+
+
+        const values =
+            collection.map(
+                entry =>
+                    getCharacterValue(
+                        entry,
+                        stat
+                    )
+            );
+
+
+        const max =
+            Math.max(
+                1,
+                ...values
+            );
+
+
+        return clamp(
+            getCharacterValue(
+                character,
+                stat
+            ) /
+                max *
+                100,
+            0,
+            100
+        );
+
+    }
+
+
+    function renderCharacterCards() {
+
+        const container =
+            finalUIRuntime
+                .refs
+                .characterCards;
+
+
+        if (!container) {
+            return;
+        }
+
+
+        const characters =
+            getCharacterCollection();
+
+
+        container.innerHTML =
+            characters
+                .map(
+                    character => {
+
+                        const id =
+                            character.id;
+
+
+                        const selected =
+                            finalUIRuntime
+                                .selectedCharacterId ===
+                            id;
+
+
+                        const attackName =
+                            character
+                                .basicAttack
+                                ?.name ||
+                            character
+                                .basicAttack
+                                ?.id ||
+                            "Ataque básico";
+
+
+                        const description =
+                            character.description ||
+                            character
+                                .classDescription ||
+                            "";
+
+
+                        const stats = [
+
+                            [
+                                "VIDA",
+                                "hp"
+                            ],
+
+                            [
+                                "MAGIA",
+                                "magic"
+                            ],
+
+                            [
+                                "ENERGIA",
+                                "energy"
+                            ],
+
+                            [
+                                "DANO",
+                                "damage"
+                            ],
+
+                            [
+                                "DEFESA",
+                                "defense"
+                            ],
+
+                            [
+                                "VELOC.",
+                                "speed"
+                            ]
+
+                        ];
+
+
+                        const bars =
+                            stats
+                                .map(
+                                    (
+                                        [
+                                            label,
+                                            stat
+                                        ]
+                                    ) => {
+
+                                        const percent =
+                                            getCharacterBarPercentage(
+                                                character,
+                                                stat
+                                            );
+
+
+                                        return `
+                                            <div
+                                                style="
+                                                    display:grid;
+                                                    grid-template-columns:54px 1fr;
+                                                    align-items:center;
+                                                    gap:6px;
+                                                    margin-top:5px;
+                                                "
+                                            >
+                                                <span
+                                                    style="
+                                                        font-size:9px;
+                                                        opacity:.72;
+                                                    "
+                                                >
+                                                    ${label}
+                                                </span>
+
+                                                <span
+                                                    style="
+                                                        height:5px;
+                                                        background:rgba(255,255,255,.08);
+                                                        border-radius:99px;
+                                                        overflow:hidden;
+                                                    "
+                                                >
+                                                    <i
+                                                        style="
+                                                            display:block;
+                                                            width:${percent}%;
+                                                            height:100%;
+                                                            background:var(--char-color);
+                                                            border-radius:inherit;
+                                                        "
+                                                    ></i>
+                                                </span>
+                                            </div>
+                                        `;
+
+                                    }
+                                )
+                                .join("");
+
+
+                        return `
+                            <button
+                                type="button"
+                                class="character-card ${selected ? "selected" : ""}"
+                                data-character-id="${escapeHTML(id)}"
+                                style="
+                                    --char-color:${character.color || "#d0b477"};
+                                    --char-glow:${rgba(character.color || "#d0b477", 0.28)};
+                                    --char-bg:${rgba(character.color || "#d0b477", 0.09)};
+                                "
+                            >
+
+                                <div class="char-art">
+                                    ${escapeHTML(character.icon || "✦")}
+                                </div>
+
+                                <h3>
+                                    ${escapeHTML(character.name || id)}
+                                </h3>
+
+                                <div class="role">
+                                    ${escapeHTML(character.className || character.class || "")}
+                                </div>
+
+                                <p>
+                                    ${escapeHTML(description)}
+                                </p>
+
+                                <p>
+                                    <strong>ATAQUE:</strong>
+                                    ${escapeHTML(attackName)}
+                                </p>
+
+                                <div
+                                    style="
+                                        margin-top:11px;
+                                    "
+                                >
+                                    ${bars}
+                                </div>
+
+                            </button>
+                        `;
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    function selectCharacter(
+        characterId
+    ) {
+
+        const character =
+            getCharacterById(
+                characterId
+            );
+
+
+        if (!character) {
+            return false;
+        }
+
+
+        finalUIRuntime
+            .selectedCharacterId =
+            characterId;
+
+
+        state.selectedCharacter =
+            characterId;
+
+
+        renderCharacterCards();
+
+
+        if (
+            finalUIRuntime
+                .refs
+                .nameError
+        ) {
+
+            finalUIRuntime
+                .refs
+                .nameError
+                .textContent =
+                "";
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       NOVO JOGO
+       ============================================================ */
+
+    function openCharacterSelection() {
+
+        state.running =
+            false;
+
+
+        state.selectedCharacter =
+            null;
+
+
+        finalUIRuntime
+            .selectedCharacterId =
+            null;
+
+
+        if (
+            finalUIRuntime
+                .refs
+                .playerName
+        ) {
+
+            finalUIRuntime
+                .refs
+                .playerName
+                .value =
+                "";
+
+        }
+
+
+        if (
+            finalUIRuntime
+                .refs
+                .nameError
+        ) {
+
+            finalUIRuntime
+                .refs
+                .nameError
+                .textContent =
+                "";
+
+        }
+
+
+        renderCharacterCards();
+
+
+        showScreen(
+            finalUIRuntime
+                .refs
+                .characterScreen
+        );
+
+    }
+
+
+    function validateCharacterStart() {
+
+        const nameInput =
+            finalUIRuntime
+                .refs
+                .playerName;
+
+
+        const name =
+            String(
+                nameInput
+                    ?.value ||
+                ""
+            )
+                .trim();
+
+
+        const characterId =
+            finalUIRuntime
+                .selectedCharacterId;
+
+
+        let error = "";
+
+
+        if (
+            !characterId
+        ) {
+
+            error =
+                "Escolha um personagem.";
+
+        } else if (
+            name.length <
+            2
+        ) {
+
+            error =
+                "Digite um nome com pelo menos 2 caracteres.";
+
+        } else if (
+            name.length >
+            16
+        ) {
+
+            error =
+                "O nome pode ter no máximo 16 caracteres.";
+
+        }
+
+
+        if (
+            finalUIRuntime
+                .refs
+                .nameError
+        ) {
+
+            finalUIRuntime
+                .refs
+                .nameError
+                .textContent =
+                error;
+
+        }
+
+
+        if (error) {
+
+            return null;
+
+        }
+
+
+        return {
+
+            name,
+
+            characterId
+
+        };
+
+    }
+
+
+    /* ============================================================
+       FACTORY COMPATÍVEL
+
+       Aceita tanto a assinatura nova quanto
+       versões antigas.
+       ============================================================ */
+
+    function createPlayerCompatible(
+        name,
+        characterId
+    ) {
+
+        const character =
+            getCharacterById(
+                characterId
+            );
+
+
+        if (!character) {
+
+            throw new Error(
+                `Personagem inválido: ${characterId}`
+            );
+
+        }
+
+
+        let result = null;
+
+
+        /*
+            V30 / versões novas.
+        */
+        if (
+            typeof createNewPlayer ===
+                "function"
+        ) {
+
+            try {
+
+                result =
+                    createNewPlayer(
+                        name,
+                        characterId
+                    );
+
+            } catch {
+                result = null;
+            }
+
+
+            if (!result) {
+
+                try {
+
+                    result =
+                        createNewPlayer(
+                            name,
+                            character
+                        );
+
+                } catch {
+                    result = null;
+                }
+
+            }
+
+        }
+
+
+        /*
+            Compatibilidade antiga.
+        */
+        if (
+            !result &&
+            typeof createPlayer ===
+                "function"
+        ) {
+
+            try {
+
+                result =
+                    createPlayer(
+                        name,
+                        character
+                    );
+
+            } catch {
+                result = null;
+            }
+
+
+            if (!result) {
+
+                try {
+
+                    result =
+                        createPlayer(
+                            name,
+                            characterId
+                        );
+
+                } catch {
+                    result = null;
+                }
+
+            }
+
+        }
+
+
+        if (!result) {
+
+            throw new Error(
+                "Nenhuma factory de jogador conseguiu criar o personagem."
+            );
+
+        }
+
+
+        return result;
+
+    }
+
+
+    function beginNewGame() {
+
+        const selection =
+            validateCharacterStart();
+
+
+        if (!selection) {
+
+            return false;
+
+        }
+
+
+        clearGameRuntimeBeforeLoad();
+
+
+        const player =
+            createPlayerCompatible(
+                selection.name,
+                selection.characterId
+            );
+
+
+        state.player =
+            player;
+
+
+        state.selectedCharacter =
+            selection.characterId;
+
+
+        state.area =
+            "village";
+
+
+        state.houseMode =
+            false;
+
+
+        state.currentHouse =
+            null;
+
+
+        state.houseReturn =
+            null;
+
+
+        state.running =
+            true;
+
+
+        state.paused =
+            false;
+
+
+        clearPauseReasonsSafe();
+
+
+        /*
+            Constrói o mundo somente DEPOIS
+            do jogador existir.
+        */
+        loadWorld(
+            "village",
+            "default"
+        );
+
+
+        repairPlayerAfterLoad(
+            player
+        );
+
+
+        if (
+            typeof recalculatePlayerStats ===
+                "function"
+        ) {
+
+            recalculatePlayerStats();
+
+        }
+
+
+        state.camera.x =
+            player.x;
+
+
+        state.camera.y =
+            player.y;
+
+
+        state.camera.targetX =
+            player.x;
+
+
+        state.camera.targetY =
+            player.y;
+
+
+        showScreen(
+            finalUIRuntime
+                .refs
+                .gameScreen
+        );
+
+
+        resizeRenderer();
+
+
+        updateHudDOM(
+            true
+        );
+
+
+        renderMiniMapCanvas(
+            true
+        );
+
+
+        showToast(
+            "Sua jornada começou.",
+            "success",
+            2600
+        );
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       LIMPEZA RUNTIME
+       ============================================================ */
+
+    function clearPauseReasonsSafe() {
+
+        if (
+            typeof clearPauseReasons ===
+                "function"
+        ) {
+
+            clearPauseReasons();
+
+            return;
+
+        }
+
+
+        state.paused =
+            false;
+
+
+        if (
+            state.pauseReasons instanceof
+            Set
+        ) {
+
+            state.pauseReasons.clear();
+
+        }
+
+    }
+
+
+    function clearGameRuntimeBeforeLoad() {
+
+        state.dialogue =
+            null;
+
+
+        state.travel =
+            null;
+
+
+        state.battle =
+            null;
+
+
+        state.activePanel =
+            null;
+
+
+        state.cutscene =
+            null;
+
+
+        state.cutsceneQueue =
+            [];
+
+
+        state.fragmentMinigame =
+            null;
+
+
+        state.holdAction =
+            null;
+
+
+        state.deathState =
+            null;
+
+
+        state.bossBarTarget =
+            null;
+
+
+        state.shopNPC =
+            null;
+
+
+        state.shopMode =
+            "buy";
+
+
+        state.keys?.clear?.();
+
+
+        clearPauseReasonsSafe();
+
+
+        hideAllGamePanels();
+
+    }
+
+
+    /* ============================================================
+       SAVE — SERIALIZAÇÃO
+       ============================================================ */
+
+    function serializableCopy(
+        value,
+        seen = new WeakSet()
+    ) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+
+            return value;
+
+        }
+
+
+        const type =
+            typeof value;
+
+
+        if (
+            type === "string" ||
+            type === "number" ||
+            type === "boolean"
+        ) {
+
+            return value;
+
+        }
+
+
+        if (
+            type ===
+                "function" ||
+            type ===
+                "symbol"
+        ) {
+
+            return undefined;
+
+        }
+
+
+        if (
+            value instanceof Set
+        ) {
+
+            return Array
+                .from(
+                    value
+                )
+                .map(
+                    entry =>
+                        serializableCopy(
+                            entry,
+                            seen
+                        )
+                );
+
+        }
+
+
+        if (
+            Array.isArray(
+                value
+            )
+        ) {
+
+            return value
+                .map(
+                    entry =>
+                        serializableCopy(
+                            entry,
+                            seen
+                        )
+                )
+                .filter(
+                    entry =>
+                        entry !==
+                        undefined
+                );
+
+        }
+
+
+        if (
+            type ===
+                "object"
+        ) {
+
+            if (
+                seen.has(
+                    value
+                )
+            ) {
+
+                return undefined;
+
+            }
+
+
+            seen.add(
+                value
+            );
+
+
+            const output = {};
+
+
+            for (
+                const [
+                    key,
+                    entry
+                ] of
+                Object.entries(
+                    value
+                )
+            ) {
+
+                const copied =
+                    serializableCopy(
+                        entry,
+                        seen
+                    );
+
+
+                if (
+                    copied !==
+                    undefined
+                ) {
+
+                    output[key] =
+                        copied;
+
+                }
+
+            }
+
+
+            seen.delete(
+                value
+            );
+
+
+            return output;
+
+        }
+
+
+        return undefined;
+
+    }
+
+
+    function createSavedPlayerSnapshot() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return null;
+        }
+
+
+        const copy =
+            serializableCopy(
+                player
+            );
+
+
+        /*
+            Runtime temporário não é save.
+        */
+        copy.dead =
+            false;
+
+
+        copy.dashRuntime =
+            null;
+
+
+        copy.attackCooldown =
+            0;
+
+
+        copy.universalDashCooldown =
+            0;
+
+
+        copy.invincible =
+            0;
+
+
+        copy.hurtAnim =
+            0;
+
+
+        copy.movementSlowTimer =
+            0;
+
+
+        copy.movementSlowMultiplier =
+            1;
+
+
+        copy.poisonEffect =
+            null;
+
+
+        copy.classBuffs =
+            [];
+
+
+        copy.activePotionBuffs =
+            [];
+
+
+        copy.resting = {
+
+            active: false,
+            timer: 0,
+            duration: 0
+
+        };
+
+
+        if (
+            copy.skillCooldowns
+        ) {
+
+            for (
+                const key of
+                Object.keys(
+                    copy.skillCooldowns
+                )
+            ) {
+
+                copy.skillCooldowns[key] =
+                    0;
+
+            }
+
+        }
+
+
+        return copy;
+
+    }
+
+
+    function buildSavePayload() {
+
+        const player =
+            createSavedPlayerSnapshot();
+
+
+        if (!player) {
+            return null;
+        }
+
+
+        return {
+
+            game:
+                "VEYRA_A_QUIETUDE",
+
+            version:
+                typeof GAME_VERSION !==
+                    "undefined"
+                    ? GAME_VERSION
+                    : 30,
+
+            versionName:
+                typeof GAME_VERSION_NAME !==
+                    "undefined"
+                    ? GAME_VERSION_NAME
+                    : "VEYRA",
+
+            savedAt:
+                Date.now(),
+
+            player,
+
+            scene: {
+
+                area:
+                    state.area ||
+                    "village",
+
+                houseMode:
+                    Boolean(
+                        state.houseMode
+                    ),
+
+                currentHouse:
+                    state.currentHouse ||
+                    null,
+
+                houseReturn:
+                    serializableCopy(
+                        state.houseReturn
+                    ),
+
+                x:
+                    finiteNumber(
+                        state.player.x,
+                        0
+                    ),
+
+                y:
+                    finiteNumber(
+                        state.player.y,
+                        0
+                    ),
+
+                facing:
+                    state.player
+                        .facing ||
+                    "down"
+
+            }
+
+            /*
+                state.dev NÃO É SALVO.
+            */
+
+        };
+
+    }
+
+
+    function saveGame(
+        options = {}
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !state.running
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.dead
+        ) {
+
+            if (!options.silent) {
+
+                showToast(
+                    "Não é possível salvar enquanto está derrotado.",
+                    "warning"
+                );
+
+            }
+
+            return false;
+
+        }
+
+
+        const payload =
+            buildSavePayload();
+
+
+        if (!payload) {
+
+            return false;
+
+        }
+
+
+        try {
+
+            localStorage.setItem(
+                SAVE_KEY,
+                JSON.stringify(
+                    payload
+                )
+            );
+
+
+            finalUIRuntime
+                .autosaveElapsed =
+                0;
+
+
+            refreshContinueButton();
+
+
+            if (
+                !options.silent
+            ) {
+
+                showToast(
+                    "JOGO SALVO",
+                    "success",
+                    1900
+                );
+
+            }
+
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "VEYRA — erro ao salvar:",
+                error
+            );
+
+
+            if (
+                !options.silent
+            ) {
+
+                showToast(
+                    "Não foi possível salvar o jogo.",
+                    "error",
+                    3000
+                );
+
+            }
+
+
+            return false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOCALIZAR SAVE
+       ============================================================ */
+
+    function getAllSaveKeys() {
+
+        const keys = [];
+
+
+        if (
+            typeof SAVE_KEY ===
+                "string"
+        ) {
+
+            keys.push(
+                SAVE_KEY
+            );
+
+        }
+
+
+        if (
+            typeof LEGACY_SAVE_KEYS !==
+                "undefined" &&
+            Array.isArray(
+                LEGACY_SAVE_KEYS
+            )
+        ) {
+
+            keys.push(
+                ...LEGACY_SAVE_KEYS
+            );
+
+        }
+
+
+        /*
+            Chaves conhecidas de builds anteriores.
+        */
+        keys.push(
+
+            "veyra_save_v30",
+            "veyra_save_v25",
+            "veyra_save_v20_five_parts",
+            "veyra_save_v20_upgrade",
+            "veyra_save_v19_rebuild",
+            "veyra_save_v19",
+            "veyra_save_v18_rebuild",
+            "veyra_save_v14_stable"
+
+        );
+
+
+        return [
+            ...new Set(
+                keys.filter(Boolean)
+            )
+        ];
+
+    }
+
+
+    function parseSaveFromKey(
+        key
+    ) {
+
+        try {
+
+            const raw =
+                localStorage.getItem(
+                    key
+                );
+
+
+            if (!raw) {
+                return null;
+            }
+
+
+            const data =
+                JSON.parse(
+                    raw
+                );
+
+
+            if (
+                !data ||
+                typeof data !==
+                    "object"
+            ) {
+
+                return null;
+
+            }
+
+
+            return {
+
+                key,
+                data
+
+            };
+
+        } catch (error) {
+
+            console.warn(
+                `VEYRA — save inválido em ${key}:`,
+                error
+            );
+
+
+            return null;
+
+        }
+
+    }
+
+
+    function findAvailableSave() {
+
+        const current =
+            parseSaveFromKey(
+                SAVE_KEY
+            );
+
+
+        if (current) {
+
+            return current;
+
+        }
+
+
+        for (
+            const key of
+            getAllSaveKeys()
+        ) {
+
+            if (
+                key ===
+                SAVE_KEY
+            ) {
+                continue;
+            }
+
+
+            const record =
+                parseSaveFromKey(
+                    key
+                );
+
+
+            if (record) {
+
+                return record;
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function refreshContinueButton() {
+
+        const button =
+            finalUIRuntime
+                .refs
+                .continueBtn;
+
+
+        const hint =
+            finalUIRuntime
+                .refs
+                .continueHint;
+
+
+        if (!button) {
+            return;
+        }
+
+
+        const save =
+            findAvailableSave();
+
+
+        button.disabled =
+            !save;
+
+
+        if (!hint) {
+            return;
+        }
+
+
+        if (!save) {
+
+            hint.textContent =
+                "Nenhum progresso salvo.";
+
+            return;
+
+        }
+
+
+        const timestamp =
+            finiteNumber(
+                save.data
+                    ?.savedAt,
+                0
+            );
+
+
+        if (
+            timestamp > 0
+        ) {
+
+            const date =
+                new Date(
+                    timestamp
+                );
+
+
+            hint.textContent =
+                `Último registro: ${date.toLocaleString("pt-BR")}`;
+
+        } else {
+
+            hint.textContent =
+                "Progresso encontrado.";
+
+        }
+
+    }
+
+
+    /* ============================================================
+       MERGE DE SAVE
+       ============================================================ */
+
+    function isPlainObject(
+        value
+    ) {
+
+        return Boolean(
+            value &&
+            typeof value ===
+                "object" &&
+            !Array.isArray(
+                value
+            )
+        );
+
+    }
+
+
+    function mergeSaveObject(
+        base,
+        saved
+    ) {
+
+        if (
+            saved ===
+            undefined
+        ) {
+
+            return base;
+
+        }
+
+
+        if (
+            Array.isArray(
+                saved
+            )
+        ) {
+
+            return saved.map(
+                item =>
+                    serializableCopy(
+                        item
+                    )
+            );
+
+        }
+
+
+        if (
+            !isPlainObject(
+                saved
+            )
+        ) {
+
+            return saved;
+
+        }
+
+
+        const output =
+            isPlainObject(
+                base
+            )
+                ? {
+                    ...base
+                }
+                : {};
+
+
+        for (
+            const [
+                key,
+                value
+            ] of
+            Object.entries(
+                saved
+            )
+        ) {
+
+            if (
+                isPlainObject(
+                    value
+                )
+            ) {
+
+                output[key] =
+                    mergeSaveObject(
+                        output[key],
+                        value
+                    );
+
+            } else if (
+                Array.isArray(
+                    value
+                )
+            ) {
+
+                output[key] =
+                    value.map(
+                        item =>
+                            serializableCopy(
+                                item
+                            )
+                    );
+
+            } else {
+
+                output[key] =
+                    value;
+
+            }
+
+        }
+
+
+        return output;
+
+    }
+
+
+    /* ============================================================
+       EXTRAIR PLAYER DE SAVES ANTIGOS
+       ============================================================ */
+
+    function extractPlayerFromSave(
+        data
+    ) {
+
+        if (!data) {
+            return null;
+        }
+
+
+        if (
+            data.player &&
+            typeof data.player ===
+                "object"
+        ) {
+
+            return data.player;
+
+        }
+
+
+        if (
+            data.state?.player &&
+            typeof data.state.player ===
+                "object"
+        ) {
+
+            return data.state.player;
+
+        }
+
+
+        if (
+            data.characterId ||
+            data.inventory
+        ) {
+
+            return data;
+
+        }
+
+
+        return null;
+
+    }
+
+
+    function extractSceneFromSave(
+        data,
+        rawPlayer
+    ) {
+
+        const scene =
+            data.scene ||
+            data.worldState ||
+            {};
+
+
+        return {
+
+            area:
+                scene.area ||
+                data.area ||
+                rawPlayer?.area ||
+                "village",
+
+            houseMode:
+                Boolean(
+                    scene.houseMode ||
+                    data.houseMode
+                ),
+
+            currentHouse:
+                scene.currentHouse ||
+                data.currentHouse ||
+                null,
+
+            houseReturn:
+                scene.houseReturn ||
+                data.houseReturn ||
+                null,
+
+            x:
+                finiteNumber(
+                    scene.x,
+                    finiteNumber(
+                        rawPlayer?.x,
+                        NaN
+                    )
+                ),
+
+            y:
+                finiteNumber(
+                    scene.y,
+                    finiteNumber(
+                        rawPlayer?.y,
+                        NaN
+                    )
+                ),
+
+            facing:
+                scene.facing ||
+                rawPlayer?.facing ||
+                "down"
+
+        };
+
+    }
+
+
+    /* ============================================================
+       SANITIZAÇÃO DO PLAYER
+       ============================================================ */
+
+    function ensureArray(
+        value
+    ) {
+
+        if (
+            Array.isArray(
+                value
+            )
+        ) {
+
+            return value;
+
+        }
+
+
+        if (
+            value instanceof Set
+        ) {
+
+            return [
+                ...value
+            ];
+
+        }
+
+
+        return [];
+
+    }
+
+
+    function repairPlayerAfterLoad(
+        player
+    ) {
+
+        if (!player) {
+            return;
+        }
+
+
+        player.inventory =
+            isPlainObject(
+                player.inventory
+            )
+                ? player.inventory
+                : {};
+
+
+        player.equipment =
+            isPlainObject(
+                player.equipment
+            )
+                ? player.equipment
+                : {};
+
+
+        player.stats =
+            isPlainObject(
+                player.stats
+            )
+                ? player.stats
+                : {
+
+                    power: 0,
+                    energy: 0,
+                    hunger: 0,
+                    fatigue: 0
+
+                };
+
+
+        for (
+            const stat of
+            [
+                "power",
+                "energy",
+                "hunger",
+                "fatigue"
+            ]
+        ) {
+
+            player.stats[stat] =
+                clamp(
+                    integer(
+                        player.stats[
+                            stat
+                        ],
+                        0
+                    ),
+                    0,
+                    STAT_CAP
+                );
+
+        }
+
+
+        player.statPoints =
+            Math.max(
+                0,
+                integer(
+                    player.statPoints,
+                    player.statusPoints ||
+                    0
+                )
+            );
+
+
+        player.defeatedBosses =
+            [
+                ...new Set(
+                    ensureArray(
+                        player
+                            .defeatedBosses
+                    )
+                )
+            ];
+
+
+        player.discoveredBosses =
+            [
+                ...new Set(
+                    ensureArray(
+                        player
+                            .discoveredBosses
+                    )
+                )
+            ];
+
+
+        player.unlockedAreas =
+            [
+                ...new Set(
+                    ensureArray(
+                        player
+                            .unlockedAreas
+                    )
+                )
+            ];
+
+
+        player.discoveredMapLocations =
+            [
+                ...new Set(
+                    ensureArray(
+                        player
+                            .discoveredMapLocations
+                    )
+                )
+            ];
+
+
+        player.purchasedUniqueItems =
+            [
+                ...new Set(
+                    ensureArray(
+                        player
+                            .purchasedUniqueItems
+                    )
+                )
+            ];
+
+
+        player.abilities =
+            isPlainObject(
+                player.abilities
+            )
+                ? player.abilities
+                : {};
+
+
+        player.abilities.dashV1 =
+            Boolean(
+                player
+                    .abilities
+                    .dashV1
+            );
+
+
+        player.abilities.dashV2 =
+            Boolean(
+                player
+                    .abilities
+                    .dashV2
+            );
+
+
+        /*
+            V2 substitui V1.
+        */
+        if (
+            player.abilities.dashV2
+        ) {
+
+            player.abilities.dashV1 =
+                false;
+
+        }
+
+
+        repairQuestStructures(
+            player
+        );
+
+
+        repairArmorProgression(
+            player
+        );
+
+
+        player.dead =
+            false;
+
+
+        player.dashRuntime =
+            null;
+
+
+        player.attackCooldown =
+            0;
+
+
+        player.universalDashCooldown =
+            0;
+
+
+        player.invincible =
+            0;
+
+
+        player.hurtAnim =
+            0;
+
+
+        player.movementSlowTimer =
+            0;
+
+
+        player.movementSlowMultiplier =
+            1;
+
+
+        player.poisonEffect =
+            null;
+
+
+        player.classBuffs =
+            [];
+
+
+        player.activePotionBuffs =
+            [];
+
+
+        player.skillCooldowns =
+            isPlainObject(
+                player.skillCooldowns
+            )
+                ? player.skillCooldowns
+                : {};
+
+
+        player.skillCooldowns.q =
+            0;
+
+
+        player.skillCooldowns.r =
+            0;
+
+
+        player.skillCooldowns.f =
+            0;
+
+
+        player.resting = {
+
+            active: false,
+            timer: 0,
+            duration: 0
+
+        };
+
+
+        player.lanternOwned =
+            Boolean(
+                player.lanternOwned ||
+                getInventoryCountDirect(
+                    player,
+                    "lanterna"
+                ) >
+                    0
+            );
+
+
+        player.minimapOwned =
+            Boolean(
+                player.minimapOwned ||
+                getInventoryCountDirect(
+                    player,
+                    "minimapa"
+                ) >
+                    0
+            );
+
+
+        if (
+            player.lanternOwned
+        ) {
+
+            player.inventory.lanterna =
+                1;
+
+        }
+
+
+        if (
+            player.minimapOwned
+        ) {
+
+            player.inventory.minimapa =
+                1;
+
+        }
+
+
+        player.gateUnlocks =
+            isPlainObject(
+                player.gateUnlocks
+            )
+                ? player.gateUnlocks
+                : {};
+
+
+        player.gateDialogueIndex =
+            isPlainObject(
+                player.gateDialogueIndex
+            )
+                ? player.gateDialogueIndex
+                : {};
+
+
+        player.gateDialogueIndex.north =
+            Math.max(
+                0,
+                integer(
+                    player
+                        .gateDialogueIndex
+                        .north,
+                    0
+                )
+            );
+
+
+        player.skyTrial =
+            isPlainObject(
+                player.skyTrial
+            )
+                ? player.skyTrial
+                : {};
+
+
+        player.skyTrial.wave =
+            clamp(
+                integer(
+                    player.skyTrial.wave,
+                    0
+                ),
+                0,
+                5
+            );
+
+
+        player.skyTrial.activeWave =
+            0;
+
+
+        player.skyTrial.started =
+            Boolean(
+                player.skyTrial.started ||
+                player.skyTrial.wave >
+                    0
+            );
+
+
+        player.skyTrial.complete =
+            Boolean(
+                player.skyTrial.complete ||
+                player.skyTrial.wave >=
+                    5
+            );
+
+
+        player.level =
+            clamp(
+                integer(
+                    player.level,
+                    1
+                ),
+                1,
+                MAX_LEVEL
+            );
+
+
+        player.money =
+            Math.max(
+                0,
+                integer(
+                    player.money,
+                    0
+                )
+            );
+
+
+        /*
+            Garantia da missão Miguel:
+            só fica disponível após Dash.
+        */
+        if (
+            player.abilities.dashV1 ||
+            player.abilities.dashV2
+        ) {
+
+            player
+                .miguelQuest
+                .missionAvailable =
+                true;
+
+        }
+
+
+        if (
+            player
+                .miguelQuest
+                .completed
+        ) {
+
+            player
+                .miguelQuest
+                .trackerVisible =
+                false;
+
+        } else if (
+            player
+                .miguelQuest
+                .missionAccepted
+        ) {
+
+            player
+                .miguelQuest
+                .trackerVisible =
+                true;
+
+        }
+
+
+        /*
+            Regras anti-duplicação.
+        */
+        if (
+            player
+                .miguelQuest
+                .keyConsumed ||
+            player
+                .miguelQuest
+                .secretDoorOpened
+        ) {
+
+            player.inventory
+                .chaveObscura =
+                0;
+
+        } else if (
+            player
+                .miguelQuest
+                .keyCollected
+        ) {
+
+            player.inventory
+                .chaveObscura =
+                Math.min(
+                    1,
+                    Math.max(
+                        1,
+                        integer(
+                            player
+                                .inventory
+                                .chaveObscura,
+                            1
+                        )
+                    )
+                );
+
+        }
+
+
+        if (
+            player
+                .miguelQuest
+                .fragmentDelivered ||
+            player
+                .miguelQuest
+                .completed
+        ) {
+
+            player.inventory
+                .fragmentoVazio =
+                0;
+
+        } else if (
+            player
+                .miguelQuest
+                .fragmentCollected
+        ) {
+
+            player.inventory
+                .fragmentoVazio =
+                1;
+
+        }
+
+
+        if (
+            player.abilities.dashV2
+        ) {
+
+            const quest =
+                player.miguelQuest;
+
+
+            quest.missionAvailable =
+                true;
+
+            quest.missionAccepted =
+                true;
+
+            quest.secretDoorOpened =
+                true;
+
+            quest.keyCollected =
+                true;
+
+            quest.keyConsumed =
+                true;
+
+            quest.dungeonDiscovered =
+                true;
+
+            quest.vaelkorActivated =
+                true;
+
+            quest.vaelkorDefeated =
+                true;
+
+            quest.fragmentSpawned =
+                true;
+
+            quest.fragmentCollected =
+                true;
+
+            quest.fragmentDelivered =
+                true;
+
+            quest.fragmentMiniGameCompleted =
+                true;
+
+            quest.completed =
+                true;
+
+            quest.trackerVisible =
+                false;
+
+
+            if (
+                typeof MIGUEL_QUEST_STAGE !==
+                    "undefined"
+            ) {
+
+                quest.stage =
+                    MIGUEL_QUEST_STAGE
+                        .COMPLETE ??
+                    quest.stage;
+
+            }
+
+        }
+
+    }
+
+
+    function getInventoryCountDirect(
+        player,
+        itemId
+    ) {
+
+        return Math.max(
+            0,
+            integer(
+                player
+                    ?.inventory
+                    ?.[itemId],
+                0
+            )
+        );
+
+    }
+
+
+    function repairQuestStructures(
+        player
+    ) {
+
+        player.quest =
+            isPlainObject(
+                player.quest
+            )
+                ? player.quest
+                : {};
+
+
+        const defaultQuestState =
+            typeof QUEST_STATE !==
+                "undefined"
+                ? QUEST_STATE
+                    .NOT_STARTED
+                : "not_started";
+
+
+        for (
+            const id of
+            [
+                "wood",
+                "coal"
+            ]
+        ) {
+
+            player.quest[id] =
+                isPlainObject(
+                    player.quest[id]
+                )
+                    ? player.quest[id]
+                    : {};
+
+
+            player.quest[id].state =
+                player.quest[id]
+                    .state ??
+                defaultQuestState;
+
+
+            player.quest[id].rewarded =
+                Boolean(
+                    player.quest[id]
+                        .rewarded
+                );
+
+        }
+
+
+        player.miguelQuest =
+            isPlainObject(
+                player.miguelQuest
+            )
+                ? player.miguelQuest
+                : {};
+
+
+        const quest =
+            player.miguelQuest;
+
+
+        const booleanFields = [
+
+            "miguelFound",
+            "dashV1SeenByMiguel",
+            "missionAvailable",
+            "missionAccepted",
+
+            "keyLocationDiscovered",
+            "keyCollected",
+            "keyConsumed",
+
+            "secretDoorDiscovered",
+            "secretDoorOpened",
+
+            "dungeonDiscovered",
+
+            "vaelkorActivated",
+            "vaelkorPhaseTwoSeen",
+            "vaelkorDefeated",
+            "vaelkorDeathCutscenePlayed",
+
+            "fragmentSpawned",
+            "fragmentMiniGameCompleted",
+            "fragmentCollected",
+            "fragmentDelivered",
+
+            "completed",
+            "trackerVisible"
+
+        ];
+
+
+        for (
+            const field of
+            booleanFields
+        ) {
+
+            quest[field] =
+                Boolean(
+                    quest[field]
+                );
+
+        }
+
+
+        quest.clearedDungeonEnemyIds =
+            [
+                ...new Set(
+                    ensureArray(
+                        quest
+                            .clearedDungeonEnemyIds
+                    )
+                )
+            ];
+
+
+        quest.objectiveRevision =
+            Math.max(
+                0,
+                integer(
+                    quest.objectiveRevision,
+                    0
+                )
+            );
+
+
+        quest.trackerObjective =
+            String(
+                quest.trackerObjective ||
+                ""
+            );
+
+    }
+
+
+    function repairArmorProgression(
+        player
+    ) {
+
+        if (
+            typeof ARMOR_DATA ===
+                "undefined"
+        ) {
+            return;
+        }
+
+
+        let highest =
+            Math.max(
+                0,
+                integer(
+                    player
+                        .armorHighestTierEver,
+                    0
+                )
+            );
+
+
+        for (
+            const armor of
+            Object.values(
+                ARMOR_DATA
+            )
+        ) {
+
+            if (!armor) {
+                continue;
+            }
+
+
+            const owned =
+                getInventoryCountDirect(
+                    player,
+                    armor.id
+                ) >
+                    0;
+
+
+            const equipped =
+                player
+                    .equipment
+                    ?.armor ===
+                armor.id;
+
+
+            if (
+                owned ||
+                equipped
+            ) {
+
+                highest =
+                    Math.max(
+                        highest,
+                        armor.tier ||
+                            0
+                    );
+
+            }
+
+        }
+
+
+        player.armorHighestTierEver =
+            highest;
+
+
+        /*
+            Não recriamos armaduras antigas.
+            Apenas impedimos regressão.
+        */
+        if (
+            highest > 0
+        ) {
+
+            const highestArmor =
+                Object
+                    .values(
+                        ARMOR_DATA
+                    )
+                    .find(
+                        armor =>
+                            armor.tier ===
+                            highest
+                    );
+
+
+            if (
+                highestArmor &&
+                player.equipment
+                    ?.armor &&
+                ARMOR_DATA[
+                    player
+                        .equipment
+                        .armor
+                ] &&
+                ARMOR_DATA[
+                    player
+                        .equipment
+                        .armor
+                ].tier >
+                    highest
+            ) {
+
+                player
+                    .armorHighestTierEver =
+                    ARMOR_DATA[
+                        player
+                            .equipment
+                            .armor
+                    ].tier;
+
+            }
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOAD
+       ============================================================ */
+
+    function loadGameFromSave() {
+
+        const record =
+            findAvailableSave();
+
+
+        if (!record) {
+
+            showToast(
+                "Nenhum save encontrado.",
+                "warning"
+            );
+
+            refreshContinueButton();
+
+            return false;
+
+        }
+
+
+        const data =
+            record.data;
+
+
+        const rawPlayer =
+            extractPlayerFromSave(
+                data
+            );
+
+
+        if (!rawPlayer) {
+
+            showToast(
+                "O save não contém um personagem válido.",
+                "error",
+                3500
+            );
+
+            return false;
+
+        }
+
+
+        const characterId =
+            rawPlayer.characterId ||
+            rawPlayer.character ||
+            getCharacterCollection()[
+                0
+            ]?.id;
+
+
+        const character =
+            getCharacterById(
+                characterId
+            );
+
+
+        if (!character) {
+
+            showToast(
+                "O personagem desse save não existe nesta versão.",
+                "error",
+                4000
+            );
+
+            return false;
+
+        }
+
+
+        const name =
+            String(
+                rawPlayer.name ||
+                character.name ||
+                "Viajante"
+            )
+                .slice(
+                    0,
+                    16
+                );
+
+
+        clearGameRuntimeBeforeLoad();
+
+
+        const basePlayer =
+            createPlayerCompatible(
+                name,
+                characterId
+            );
+
+
+        const merged =
+            mergeSaveObject(
+                basePlayer,
+                rawPlayer
+            );
+
+
+        state.player =
+            merged;
+
+
+        state.selectedCharacter =
+            characterId;
+
+
+        finalUIRuntime
+            .selectedCharacterId =
+            characterId;
+
+
+        repairPlayerAfterLoad(
+            merged
+        );
+
+
+        const scene =
+            extractSceneFromSave(
+                data,
+                rawPlayer
+            );
+
+
+        let area =
+            scene.area;
+
+
+        /*
+            Região inexistente em save antigo:
+            volta para vila em vez de quebrar.
+        */
+        if (
+            typeof REGION_META !==
+                "undefined" &&
+            !REGION_META[
+                area
+            ] &&
+            area !==
+                "voidDungeon"
+        ) {
+
+            area =
+                "village";
+
+        }
+
+
+        state.area =
+            area;
+
+
+        state.running =
+            true;
+
+
+        state.houseMode =
+            false;
+
+
+        state.currentHouse =
+            null;
+
+
+        state.houseReturn =
+            null;
+
+
+        /*
+            Fight de Vaelkor não é salva pela metade.
+            Se morreu/fechou no meio, tentativa recomeça.
+        */
+        if (
+            area ===
+                "voidDungeon" &&
+            !merged
+                .miguelQuest
+                .vaelkorDefeated
+        ) {
+
+            loadWorld(
+                "voidDungeon",
+                "entrance"
+            );
+
+        } else {
+
+            loadWorld(
+                area,
+                "default"
+            );
+
+        }
+
+
+        /*
+            Interior salvo.
+        */
+        if (
+            scene.houseMode &&
+            scene.currentHouse &&
+            typeof createHouseWorld ===
+                "function"
+        ) {
+
+            const interior =
+                createHouseWorld(
+                    scene.currentHouse
+                );
+
+
+            if (interior) {
+
+                state.houseMode =
+                    true;
+
+
+                state.currentHouse =
+                    scene.currentHouse;
+
+
+                state.houseReturn =
+                    scene.houseReturn ||
+                    {
+
+                        area,
+                        buildingId:
+                            scene.currentHouse
+
+                    };
+
+
+                state.world =
+                    interior;
+
+            }
+
+        }
+
+
+        let desiredX =
+            scene.x;
+
+
+        let desiredY =
+            scene.y;
+
+
+        if (
+            area ===
+                "voidDungeon" &&
+            !merged
+                .miguelQuest
+                .vaelkorDefeated
+        ) {
+
+            const spawn =
+                typeof getRegionSpawn ===
+                    "function"
+                    ? getRegionSpawn(
+                        "voidDungeon",
+                        "entrance"
+                    )
+                    : null;
+
+
+            if (spawn) {
+
+                desiredX =
+                    spawn.x;
+
+                desiredY =
+                    spawn.y;
+
+            }
+
+        }
+
+
+        if (
+            Number.isFinite(
+                desiredX
+            ) &&
+            Number.isFinite(
+                desiredY
+            ) &&
+            state.world
+        ) {
+
+            const safe =
+                findSafePosition(
+                    desiredX,
+                    desiredY,
+                    state.player.radius,
+                    state.world
+                );
+
+
+            state.player.x =
+                safe.x;
+
+
+            state.player.y =
+                safe.y;
+
+
+            state.player.facing =
+                scene.facing ||
+                state.player.facing ||
+                "down";
+
+        }
+
+
+        if (
+            typeof recalculatePlayerStats ===
+                "function"
+        ) {
+
+            recalculatePlayerStats();
+
+        }
+
+
+        state.player.hp =
+            clamp(
+                state.player.hp,
+                1,
+                state.player.maxHp
+            );
+
+
+        state.player.magic =
+            clamp(
+                state.player.magic,
+                0,
+                state.player.maxMagic
+            );
+
+
+        state.player.energy =
+            clamp(
+                state.player.energy,
+                0,
+                state.player.maxEnergy
+            );
+
+
+        state.player.hunger =
+            clamp(
+                state.player.hunger,
+                0,
+                state.player.maxHunger
+            );
+
+
+        state.player.fatigue =
+            clamp(
+                state.player.fatigue,
+                0,
+                state.player.maxFatigue
+            );
+
+
+        state.camera.x =
+            state.player.x;
+
+
+        state.camera.y =
+            state.player.y;
+
+
+        state.camera.targetX =
+            state.player.x;
+
+
+        state.camera.targetY =
+            state.player.y;
+
+
+        /*
+            Recupera Fragmento caso Vaelkor
+            já esteja morto e item ainda não tenha
+            sido coletado.
+        */
+        if (
+            typeof repairVoidDungeonRuntimeAfterLoad ===
+                "function"
+        ) {
+
+            repairVoidDungeonRuntimeAfterLoad();
+
+        }
+
+
+        if (
+            typeof sanitizeVaelkorState ===
+                "function"
+        ) {
+
+            sanitizeVaelkorState();
+
+        }
+
+
+        clearPauseReasonsSafe();
+
+
+        showScreen(
+            finalUIRuntime
+                .refs
+                .gameScreen
+        );
+
+
+        resizeRenderer();
+
+
+        updateHudDOM(
+            true
+        );
+
+
+        refreshEveryPanel();
+
+
+        renderMiniMapCanvas(
+            true
+        );
+
+
+        /*
+            Migra save legado para chave atual.
+        */
+        if (
+            record.key !==
+                SAVE_KEY
+        ) {
+
+            saveGame({
+                silent: true
+            });
+
+        }
+
+
+        showToast(
+            "Progresso carregado.",
+            "success",
+            2200
+        );
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       INVENTÁRIO DOM
+       ============================================================ */
+
+    function getInventoryEntriesForUI() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return [];
+        }
+
+
+        return Object
+            .entries(
+                player.inventory
+            )
+            .filter(
+                (
+                    [
+                        id,
+                        amount
+                    ]
+                ) =>
+                    amount > 0 &&
+                    ITEMS[id]
+            )
+            .map(
+                (
+                    [
+                        id,
+                        amount
+                    ]
+                ) => ({
+
+                    id,
+                    amount,
+                    item:
+                        ITEMS[id]
+
+                })
+            )
+            .filter(
+                entry => {
+
+                    if (
+                        finalUIRuntime
+                            .inventoryCategory ===
+                        "all"
+                    ) {
+
+                        return true;
+
+                    }
+
+
+                    if (
+                        finalUIRuntime
+                            .inventoryCategory ===
+                        "special"
+                    ) {
+
+                        return [
+
+                            "quest",
+                            "special"
+
+                        ].includes(
+                            entry
+                                .item
+                                .category
+                        );
+
+                    }
+
+
+                    return (
+                        entry
+                            .item
+                            .category ===
+                        finalUIRuntime
+                            .inventoryCategory
+                    );
+
+                }
+            )
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    String(
+                        a.item.category
+                    ).localeCompare(
+                        String(
+                            b.item.category
+                        )
+                    ) ||
+                    a.item.name.localeCompare(
+                        b.item.name
+                    )
+            );
+
+    }
+
+
+    function buildInventoryItemAction(
+        entry
+    ) {
+
+        const {
+            id,
+            item
+        } =
+            entry;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            item.category ===
+                "weapons"
+        ) {
+
+            const equipped =
+                player
+                    .equipment
+                    .weapon ===
+                id;
+
+
+            return `
+                <button
+                    type="button"
+                    data-inventory-action="equip"
+                    data-item-id="${escapeHTML(id)}"
+                    ${equipped ? "disabled" : ""}
+                >
+                    ${equipped ? "EQUIPADO" : "EQUIPAR"}
+                </button>
+            `;
+
+        }
+
+
+        if (
+            item.category ===
+                "armor"
+        ) {
+
+            const equipped =
+                player
+                    .equipment
+                    .armor ===
+                id;
+
+
+            return `
+                <button
+                    type="button"
+                    data-inventory-action="equip-armor"
+                    data-item-id="${escapeHTML(id)}"
+                    ${equipped ? "disabled" : ""}
+                >
+                    ${equipped ? "EQUIPADA" : "EQUIPAR"}
+                </button>
+            `;
+
+        }
+
+
+        if (
+            [
+                "food",
+                "potions"
+            ].includes(
+                item.category
+            )
+        ) {
+
+            return `
+                <button
+                    type="button"
+                    data-inventory-action="use"
+                    data-item-id="${escapeHTML(id)}"
+                >
+                    USAR
+                </button>
+            `;
+
+        }
+
+
+        return "";
+
+    }
+
+
+    function refreshInventoryDOM() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !refs.inventoryGrid ||
+            !state.player
+        ) {
+            return;
+        }
+
+
+        const entries =
+            getInventoryEntriesForUI();
+
+
+        if (
+            entries.length ===
+            0
+        ) {
+
+            refs.inventoryGrid
+                .innerHTML = `
+                    <div class="empty-panel-message">
+                        Nenhum item nesta categoria.
+                    </div>
+                `;
+
+        } else {
+
+            refs.inventoryGrid
+                .innerHTML =
+                entries
+                    .map(
+                        entry => `
+                            <div
+                                class="inventory-item"
+                                data-item-id="${escapeHTML(entry.id)}"
+                            >
+
+                                <div class="inventory-item-icon">
+                                    ${entry.item.icon || "•"}
+                                </div>
+
+                                <div class="inventory-item-info">
+
+                                    <strong>
+                                        ${escapeHTML(entry.item.name)}
+                                    </strong>
+
+                                    <span>
+                                        ${escapeHTML(formatItemCategory(entry.item.category))}
+                                    </span>
+
+                                </div>
+
+                                <div class="inventory-item-count">
+                                    x${entry.amount}
+                                </div>
+
+                                <div class="inventory-item-action">
+                                    ${buildInventoryItemAction(entry)}
+                                </div>
+
+                            </div>
+                        `
+                    )
+                    .join("");
+
+        }
+
+
+        if (
+            refs.weightText
+        ) {
+
+            refs.weightText.textContent =
+                `${getInventoryWeight().toFixed(1)}/${state.player.inventoryWeightLimit}`;
+
+        }
+
+
+        refreshEquipmentDOM();
+
+        syncInventoryTabClasses();
+
+    }
+
+
+    function refreshEquipmentDOM() {
+
+        const container =
+            finalUIRuntime
+                .refs
+                .equipmentGrid;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            !container ||
+            !player
+        ) {
+            return;
+        }
+
+
+        const weaponId =
+            player
+                .equipment
+                .weapon;
+
+
+        const armorId =
+            player
+                .equipment
+                .armor;
+
+
+        const weapon =
+            weaponId
+                ? ITEMS[
+                    weaponId
+                ]
+                : null;
+
+
+        const armor =
+            armorId
+                ? ITEMS[
+                    armorId
+                ]
+                : null;
+
+
+        container.innerHTML = `
+
+            <div class="equipment-slot">
+
+                <span>ARMA</span>
+
+                <strong>
+                    ${weapon ? `${weapon.icon || ""} ${escapeHTML(weapon.name)}` : "Nenhuma"}
+                </strong>
+
+            </div>
+
+            <div class="equipment-slot">
+
+                <span>ARMADURA</span>
+
+                <strong>
+                    ${armor ? `${armor.icon || ""} ${escapeHTML(armor.name)}` : "Nenhuma"}
+                </strong>
+
+            </div>
+        `;
+
+    }
+
+
+    function syncInventoryTabClasses() {
+
+        const tabs =
+            finalUIRuntime
+                .refs
+                .inventoryTabs;
+
+
+        if (!tabs) {
+            return;
+        }
+
+
+        for (
+            const button of
+            tabs.querySelectorAll(
+                "[data-cat]"
+            )
+        ) {
+
+            button
+                .classList
+                .toggle(
+                    "active",
+                    button.dataset.cat ===
+                        finalUIRuntime
+                            .inventoryCategory
+                );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function refreshStatusDOM() {
+
+        const content =
+            finalUIRuntime
+                .refs
+                .statusContent;
+
+
+        if (
+            !content ||
+            !state.player
+        ) {
+            return;
+        }
+
+
+        content.innerHTML =
+            buildStatusHTML();
+
+    }
+
+
+    function applyStatusPointFromUI(
+        statId
+    ) {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return false;
+        }
+
+
+        const config =
+            STAT_CONFIG[
+                statId
+            ] ||
+            Object
+                .values(
+                    STAT_CONFIG
+                )
+                .find(
+                    stat =>
+                        stat.id ===
+                        statId
+                );
+
+
+        if (!config) {
+
+            return false;
+
+        }
+
+
+        if (
+            player.statPoints <=
+                0
+        ) {
+
+            return false;
+
+        }
+
+
+        const current =
+            integer(
+                player.stats[
+                    statId
+                ],
+                0
+            );
+
+
+        const cap =
+            config.cap ||
+            STAT_CAP;
+
+
+        if (
+            current >=
+            cap
+        ) {
+
+            return false;
+
+        }
+
+
+        player.stats[
+            statId
+        ] =
+            current +
+            1;
+
+
+        player.statPoints -=
+            1;
+
+
+        recalculatePlayerStats();
+
+
+        refreshStatusDOM();
+
+        updateHudDOM(
+            true
+        );
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       SHOP DOM
+       ============================================================ */
+
+    function refreshShopDOM() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !refs.shopGrid ||
+            !state.player ||
+            !state.shopNPC
+        ) {
+
+            return;
+
+        }
+
+
+        const config =
+            SHOP_CONFIG[
+                state.shopNPC
+            ];
+
+
+        if (
+            refs.shopTitle
+        ) {
+
+            refs.shopTitle.textContent =
+                config?.name ||
+                "LOJA";
+
+        }
+
+
+        syncShopTabClasses();
+
+
+        if (
+            state.shopMode ===
+                "sell"
+        ) {
+
+            const sellables =
+                getSellableInventoryEntries();
+
+
+            if (
+                sellables.length ===
+                0
+            ) {
+
+                refs.shopGrid
+                    .innerHTML = `
+                        <div class="empty-panel-message">
+                            Você não possui itens que podem ser vendidos.
+                        </div>
+                    `;
+
+                return;
+
+            }
+
+
+            refs.shopGrid
+                .innerHTML =
+                sellables
+                    .map(
+                        entry => `
+
+                            <div class="shop-item">
+
+                                <div class="shop-item-icon">
+                                    ${entry.item.icon || "•"}
+                                </div>
+
+                                <div class="shop-item-info">
+
+                                    <strong>
+                                        ${escapeHTML(entry.item.name)}
+                                    </strong>
+
+                                    <span>
+                                        x${entry.amount}
+                                        •
+                                        ${entry.sellPrice} moedas cada
+                                    </span>
+
+                                </div>
+
+                                <div class="shop-item-actions">
+
+                                    <button
+                                        type="button"
+                                        data-shop-sell-one="${escapeHTML(entry.id)}"
+                                    >
+                                        VENDER 1
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        data-shop-sell-all="${escapeHTML(entry.id)}"
+                                    >
+                                        VENDER TUDO
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        `
+                    )
+                    .join("");
+
+
+            return;
+
+        }
+
+
+        const items =
+            getShopItems(
+                state.shopNPC
+            );
+
+
+        if (
+            items.length ===
+            0
+        ) {
+
+            refs.shopGrid
+                .innerHTML = `
+                    <div class="empty-panel-message">
+                        Nenhuma mercadoria nova disponível.
+                    </div>
+                `;
+
+            return;
+
+        }
+
+
+        refs.shopGrid
+            .innerHTML =
+            items
+                .map(
+                    entry => {
+
+                        const item =
+                            ITEMS[
+                                entry.id
+                            ];
+
+
+                        const validation =
+                            canBuyShopItem(
+                                entry.id,
+                                state.shopNPC
+                            );
+
+
+                        let requirements =
+                            `${entry.price} moedas`;
+
+
+                        if (
+                            entry.type ===
+                                "armor"
+                        ) {
+
+                            const armor =
+                                ARMOR_DATA[
+                                    entry.id
+                                ];
+
+
+                            const parts = [];
+
+
+                            if (
+                                armor.previousArmor
+                            ) {
+
+                                parts.push(
+                                    ITEMS[
+                                        armor.previousArmor
+                                    ]?.name ||
+                                    armor.previousArmor
+                                );
+
+                            }
+
+
+                            if (
+                                armor.material
+                            ) {
+
+                                parts.push(
+                                    `${armor.materialAmount}x ${ITEMS[armor.material]?.name || armor.material}`
+                                );
+
+                            }
+
+
+                            parts.push(
+                                `${armor.price} moedas`
+                            );
+
+
+                            requirements =
+                                parts.join(
+                                    " + "
+                                );
+
+                        }
+
+
+                        return `
+
+                            <div class="shop-item">
+
+                                <div class="shop-item-icon">
+                                    ${item?.icon || "•"}
+                                </div>
+
+                                <div class="shop-item-info">
+
+                                    <strong>
+                                        ${escapeHTML(item?.name || entry.id)}
+                                    </strong>
+
+                                    <span>
+                                        ${escapeHTML(requirements)}
+                                    </span>
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    data-shop-buy="${escapeHTML(entry.id)}"
+                                    ${validation.ok ? "" : "disabled"}
+                                    title="${validation.ok ? "" : escapeHTML(validation.reason)}"
+                                >
+                                    COMPRAR
+                                </button>
+
+                            </div>
+                        `;
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    function syncShopTabClasses() {
+
+        const tabs =
+            finalUIRuntime
+                .refs
+                .shopTabs;
+
+
+        if (!tabs) {
+            return;
+        }
+
+
+        for (
+            const button of
+            tabs.querySelectorAll(
+                "[data-shop]"
+            )
+        ) {
+
+            button
+                .classList
+                .toggle(
+                    "active",
+                    button.dataset.shop ===
+                        state.shopMode
+                );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LIVRO
+       ============================================================ */
+
+    function refreshBossBookDOM() {
+
+        const container =
+            finalUIRuntime
+                .refs
+                .bossBook;
+
+
+        const player =
+            state.player;
+
+
+        if (
+            !container ||
+            !player
+        ) {
+            return;
+        }
+
+
+        const discovered =
+            new Set(
+                ensureArray(
+                    player
+                        .discoveredBosses
+                )
+            );
+
+
+        const defeated =
+            new Set(
+                ensureArray(
+                    player
+                        .defeatedBosses
+                )
+            );
+
+
+        const bosses =
+            Object
+                .values(
+                    BOSS_REGISTRY
+                );
+
+
+        container.innerHTML =
+            bosses
+                .map(
+                    boss => {
+
+                        const known =
+                            discovered.has(
+                                boss.id
+                            ) ||
+                            defeated.has(
+                                boss.id
+                            );
+
+
+                        const dead =
+                            defeated.has(
+                                boss.id
+                            );
+
+
+                        return `
+                            <div class="boss-book-entry">
+
+                                <div class="boss-book-icon">
+                                    ${known ? boss.icon || "☠" : "?"}
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        ${known ? escapeHTML(boss.name) : "DESCONHECIDO"}
+                                    </strong>
+
+                                    <span>
+                                        ${
+                                            !known
+                                                ? "Ainda não encontrado."
+                                                : dead
+                                                    ? "DERROTADO"
+                                                    : "DESCOBERTO"
+                                        }
+                                    </span>
+
+                                </div>
+
+                            </div>
+                        `;
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    /* ============================================================
+       MINIMAPA HTML CANVAS
+       ============================================================ */
+
+    function renderMiniMapCanvas(
+        force = false
+    ) {
+
+        const canvas =
+            finalUIRuntime
+                .refs
+                .miniCanvas;
+
+
+        const player =
+            state.player;
+
+
+        const world =
+            state.world;
+
+
+        if (
+            !canvas ||
+            !player ||
+            !world ||
+            !player.minimapOwned
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            !force &&
+            state.time -
+                finalUIRuntime
+                    .lastMiniMapRefresh <
+                0.1
+        ) {
+
+            return;
+
+        }
+
+
+        finalUIRuntime
+            .lastMiniMapRefresh =
+            state.time;
+
+
+        const ctx =
+            canvas.getContext(
+                "2d"
+            );
+
+
+        if (!ctx) {
+            return;
+        }
+
+
+        const width =
+            canvas.width;
+
+
+        const height =
+            canvas.height;
+
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        ctx.fillStyle =
+            "#111318";
+
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        if (
+            typeof isMinimapSignalAvailable ===
+                "function" &&
+            !isMinimapSignalAvailable()
+        ) {
+
+            ctx.fillStyle =
+                "#9d83a4";
+
+
+            ctx.font =
+                "bold 17px Georgia";
+
+
+            ctx.textAlign =
+                "center";
+
+
+            ctx.fillText(
+                "SEM SINAL",
+                width / 2,
+                height / 2
+            );
+
+
+            ctx.font =
+                "10px Georgia";
+
+
+            ctx.fillStyle =
+                "rgba(230,220,230,.5)";
+
+
+            ctx.fillText(
+                "LOCALIZAÇÃO INDISPONÍVEL",
+                width / 2,
+                height / 2 +
+                    22
+            );
+
+
+            return;
+
+        }
+
+
+        const padding = 7;
+
+
+        const mapWidth =
+            width -
+            padding * 2;
+
+
+        const mapHeight =
+            height -
+            padding * 2;
+
+
+        const scaleX =
+            mapWidth /
+            world.width;
+
+
+        const scaleY =
+            mapHeight /
+            world.height;
+
+
+        const biome =
+            getBiomeStyle(
+                state.area
+            );
+
+
+        ctx.fillStyle =
+            biome?.ground ||
+            "#394538";
+
+
+        ctx.fillRect(
+            padding,
+            padding,
+            mapWidth,
+            mapHeight
+        );
+
+
+        const pathStyle =
+            getPathStyle(
+                state.area
+            );
+
+
+        ctx.fillStyle =
+            pathStyle?.base ||
+            "#716858";
+
+
+        for (
+            const path of
+            world.paths ||
+            []
+        ) {
+
+            ctx.fillRect(
+
+                padding +
+                    path.x *
+                    scaleX,
+
+                padding +
+                    path.y *
+                    scaleY,
+
+                Math.max(
+                    1,
+                    path.w *
+                        scaleX
+                ),
+
+                Math.max(
+                    1,
+                    path.h *
+                        scaleY
+                )
+
+            );
+
+        }
+
+
+        /*
+            Casas.
+        */
+        ctx.fillStyle =
+            "#c0a373";
+
+
+        for (
+            const building of
+            world.buildings ||
+            []
+        ) {
+
+            ctx.fillRect(
+
+                padding +
+                    building.x *
+                    scaleX,
+
+                padding +
+                    building.y *
+                    scaleY,
+
+                Math.max(
+                    3,
+                    building.w *
+                        scaleX
+                ),
+
+                Math.max(
+                    3,
+                    building.h *
+                        scaleY
+                )
+
+            );
+
+        }
+
+
+        /*
+            Marcadores.
+        */
+        if (
+            typeof getWorldMapMarkers ===
+                "function"
+        ) {
+
+            const markers =
+                getWorldMapMarkers(
+                    world,
+                    player
+                ) ||
+                [];
+
+
+            for (
+                const marker of
+                markers
+            ) {
+
+                ctx.fillStyle =
+                    marker.type ===
+                        "secret"
+                        ? "#936aa3"
+                        : "#e2ddcf";
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+
+                    padding +
+                        marker.x *
+                        scaleX,
+
+                    padding +
+                        marker.y *
+                        scaleY,
+
+                    marker.type ===
+                        "secret"
+                        ? 3.4
+                        : 2.5,
+
+                    0,
+                    Math.PI * 2
+
+                );
+
+
+                ctx.fill();
+
+            }
+
+        }
+
+
+        /*
+            Player.
+        */
+        ctx.fillStyle =
+            "#ffffff";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            padding +
+                player.x *
+                scaleX,
+
+            padding +
+                player.y *
+                scaleY,
+
+            4,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        ctx.fill();
+
+    }
+
+
+    /* ============================================================
+       MAPA GLOBAL
+       ============================================================ */
+
+    function renderWorldMapCanvas(
+        force = false
+    ) {
+
+        const canvas =
+            finalUIRuntime
+                .refs
+                .worldMapCanvas;
+
+
+        if (
+            !canvas ||
+            !state.player
+        ) {
+            return;
+        }
+
+
+        if (
+            !force &&
+            state.time -
+                finalUIRuntime
+                    .lastWorldMapRefresh <
+                0.25
+        ) {
+
+            return;
+
+        }
+
+
+        finalUIRuntime
+            .lastWorldMapRefresh =
+            state.time;
+
+
+        const ctx =
+            canvas.getContext(
+                "2d"
+            );
+
+
+        if (!ctx) {
+            return;
+        }
+
+
+        const width =
+            canvas.width;
+
+
+        const height =
+            canvas.height;
+
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        const background =
+            ctx.createLinearGradient(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+        background.addColorStop(
+            0,
+            "#191b1d"
+        );
+
+
+        background.addColorStop(
+            1,
+            "#26231f"
+        );
+
+
+        ctx.fillStyle =
+            background;
+
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        /*
+            Moldura.
+        */
+        ctx.strokeStyle =
+            "rgba(216,180,106,.28)";
+
+
+        ctx.lineWidth =
+            2;
+
+
+        ctx.strokeRect(
+            14,
+            14,
+            width - 28,
+            height - 28
+        );
+
+
+        let locations = [];
+
+
+        if (
+            typeof getGlobalMapLocations ===
+                "function"
+        ) {
+
+            locations =
+                getGlobalMapLocations() ||
+                [];
+
+        }
+
+
+        if (
+            locations.length ===
+            0
+        ) {
+
+            locations = [
+
+                {
+                    id: "village",
+                    name:
+                        "VILA DO CREPÚSCULO"
+                }
+
+            ];
+
+        }
+
+
+        const columnCount =
+            Math.min(
+                4,
+                Math.max(
+                    1,
+                    Math.ceil(
+                        locations.length /
+                        5
+                    )
+                )
+            );
+
+
+        const rows =
+            Math.ceil(
+                locations.length /
+                columnCount
+            );
+
+
+        locations.forEach(
+            (
+                location,
+                index
+            ) => {
+
+                const column =
+                    index %
+                    columnCount;
+
+
+                const row =
+                    Math.floor(
+                        index /
+                        columnCount
+                    );
+
+
+                const x =
+                    90 +
+                    column *
+                    (
+                        (
+                            width -
+                            180
+                        ) /
+                        Math.max(
+                            1,
+                            columnCount -
+                                1
+                        )
+                    );
+
+
+                const y =
+                    80 +
+                    row *
+                    (
+                        (
+                            height -
+                            160
+                        ) /
+                        Math.max(
+                            1,
+                            rows -
+                                1
+                        )
+                    );
+
+
+                const current =
+                    location.id ===
+                        state.area;
+
+
+                /*
+                    Linha para próximo.
+                */
+                if (
+                    index <
+                    locations.length -
+                        1
+                ) {
+
+                    const nextIndex =
+                        index +
+                        1;
+
+
+                    const nextColumn =
+                        nextIndex %
+                        columnCount;
+
+
+                    const nextRow =
+                        Math.floor(
+                            nextIndex /
+                            columnCount
+                        );
+
+
+                    const nx =
+                        90 +
+                        nextColumn *
+                        (
+                            (
+                                width -
+                                180
+                            ) /
+                            Math.max(
+                                1,
+                                columnCount -
+                                    1
+                            )
+                        );
+
+
+                    const ny =
+                        80 +
+                        nextRow *
+                        (
+                            (
+                                height -
+                                160
+                            ) /
+                            Math.max(
+                                1,
+                                rows -
+                                    1
+                            )
+                        );
+
+
+                    ctx.strokeStyle =
+                        "rgba(203,178,126,.19)";
+
+
+                    ctx.lineWidth =
+                        2;
+
+
+                    ctx.beginPath();
+
+
+                    ctx.moveTo(
+                        x,
+                        y
+                    );
+
+
+                    ctx.lineTo(
+                        nx,
+                        ny
+                    );
+
+
+                    ctx.stroke();
+
+                }
+
+
+                ctx.fillStyle =
+                    location.secret
+                        ? "#765181"
+                        : current
+                            ? "#e1bc6c"
+                            : "#9a8e72";
+
+
+                ctx.beginPath();
+
+
+                ctx.arc(
+                    x,
+                    y,
+                    current
+                        ? 10
+                        : 7,
+                    0,
+                    Math.PI * 2
+                );
+
+
+                ctx.fill();
+
+
+                ctx.fillStyle =
+                    current
+                        ? "#f4e4bc"
+                        : "#c9c0ad";
+
+
+                ctx.font =
+                    `${current ? "bold " : ""}12px Georgia`;
+
+
+                ctx.textAlign =
+                    "center";
+
+
+                ctx.fillText(
+                    location.name,
+                    x,
+                    y + 27
+                );
+
+            }
+        );
+
+
+        /*
+            Área secreta só aparece após
+            vitória conforme regra definida.
+        */
+        if (
+            state.player
+                .discoveredMapLocations
+                ?.includes(
+                    "voidDungeon"
+                )
+        ) {
+
+            ctx.fillStyle =
+                "#8c639d";
+
+
+            ctx.font =
+                "bold 13px Georgia";
+
+
+            ctx.textAlign =
+                "right";
+
+
+            ctx.fillText(
+                "◈ ÁREA SECRETA DO VAZIO",
+                width - 35,
+                height - 35
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       PAINÉIS
+       ============================================================ */
+
+    function hideAllGamePanels() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        for (
+            const panel of
+            [
+
+                refs.inventoryPanel,
+                refs.mapPanel,
+                refs.bookPanel,
+                refs.shopPanel,
+                refs.statusPanel
+
+            ]
+        ) {
+
+            setHidden(
+                panel,
+                true
+            );
+
+        }
+
+    }
+
+
+    function getPanelElement(
+        panelName
+    ) {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        switch (
+            panelName
+        ) {
+
+            case "inventory":
+                return refs.inventoryPanel;
+
+            case "map":
+                return refs.mapPanel;
+
+            case "book":
+                return refs.bookPanel;
+
+            case "shop":
+                return refs.shopPanel;
+
+            case "status":
+                return refs.statusPanel;
+
+            default:
+                return null;
+
+        }
+
+    }
+
+
+    function openGamePanel(
+        panelName
+    ) {
+
+        if (
+            !state.running ||
+            !state.player ||
+            state.dialogue ||
+            state.cutscene ||
+            state.fragmentMinigame
+                ?.active ||
+            state.deathState
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            state.activePanel ===
+                panelName
+        ) {
+
+            return closeGamePanel(
+                panelName
+            );
+
+        }
+
+
+        hideAllGamePanels();
+
+
+        state.activePanel =
+            panelName;
+
+
+        const panel =
+            getPanelElement(
+                panelName
+            );
+
+
+        setHidden(
+            panel,
+            false
+        );
+
+
+        refreshPanel(
+            panelName,
+            true
+        );
+
+
+        return true;
+
+    }
+
+
+    function closeGamePanel(
+        panelName = null
+    ) {
+
+        const current =
+            panelName ||
+            state.activePanel;
+
+
+        if (
+            current ===
+                "shop"
+        ) {
+
+            if (
+                typeof closeShop ===
+                    "function"
+            ) {
+
+                closeShop();
+
+            } else {
+
+                state.shopNPC =
+                    null;
+
+                state.activePanel =
+                    null;
+
+            }
+
+        } else if (
+            !panelName ||
+            state.activePanel ===
+                panelName
+        ) {
+
+            state.activePanel =
+                null;
+
+        }
+
+
+        hideAllGamePanels();
+
+
+        return true;
+
+    }
+
+
+    function toggleGamePanel(
+        panelName
+    ) {
+
+        if (
+            state.activePanel ===
+                panelName
+        ) {
+
+            return closeGamePanel(
+                panelName
+            );
+
+        }
+
+
+        return openGamePanel(
+            panelName
+        );
+
+    }
+
+
+    function refreshPanel(
+        panelName,
+        force = false
+    ) {
+
+        switch (
+            panelName
+        ) {
+
+            case "inventory":
+
+                refreshInventoryDOM();
+
+                break;
+
+
+            case "status":
+
+                refreshStatusDOM();
+
+                break;
+
+
+            case "map":
+
+                renderWorldMapCanvas(
+                    force
+                );
+
+                break;
+
+
+            case "book":
+
+                refreshBossBookDOM();
+
+                break;
+
+
+            case "shop":
+
+                refreshShopDOM();
+
+                break;
+
+        }
+
+    }
+
+
+    function refreshEveryPanel() {
+
+        refreshInventoryDOM();
+
+        refreshStatusDOM();
+
+        refreshBossBookDOM();
+
+        refreshShopDOM();
+
+        renderWorldMapCanvas(
+            true
+        );
+
+    }
+
+
+    function syncActivePanelVisibility() {
+
+        const active =
+            state.activePanel;
+
+
+        for (
+            const name of
+            [
+
+                "inventory",
+                "map",
+                "book",
+                "shop",
+                "status"
+
+            ]
+        ) {
+
+            const panel =
+                getPanelElement(
+                    name
+                );
+
+
+            if (!panel) {
+                continue;
+            }
+
+
+            setHidden(
+                panel,
+                active !==
+                    name
+            );
+
+        }
+
+
+        if (active) {
+
+            refreshPanel(
+                active
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       QUEST PANEL — ESCOLHA DO MIGUEL
+       ============================================================ */
+
+    function syncDialogueChoicePanel() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        const dialogue =
+            state.dialogue;
+
+
+        if (
+            !refs.questPanel
+        ) {
+            return;
+        }
+
+
+        const hasChoices =
+            Boolean(
+                dialogue &&
+                Array.isArray(
+                    dialogue.choices
+                ) &&
+                dialogue.choices.length >
+                    0 &&
+                !dialogue.typing &&
+                dialogue.index >=
+                    dialogue.lines.length -
+                        1
+            );
+
+
+        if (!hasChoices) {
+
+            if (
+                refs.questPanel
+                    .dataset
+                    .dialogueChoice ===
+                "true"
+            ) {
+
+                setHidden(
+                    refs.questPanel,
+                    true
+                );
+
+
+                refs.questPanel
+                    .dataset
+                    .dialogueChoice =
+                    "false";
+
+            }
+
+
+            return;
+
+        }
+
+
+        refs.questPanel
+            .dataset
+            .dialogueChoice =
+            "true";
+
+
+        setHidden(
+            refs.questPanel,
+            false
+        );
+
+
+        if (
+            refs.questTitle
+        ) {
+
+            refs.questTitle.textContent =
+                "A PROVAÇÃO DO VAZIO";
+
+        }
+
+
+        if (
+            refs.questText
+        ) {
+
+            refs.questText.textContent =
+                "Miguel está oferecendo uma missão secreta.";
+
+        }
+
+
+        if (
+            refs.questStatus
+        ) {
+
+            refs.questStatus.textContent =
+                "Objetivo inicial: encontre a Chave Obscura.";
+
+        }
+
+
+        if (
+            refs.questActionBtn
+        ) {
+
+            const accept =
+                dialogue.choices.find(
+                    choice =>
+                        choice.id ===
+                        "acceptMiguelQuest"
+                ) ||
+                dialogue.choices[0];
+
+
+            refs.questActionBtn.textContent =
+                accept?.label ||
+                "ACEITAR";
+
+
+            refs.questActionBtn.dataset
+                .dialogueChoiceId =
+                accept?.id ||
+                "";
+
+        }
+
+    }
+
+
+    /* ============================================================
+       BATTLE CONFIRM
+       ============================================================ */
+
+    function getBattleBoss() {
+
+        const battle =
+            state.battle;
+
+
+        if (
+            !battle ||
+            !state.world
+        ) {
+            return null;
+        }
+
+
+        return state.world
+            .bosses
+            ?.find(
+                boss => {
+
+                    const identity =
+                        boss.entityId ||
+                        boss.id;
+
+
+                    return (
+                        identity ===
+                            battle
+                                .bossEntityId ||
+                        boss.id ===
+                            battle
+                                .bossId
+                    );
+
+                }
+            ) ||
+            null;
+
+    }
+
+
+    function shouldRequireBossConfirmation(
+        boss
+    ) {
+
+        if (
+            !boss ||
+            boss.dead ||
+            boss.id ===
+                "vaelkor" ||
+            boss.id ===
+                "ancient_deer"
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            boss.confirmed
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            boss.confirmationDeclinedUntil >
+            state.time
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            typeof shouldBossUseTopBar ===
+                "function"
+        ) {
+
+            return shouldBossUseTopBar(
+                boss
+            );
+
+        }
+
+
+        return Boolean(
+            boss.progression
+        );
+
+    }
+
+
+    function maybePromptNearbyBoss() {
+
+        if (
+            !state.running ||
+            !state.player ||
+            !state.world ||
+            state.houseMode ||
+            state.dialogue ||
+            state.cutscene ||
+            state.activePanel ||
+            state.travel ||
+            state.battle ||
+            state.fragmentMinigame
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        const player =
+            state.player;
+
+
+        for (
+            const boss of
+            state.world.bosses ||
+            []
+        ) {
+
+            if (
+                !shouldRequireBossConfirmation(
+                    boss
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            const dist =
+                distance(
+                    player.x,
+                    player.y,
+                    boss.x,
+                    boss.y
+                );
+
+
+            if (
+                dist >
+                boss.radius +
+                    175
+            ) {
+
+                continue;
+
+            }
+
+
+            state.battle = {
+
+                bossEntityId:
+                    boss.entityId ||
+                    boss.id,
+
+                bossId:
+                    boss.id,
+
+                title:
+                    boss.name,
+
+                text:
+                    "Um inimigo poderoso bloqueia o caminho. Deseja enfrentá-lo?",
+
+                icon:
+                    boss.icon ||
+                    "☠"
+
+            };
+
+
+            break;
+
+        }
+
+    }
+
+
+    function syncBattlePanel() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !refs.battlePanel
+        ) {
+            return;
+        }
+
+
+        if (
+            !state.battle
+        ) {
+
+            setHidden(
+                refs.battlePanel,
+                true
+            );
+
+            return;
+
+        }
+
+
+        setHidden(
+            refs.battlePanel,
+            false
+        );
+
+
+        if (
+            refs.battleIcon
+        ) {
+
+            refs.battleIcon.textContent =
+                state.battle.icon ||
+                "☠";
+
+        }
+
+
+        if (
+            refs.battleTitle
+        ) {
+
+            refs.battleTitle.textContent =
+                state.battle.title ||
+                "GUARDIÃO";
+
+        }
+
+
+        if (
+            refs.battleText
+        ) {
+
+            refs.battleText.textContent =
+                state.battle.text ||
+                "Deseja aceitar a batalha?";
+
+        }
+
+    }
+
+
+    function acceptBattleConfirmation() {
+
+        const boss =
+            getBattleBoss();
+
+
+        if (boss) {
+
+            boss.confirmed =
+                true;
+
+
+            state.bossBarTarget =
+                boss;
+
+        }
+
+
+        state.battle =
+            null;
+
+
+        syncBattlePanel();
+
+
+        return true;
+
+    }
+
+
+    function declineBattleConfirmation() {
+
+        const boss =
+            getBattleBoss();
+
+
+        if (boss) {
+
+            boss.confirmationDeclinedUntil =
+                state.time +
+                3;
+
+
+            /*
+                Pequeno afastamento.
+            */
+            const away =
+                normalize(
+                    state.player.x -
+                        boss.x,
+
+                    state.player.y -
+                        boss.y
+                );
+
+
+            moveCircleWithCollision(
+                state.player,
+
+                away.x *
+                    70,
+
+                away.y *
+                    70,
+
+                state.player.radius
+            );
+
+        }
+
+
+        state.battle =
+            null;
+
+
+        syncBattlePanel();
+
+
+        return true;
+
+    }
+
+
+    function ensureBossAcceptedBeforePlayerAttack() {
+
+        if (
+            state.battle
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            !state.world ||
+            !state.player
+        ) {
+
+            return true;
+
+        }
+
+
+        for (
+            const boss of
+            state.world.bosses ||
+            []
+        ) {
+
+            if (
+                !shouldRequireBossConfirmation(
+                    boss
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            const dist =
+                distance(
+                    state.player.x,
+                    state.player.y,
+                    boss.x,
+                    boss.y
+                );
+
+
+            if (
+                dist <=
+                    boss.radius +
+                    180
+            ) {
+
+                state.battle = {
+
+                    bossEntityId:
+                        boss.entityId ||
+                        boss.id,
+
+                    bossId:
+                        boss.id,
+
+                    title:
+                        boss.name,
+
+                    text:
+                        "Você está prestes a desafiar este guardião.",
+
+                    icon:
+                        boss.icon ||
+                        "☠"
+
+                };
+
+
+                syncBattlePanel();
+
+
+                return false;
+
+            }
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       TRAVEL PANEL
+       ============================================================ */
+
+    function syncTravelPanel() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            !refs.travelPanel
+        ) {
+            return;
+        }
+
+
+        if (
+            !state.travel
+        ) {
+
+            setHidden(
+                refs.travelPanel,
+                true
+            );
+
+            return;
+
+        }
+
+
+        setHidden(
+            refs.travelPanel,
+            false
+        );
+
+
+        if (
+            refs.travelText
+        ) {
+
+            refs.travelText.textContent =
+                state.travel.text ||
+                state.travel.message ||
+                "Deseja continuar por este caminho?";
+
+        }
+
+    }
+
+
+    function confirmTravel() {
+
+        const travel =
+            state.travel;
+
+
+        if (!travel) {
+            return false;
+        }
+
+
+        state.travel =
+            null;
+
+
+        setHidden(
+            finalUIRuntime
+                .refs
+                .travelPanel,
+            true
+        );
+
+
+        if (
+            typeof travel.onConfirm ===
+                "function"
+        ) {
+
+            travel.onConfirm();
+
+            return true;
+
+        }
+
+
+        if (
+            travel.destination
+        ) {
+
+            loadWorld(
+                travel.destination,
+                travel.spawn ||
+                    "default"
+            );
+
+
+            return true;
+
+        }
+
+
+        return true;
+
+    }
+
+
+    function cancelTravel() {
+
+        const travel =
+            state.travel;
+
+
+        state.travel =
+            null;
+
+
+        setHidden(
+            finalUIRuntime
+                .refs
+                .travelPanel,
+            true
+        );
+
+
+        if (
+            typeof travel?.onCancel ===
+                "function"
+        ) {
+
+            travel.onCancel();
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /* ============================================================
+       WORLD PANEL SYNC
+       ============================================================ */
+
+    function syncModalVisibility() {
+
+        syncActivePanelVisibility();
+
+        syncDialogueChoicePanel();
+
+        syncBattlePanel();
+
+        syncTravelPanel();
+
+    }
+
+
+    /* ============================================================
+       SHOP / INVENTÁRIO — EVENT DELEGATION
+
+       UMA ÚNICA LISTENER.
+
+       Não são criados listeners repetidos quando
+       a interface é atualizada.
+       ============================================================ */
+
+    function handleDynamicInterfaceClick(
+        event
+    ) {
+
+        const target =
+            event.target.closest(
+                "button"
+            );
+
+
+        if (!target) {
+            return;
+        }
+
+
+        /* ========================================================
+           PERSONAGEM
+           ======================================================== */
+
+        const characterId =
+            target.dataset
+                .characterId;
+
+
+        if (characterId) {
+
+            selectCharacter(
+                characterId
+            );
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           CLOSE
+           ======================================================== */
+
+        const closeTarget =
+            target.dataset
+                .close;
+
+
+        if (closeTarget) {
+
+            if (
+                closeTarget ===
+                    "questPanel" &&
+                finalUIRuntime
+                    .refs
+                    .questPanel
+                    ?.dataset
+                    .dialogueChoice ===
+                    "true"
+            ) {
+
+                const dialogue =
+                    state.dialogue;
+
+
+                const decline =
+                    dialogue
+                        ?.choices
+                        ?.find(
+                            choice =>
+                                choice.id ===
+                                "declineMiguelQuest"
+                        );
+
+
+                if (decline) {
+
+                    chooseDialogueOption(
+                        decline.id
+                    );
+
+                } else {
+
+                    finishDialogue();
+
+                }
+
+
+                setHidden(
+                    finalUIRuntime
+                        .refs
+                        .questPanel,
+                    true
+                );
+
+
+                return;
+
+            }
+
+
+            const panelMap = {
+
+                inventoryPanel:
+                    "inventory",
+
+                mapPanel:
+                    "map",
+
+                bookPanel:
+                    "book",
+
+                shopPanel:
+                    "shop",
+
+                statusPanel:
+                    "status"
+
+            };
+
+
+            const panelName =
+                panelMap[
+                    closeTarget
+                ];
+
+
+            if (panelName) {
+
+                closeGamePanel(
+                    panelName
+                );
+
+            } else {
+
+                setHidden(
+                    document.getElementById(
+                        closeTarget
+                    ),
+                    true
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           INVENTÁRIO CATEGORY
+           ======================================================== */
+
+        if (
+            target.dataset.cat
+        ) {
+
+            finalUIRuntime
+                .inventoryCategory =
+                target.dataset.cat;
+
+
+            refreshInventoryDOM();
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           INVENTÁRIO ACTION
+           ======================================================== */
+
+        const inventoryAction =
+            target.dataset
+                .inventoryAction;
+
+
+        const itemId =
+            target.dataset
+                .itemId;
+
+
+        if (
+            inventoryAction &&
+            itemId
+        ) {
+
+            let success = false;
+
+
+            if (
+                inventoryAction ===
+                    "equip"
+            ) {
+
+                success =
+                    equipWeapon(
+                        itemId
+                    );
+
+            }
+
+
+            if (
+                inventoryAction ===
+                    "equip-armor"
+            ) {
+
+                success =
+                    equipArmor(
+                        itemId
+                    );
+
+            }
+
+
+            if (
+                inventoryAction ===
+                    "use"
+            ) {
+
+                success =
+                    useInventoryItem(
+                        itemId
+                    );
+
+            }
+
+
+            if (success) {
+
+                refreshInventoryDOM();
+
+                refreshStatusDOM();
+
+                updateHudDOM(
+                    true
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           SHOP TAB
+           ======================================================== */
+
+        if (
+            target.dataset.shop
+        ) {
+
+            state.shopMode =
+                target.dataset.shop;
+
+
+            refreshShopDOM();
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           COMPRA
+           ======================================================== */
+
+        const buyId =
+            target.dataset
+                .shopBuy;
+
+
+        if (buyId) {
+
+            if (
+                buyShopItem(
+                    buyId
+                )
+            ) {
+
+                refreshShopDOM();
+
+                refreshInventoryDOM();
+
+                refreshStatusDOM();
+
+                updateHudDOM(
+                    true
+                );
+
+                renderMiniMapCanvas(
+                    true
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           VENDA 1
+           ======================================================== */
+
+        const sellOneId =
+            target.dataset
+                .shopSellOne;
+
+
+        if (sellOneId) {
+
+            if (
+                sellOneItem(
+                    sellOneId
+                )
+            ) {
+
+                refreshShopDOM();
+
+                refreshInventoryDOM();
+
+                updateHudDOM(
+                    true
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           VENDER TUDO
+           ======================================================== */
+
+        const sellAllId =
+            target.dataset
+                .shopSellAll;
+
+
+        if (sellAllId) {
+
+            if (
+                sellAllItem(
+                    sellAllId
+                )
+            ) {
+
+                refreshShopDOM();
+
+                refreshInventoryDOM();
+
+                updateHudDOM(
+                    true
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           STATUS
+           ======================================================== */
+
+        const statId =
+            target.dataset
+                .statusAdd;
+
+
+        if (statId) {
+
+            applyStatusPointFromUI(
+                statId
+            );
+
+
+            return;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       QUEST ACTION
+       ============================================================ */
+
+    function handleQuestActionButton() {
+
+        const button =
+            finalUIRuntime
+                .refs
+                .questActionBtn;
+
+
+        if (!button) {
+            return;
+        }
+
+
+        const choiceId =
+            button
+                .dataset
+                .dialogueChoiceId;
+
+
+        if (
+            choiceId &&
+            state.dialogue
+        ) {
+
+            chooseDialogueOption(
+                choiceId
+            );
+
+
+            setHidden(
+                finalUIRuntime
+                    .refs
+                    .questPanel,
+                true
+            );
+
+
+            return;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       POINTER
+       ============================================================ */
+
+    function updatePointerFromEvent(
+        event
+    ) {
+
+        const canvas =
+            finalUIRuntime
+                .refs
+                .gameCanvas;
+
+
+        if (!canvas) {
+            return;
+        }
+
+
+        const rect =
+            canvas
+                .getBoundingClientRect();
+
+
+        if (
+            rect.width <= 0 ||
+            rect.height <= 0
+        ) {
+            return;
+        }
+
+
+        const x =
+            event.clientX -
+            rect.left;
+
+
+        const y =
+            event.clientY -
+            rect.top;
+
+
+        const world =
+            screenToWorld(
+                x,
+                y
+            );
+
+
+        state.pointer.x =
+            x;
+
+
+        state.pointer.y =
+            y;
+
+
+        state.pointer.screenX =
+            x;
+
+
+        state.pointer.screenY =
+            y;
+
+
+        state.pointer.worldX =
+            world.x;
+
+
+        state.pointer.worldY =
+            world.y;
+
+    }
+
+
+    function handleCanvasPointerMove(
+        event
+    ) {
+
+        updatePointerFromEvent(
+            event
+        );
+
+    }
+
+
+    function handleCanvasPointerDown(
+        event
+    ) {
+
+        if (
+            event.button !==
+                0
+        ) {
+            return;
+        }
+
+
+        updatePointerFromEvent(
+            event
+        );
+
+
+        state.pointer.down =
+            true;
+
+
+        /*
+            UM POINTERDOWN = UM ATAQUE.
+
+            Não existe loop usando pointer.down
+            para gerar ataques contínuos.
+        */
+        if (
+            !state.running ||
+            !state.player ||
+            isPlayerControlBlocked()
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            !ensureBossAcceptedBeforePlayerAttack()
+        ) {
+
+            return;
+
+        }
+
+
+        handleGameplayAttackInput();
+
+    }
+
+
+    function handleCanvasPointerUp(
+        event
+    ) {
+
+        if (
+            event.button ===
+                0
+        ) {
+
+            state.pointer.down =
+                false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       TEXT INPUT
+       ============================================================ */
+
+    function isTypingIntoField(
+        target
+    ) {
+
+        if (!target) {
+            return false;
+        }
+
+
+        const tag =
+            String(
+                target.tagName ||
+                ""
+            )
+                .toLowerCase();
+
+
+        return (
+            tag === "input" ||
+            tag === "textarea" ||
+            target.isContentEditable
+        );
+
+    }
+
+
+    /* ============================================================
+       TECLADO
+       ============================================================ */
+
+    function handleGlobalKeyDown(
+        event
+    ) {
+
+        /*
+            Não deixa setas/espaço moverem
+            a página durante o jogo.
+        */
+        if (
+            state.running &&
+            [
+
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight",
+                "Space"
+
+            ].includes(
+                event.code
+            )
+        ) {
+
+            event.preventDefault();
+
+        }
+
+
+        /*
+            Campo de texto:
+            NÃO ativa cheats/gameplay.
+        */
+        if (
+            isTypingIntoField(
+                event.target
+            )
+        ) {
+
+            if (
+                event.code ===
+                    "Enter" &&
+                isScreenActive(
+                    finalUIRuntime
+                        .refs
+                        .characterScreen
+                )
+            ) {
+
+                event.preventDefault();
+
+
+                safeCall(
+                    beginNewGame,
+                    "iniciar novo jogo pelo Enter"
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        /*
+            DEV PRIMEIRO.
+        */
+        if (
+            typeof handleDevShortcutKeyDown ===
+                "function"
+        ) {
+
+            const consumed =
+                handleDevShortcutKeyDown(
+                    event
+                );
+
+
+            if (consumed) {
+
+                event.preventDefault();
+
+                return;
+
+            }
+
+        }
+
+
+        /*
+            Mantém teclas pressionadas para WASD
+            e coleta segurando E.
+        */
+        state.keys.add(
+            event.code
+        );
+
+
+        /*
+            Ações únicas não repetem.
+        */
+        if (
+            event.repeat
+        ) {
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           ESC
+           ======================================================== */
+
+        if (
+            event.code ===
+                "Escape"
+        ) {
+
+            if (
+                state.activePanel
+            ) {
+
+                closeGamePanel();
+
+                return;
+
+            }
+
+
+            if (
+                state.battle
+            ) {
+
+                declineBattleConfirmation();
+
+                return;
+
+            }
+
+
+            if (
+                state.travel
+            ) {
+
+                cancelTravel();
+
+                return;
+
+            }
+
+
+            if (
+                state.cutscene &&
+                state.cutscene
+                    .skippable
+            ) {
+
+                skipCurrentCutscene();
+
+                return;
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           E / ENTER
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyE" ||
+            event.code ===
+                "Enter"
+        ) {
+
+            event.preventDefault();
+
+
+            safeCall(
+                handlePrimaryInteractionPress,
+                "interação E"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           Z
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyZ"
+        ) {
+
+            safeCall(
+                handleDoorInteraction,
+                "interação de porta Z"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           INVENTÁRIO
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyI"
+        ) {
+
+            toggleGamePanel(
+                "inventory"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           MAPA
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyM"
+        ) {
+
+            toggleGamePanel(
+                "map"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           LIVRO
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyL"
+        ) {
+
+            toggleGamePanel(
+                "book"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           STATUS
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyC"
+        ) {
+
+            toggleGamePanel(
+                "status"
+            );
+
+
+            return;
+
+        }
+
+
+        if (
+            isPlayerControlBlocked()
+        ) {
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           DASH
+           ======================================================== */
+
+        if (
+            event.code ===
+                "Space"
+        ) {
+
+            event.preventDefault();
+
+
+            safeCall(
+                handleGameplayDashInput,
+                "Dash"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ========================================================
+           Q / R / F
+           ======================================================== */
+
+        if (
+            event.code ===
+                "KeyQ"
+        ) {
+
+            if (
+                ensureBossAcceptedBeforePlayerAttack()
+            ) {
+
+                handleGameplaySkillInput(
+                    "q"
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            event.code ===
+                "KeyR"
+        ) {
+
+            if (
+                ensureBossAcceptedBeforePlayerAttack()
+            ) {
+
+                handleGameplaySkillInput(
+                    "r"
+                );
+
+            }
+
+
+            return;
+
+        }
+
+
+        if (
+            event.code ===
+                "KeyF"
+        ) {
+
+            if (
+                ensureBossAcceptedBeforePlayerAttack()
+            ) {
+
+                handleGameplaySkillInput(
+                    "f"
+                );
+
+            }
+
+
+            return;
+
+        }
+
+    }
+
+
+    function handleGlobalKeyUp(
+        event
+    ) {
+
+        state.keys.delete(
+            event.code
+        );
+
+
+        if (
+            event.code ===
+                "KeyE"
+        ) {
+
+            handlePrimaryHoldInteractionEnd();
+
+        }
+
+
+        if (
+            typeof handleDevShortcutKeyUp ===
+                "function"
+        ) {
+
+            handleDevShortcutKeyUp(
+                event
+            );
+
+        }
+
+    }
+
+
+    function handleWindowBlur() {
+
+        state.keys.clear();
+
+
+        state.pointer.down =
+            false;
+
+
+        handlePrimaryHoldInteractionEnd();
+
+
+        if (
+            typeof clearDevHeldKeys ===
+                "function"
+        ) {
+
+            clearDevHeldKeys();
+
+        }
+
+    }
+
+
+    /* ============================================================
+       MENU
+       ============================================================ */
+
+    function returnToMainMenu() {
+
+        if (
+            state.running &&
+            state.player &&
+            !state.player.dead
+        ) {
+
+            saveGame({
+                silent: true
+            });
+
+        }
+
+
+        state.running =
+            false;
+
+
+        state.pointer.down =
+            false;
+
+
+        state.keys.clear();
+
+
+        clearGameRuntimeBeforeLoad();
+
+
+        showScreen(
+            finalUIRuntime
+                .refs
+                .menuScreen
+        );
+
+
+        refreshContinueButton();
+
+    }
+
+
+    /* ============================================================
+       BUTTON BINDING
+
+       IMPORTANTE:
+       bind acontece UMA VEZ.
+       ============================================================ */
+
+    function bindFinalEvents() {
+
+        if (
+            finalUIRuntime.eventsBound
+        ) {
+
+            return;
+
+        }
+
+
+        finalUIRuntime.eventsBound =
+            true;
+
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        /* ========================================================
+           MENU
+           ======================================================== */
+
+        refs.newGameBtn
+            ?.addEventListener(
+                "click",
+                () =>
+                    safeCall(
+                        openCharacterSelection,
+                        "botão NOVO JOGO"
+                    )
+            );
+
+
+        refs.continueBtn
+            ?.addEventListener(
+                "click",
+                () =>
+                    safeCall(
+                        loadGameFromSave,
+                        "botão CONTINUAR"
+                    )
+            );
+
+
+        refs.howToBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    showScreen(
+                        refs.howScreen
+                    );
+
+                }
+            );
+
+
+        refs.creditsBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    showScreen(
+                        refs.creditsScreen
+                    );
+
+                }
+            );
+
+
+        refs.closeHowBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    showScreen(
+                        refs.menuScreen
+                    );
+
+                }
+            );
+
+
+        refs.closeCreditsBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    showScreen(
+                        refs.menuScreen
+                    );
+
+                }
+            );
+
+
+        refs.backMenuBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    showScreen(
+                        refs.menuScreen
+                    );
+
+                }
+            );
+
+
+        /* ========================================================
+           START GAME
+           ======================================================== */
+
+        refs.startGameBtn
+            ?.addEventListener(
+                "click",
+                () =>
+                    safeCall(
+                        beginNewGame,
+                        "botão ENTRAR EM VEYRA"
+                    )
+            );
+
+
+        /* ========================================================
+           HUD
+           ======================================================== */
+
+        refs.inventoryBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    toggleGamePanel(
+                        "inventory"
+                    );
+
+                }
+            );
+
+
+        refs.mapBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    toggleGamePanel(
+                        "map"
+                    );
+
+                }
+            );
+
+
+        refs.bookBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    toggleGamePanel(
+                        "book"
+                    );
+
+                }
+            );
+
+
+        refs.statusBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    toggleGamePanel(
+                        "status"
+                    );
+
+                }
+            );
+
+
+        refs.saveBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    saveGame();
+
+                }
+            );
+
+
+        refs.menuBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    returnToMainMenu();
+
+                }
+            );
+
+
+        /* ========================================================
+           TRAVEL
+           ======================================================== */
+
+        refs.travelYes
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    confirmTravel();
+
+                }
+            );
+
+
+        refs.travelNo
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    cancelTravel();
+
+                }
+            );
+
+
+        /* ========================================================
+           BATTLE
+           ======================================================== */
+
+        refs.battleAccept
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    acceptBattleConfirmation();
+
+                }
+            );
+
+
+        refs.battleDecline
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    declineBattleConfirmation();
+
+                }
+            );
+
+
+        /* ========================================================
+           RESPAWN
+           ======================================================== */
+
+        refs.respawnBtn
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    respawnPlayerAtHome();
+
+                }
+            );
+
+
+        /* ========================================================
+           QUEST
+           ======================================================== */
+
+        refs.questActionBtn
+            ?.addEventListener(
+                "click",
+                handleQuestActionButton
+            );
+
+
+        /* ========================================================
+           DELEGAÇÃO
+           ======================================================== */
+
+        document.addEventListener(
+            "click",
+            handleDynamicInterfaceClick
+        );
+
+
+        /* ========================================================
+           CANVAS
+           ======================================================== */
+
+        refs.gameCanvas
+            ?.addEventListener(
+                "pointermove",
+                handleCanvasPointerMove
+            );
+
+
+        refs.gameCanvas
+            ?.addEventListener(
+                "pointerdown",
+                handleCanvasPointerDown
+            );
+
+
+        refs.gameCanvas
+            ?.addEventListener(
+                "pointerup",
+                handleCanvasPointerUp
+            );
+
+
+        refs.gameCanvas
+            ?.addEventListener(
+                "pointerleave",
+                () => {
+
+                    state.pointer.down =
+                        false;
+
+                }
+            );
+
+
+        /*
+            Impede menu de contexto durante jogo.
+        */
+        refs.gameCanvas
+            ?.addEventListener(
+                "contextmenu",
+                event => {
+
+                    event.preventDefault();
+
+                }
+            );
+
+
+        /* ========================================================
+           TECLADO
+           ======================================================== */
+
+        window.addEventListener(
+            "keydown",
+            handleGlobalKeyDown
+        );
+
+
+        window.addEventListener(
+            "keyup",
+            handleGlobalKeyUp
+        );
+
+
+        window.addEventListener(
+            "blur",
+            handleWindowBlur
+        );
+
+
+        /* ========================================================
+           RESIZE
+           ======================================================== */
+
+        window.addEventListener(
+            "resize",
+            () => {
+
+                resizeRenderer();
+
+                renderMiniMapCanvas(
+                    true
+                );
+
+                renderWorldMapCanvas(
+                    true
+                );
+
+            }
+        );
+
+
+        /* ========================================================
+           AUTO SAVE AO FECHAR
+           ======================================================== */
+
+        window.addEventListener(
+            "beforeunload",
+            () => {
+
+                if (
+                    state.running &&
+                    state.player &&
+                    !state.player.dead
+                ) {
+
+                    saveGame({
+                        silent: true
+                    });
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ============================================================
+       PAUSA REAL DE PAINEL / DIÁLOGO
+
+       Inimigo não deve continuar batendo no
+       player enquanto ele está lendo inventário
+       ou diálogo.
+       ============================================================ */
+
+    function shouldFreezeCombatSimulation() {
+
+        if (
+            state.activePanel
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            state.dialogue
+        ) {
+
+            return true;
+
+        }
+
+
+        if (
+            state.travel ||
+            state.battle
+        ) {
+
+            return true;
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /* ============================================================
+       AUTOSAVE
+       ============================================================ */
+
+    function updateAutosave(
+        dt
+    ) {
+
+        if (
+            !state.running ||
+            !state.player ||
+            state.player.dead ||
+            state.cutscene ||
+            state.fragmentMinigame
+                ?.active
+        ) {
+
+            return;
+
+        }
+
+
+        finalUIRuntime
+            .autosaveElapsed +=
+            dt;
+
+
+        const interval =
+            finiteNumber(
+                GAME_CONFIG
+                    .autosaveSeconds,
+                30
+            );
+
+
+        if (
+            finalUIRuntime
+                .autosaveElapsed <
+            interval
+        ) {
+
+            return;
+
+        }
+
+
+        saveGame({
+            silent: true
+        });
+
+    }
+
+
+    /* ============================================================
+       REFRESH INTELIGENTE
+       ============================================================ */
+
+    function createInventorySignature() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return "";
+        }
+
+
+        return JSON.stringify({
+
+            inventory:
+                player.inventory,
+
+            equipment:
+                player.equipment,
+
+            money:
+                player.money,
+
+            statPoints:
+                player.statPoints
+
+        });
+
+    }
+
+
+    function updateDOMInterfaces() {
+
+        if (
+            !state.running ||
+            !state.player
+        ) {
+
+            return;
+
+        }
+
+
+        updateHudDOM();
+
+
+        renderMiniMapCanvas();
+
+
+        syncModalVisibility();
+
+
+        const signature =
+            createInventorySignature();
+
+
+        if (
+            signature !==
+            finalUIRuntime
+                .lastInventorySignature
+        ) {
+
+            finalUIRuntime
+                .lastInventorySignature =
+                signature;
+
+
+            if (
+                state.activePanel ===
+                    "inventory"
+            ) {
+
+                refreshInventoryDOM();
+
+            }
+
+
+            if (
+                state.activePanel ===
+                    "shop"
+            ) {
+
+                refreshShopDOM();
+
+            }
+
+
+            if (
+                state.activePanel ===
+                    "status"
+            ) {
+
+                refreshStatusDOM();
+
+            }
+
+        }
+
+
+        if (
+            state.area !==
+                finalUIRuntime
+                    .lastArea
+        ) {
+
+            finalUIRuntime
+                .lastArea =
+                state.area;
+
+
+            updateHudDOM(
+                true
+            );
+
+
+            renderMiniMapCanvas(
+                true
+            );
+
+
+            renderWorldMapCanvas(
+                true
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       VAELKOR / MISSÃO REPAIR CONTÍNUO
+
+       NÃO muda progresso.
+       Apenas impede entidades duplicadas.
+       ============================================================ */
+
+    function lightweightAntiBugRepair() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return;
+        }
+
+
+        const quest =
+            player.miguelQuest;
+
+
+        if (quest) {
+
+            if (
+                quest.keyConsumed ||
+                quest.secretDoorOpened
+            ) {
+
+                if (
+                    getRealItemCount(
+                        "chaveObscura"
+                    ) >
+                    0
+                ) {
+
+                    player.inventory
+                        .chaveObscura =
+                        0;
+
+                }
+
+            }
+
+
+            if (
+                quest.fragmentDelivered ||
+                quest.completed
+            ) {
+
+                if (
+                    getRealItemCount(
+                        "fragmentoVazio"
+                    ) >
+                    0
+                ) {
+
+                    player.inventory
+                        .fragmentoVazio =
+                        0;
+
+                }
+
+            }
+
+
+            if (
+                player
+                    .abilities
+                    .dashV2
+            ) {
+
+                player
+                    .abilities
+                    .dashV1 =
+                    false;
+
+            }
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOOP PRINCIPAL
+       ============================================================ */
+
+    function finalGameLoop(
+        timestamp
+    ) {
+
+        requestAnimationFrame(
+            finalGameLoop
+        );
+
+
+        if (
+            !finalUIRuntime.initialized
+        ) {
+
+            return;
+
+        }
+
+
+        const last =
+            finiteNumber(
+                state.lastTime,
+                timestamp
+            );
+
+
+        let dt =
+            (
+                timestamp -
+                last
+            ) /
+            1000;
+
+
+        state.lastTime =
+            timestamp;
+
+
+        dt =
+            clamp(
+                dt,
+                0,
+                GAME_CONFIG
+                    .maxDeltaTime ||
+                    0.05
+            );
+
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            Painéis/diálogos:
+            mundo fica congelado.
+
+            Cutscenes e minigame:
+            updateGameplaySystems precisa continuar,
+            pois são atualizados lá dentro.
+        */
+        const frozen =
+            shouldFreezeCombatSimulation();
+
+
+        if (
+            !frozen ||
+            state.cutscene ||
+            state.fragmentMinigame
+                ?.active ||
+            state.deathState
+        ) {
+
+            safeCall(
+                () =>
+                    updateGameplaySystems(
+                        dt
+                    ),
+                "gameplay update"
+            );
+
+        }
+
+
+        /*
+            Typewriter e apresentação sempre
+            continuam mesmo com diálogo.
+        */
+        safeCall(
+            () =>
+                updatePresentationSystems(
+                    dt
+                ),
+            "presentation update"
+        );
+
+
+        if (
+            !frozen
+        ) {
+
+            maybePromptNearbyBoss();
+
+        }
+
+
+        lightweightAntiBugRepair();
+
+
+        updateAutosave(
+            dt
+        );
+
+
+        updateDOMInterfaces();
+
+
+        safeCall(
+            renderGameFrame,
+            "render"
+        );
+
+    }
+
+
+    /* ============================================================
+       AUDITORIA DOS IDs
+       ============================================================ */
+
+    function auditRequiredHTML() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        const required = [
+
+            [
+                "menuScreen",
+                refs.menuScreen
+            ],
+
+            [
+                "newGameBtn",
+                refs.newGameBtn
+            ],
+
+            [
+                "continueBtn",
+                refs.continueBtn
+            ],
+
+            [
+                "howToBtn",
+                refs.howToBtn
+            ],
+
+            [
+                "creditsBtn",
+                refs.creditsBtn
+            ],
+
+            [
+                "characterScreen",
+                refs.characterScreen
+            ],
+
+            [
+                "characterCards",
+                refs.characterCards
+            ],
+
+            [
+                "playerName",
+                refs.playerName
+            ],
+
+            [
+                "startGameBtn",
+                refs.startGameBtn
+            ],
+
+            [
+                "gameScreen",
+                refs.gameScreen
+            ],
+
+            [
+                "gameCanvas",
+                refs.gameCanvas
+            ],
+
+            [
+                "inventoryBtn",
+                refs.inventoryBtn
+            ],
+
+            [
+                "mapBtn",
+                refs.mapBtn
+            ],
+
+            [
+                "bookBtn",
+                refs.bookBtn
+            ],
+
+            [
+                "saveBtn",
+                refs.saveBtn
+            ],
+
+            [
+                "menuBtn",
+                refs.menuBtn
+            ]
+
+        ];
+
+
+        const missing =
+            required
+                .filter(
+                    (
+                        [
+                            ,
+                            element
+                        ]
+                    ) =>
+                        !element
+                )
+                .map(
+                    (
+                        [
+                            id
+                        ]
+                    ) =>
+                        id
+                );
+
+
+        if (
+            missing.length >
+            0
+        ) {
+
+            console.error(
+                "VEYRA — IDs obrigatórios ausentes:",
+                missing
+            );
+
+        } else {
+
+            console.log(
+                "VEYRA — HTML alinhado: IDs principais encontrados."
+            );
+
+        }
+
+
+        return missing;
+
+    }
+
+
+    /* ============================================================
+       AUDITORIA DAS FUNÇÕES DAS PARTES 1—4
+       ============================================================ */
+
+    function auditRequiredGameFunctions() {
+
+        const tests = [
+
+            [
+                "getCharacterById",
+                typeof getCharacterById
+            ],
+
+            [
+                "loadWorld",
+                typeof loadWorld
+            ],
+
+            [
+                "findSafePosition",
+                typeof findSafePosition
+            ],
+
+            [
+                "recalculatePlayerStats",
+                typeof recalculatePlayerStats
+            ],
+
+            [
+                "handleGameplayAttackInput",
+                typeof handleGameplayAttackInput
+            ],
+
+            [
+                "handleGameplaySkillInput",
+                typeof handleGameplaySkillInput
+            ],
+
+            [
+                "handleGameplayDashInput",
+                typeof handleGameplayDashInput
+            ],
+
+            [
+                "handlePrimaryInteractionPress",
+                typeof handlePrimaryInteractionPress
+            ],
+
+            [
+                "handleDoorInteraction",
+                typeof handleDoorInteraction
+            ],
+
+            [
+                "updateGameplaySystems",
+                typeof updateGameplaySystems
+            ],
+
+            [
+                "updatePresentationSystems",
+                typeof updatePresentationSystems
+            ],
+
+            [
+                "renderGameFrame",
+                typeof renderGameFrame
+            ],
+
+            [
+                "attachRenderer",
+                typeof attachRenderer
+            ]
+
+        ];
+
+
+        const missing =
+            tests
+                .filter(
+                    (
+                        [
+                            ,
+                            type
+                        ]
+                    ) =>
+                        type !==
+                        "function"
+                )
+                .map(
+                    (
+                        [
+                            name
+                        ]
+                    ) =>
+                        name
+                );
+
+
+        if (
+            missing.length >
+            0
+        ) {
+
+            console.error(
+                "VEYRA — funções obrigatórias ausentes:",
+                missing
+            );
+
+        } else {
+
+            console.log(
+                "VEYRA — Partes 1–4 conectadas."
+            );
+
+        }
+
+
+        return missing;
+
+    }
+
+
+    /* ============================================================
+       VALIDADORES DAS PARTES
+
+       ERRO DE VALIDAÇÃO NÃO IMPEDE
+       OS BOTÕES DE FUNCIONAREM.
+
+       Esse detalhe é proposital.
+       ============================================================ */
+
+    function runPartValidatorsSafely() {
+
+        const validators = [
+
+            [
+                "Parte 1",
+                typeof validatePart1Data ===
+                    "function"
+                    ? validatePart1Data
+                    : null
+            ],
+
+            [
+                "Parte 2",
+                typeof validatePart2Data ===
+                    "function"
+                    ? validatePart2Data
+                    : null
+            ],
+
+            [
+                "Parte 3",
+                typeof validatePart3Data ===
+                    "function"
+                    ? validatePart3Data
+                    : null
+            ],
+
+            [
+                "Parte 4",
+                typeof validatePart4Data ===
+                    "function"
+                    ? validatePart4Data
+                    : null
+            ]
+
+        ];
+
+
+        const results = [];
+
+
+        for (
+            const [
+                name,
+                validator
+            ] of
+            validators
+        ) {
+
+            if (!validator) {
+
+                results.push({
+
+                    name,
+                    status:
+                        "ausente"
+
+                });
+
+
+                continue;
+
+            }
+
+
+            try {
+
+                const result =
+                    validator();
+
+
+                results.push({
+
+                    name,
+                    status:
+                        "executado",
+
+                    result
+
+                });
+
+            } catch (error) {
+
+                /*
+                    IMPORTANTE:
+                    não derruba initialize().
+                */
+                console.error(
+                    `VEYRA — ${name} apresentou erro na validação:`,
+                    error
+                );
+
+
+                results.push({
+
+                    name,
+                    status:
+                        "erro",
+
+                    error
+
+                });
+
+            }
+
+        }
+
+
+        return results;
+
+    }
+
+
+    /* ============================================================
+       RELATÓRIO FINAL
+       ============================================================ */
+
+    function runFinalCompatibilityAudit() {
+
+        const htmlMissing =
+            auditRequiredHTML();
+
+
+        const functionMissing =
+            auditRequiredGameFunctions();
+
+
+        const validators =
+            runPartValidatorsSafely();
+
+
+        const report = {
+
+            version:
+                typeof GAME_VERSION_NAME !==
+                    "undefined"
+                    ? GAME_VERSION_NAME
+                    : "VEYRA",
+
+            htmlMissing,
+
+            functionMissing,
+
+            validators,
+
+            buttonsBound:
+                finalUIRuntime
+                    .eventsBound,
+
+            rendererReady:
+                Boolean(
+                    renderRuntime.ctx &&
+                    renderRuntime.canvas
+                )
+
+        };
+
+
+        console.group(
+            "VEYRA — AUDITORIA FINAL"
+        );
+
+
+        console.log(
+            report
+        );
+
+
+        if (
+            htmlMissing.length ===
+                0 &&
+            functionMissing.length ===
+                0 &&
+            report.buttonsBound &&
+            report.rendererReady
+        ) {
+
+            console.log(
+                "✓ Integração principal concluída."
+            );
+
+        }
+
+
+        console.groupEnd();
+
+
+        return report;
+
+    }
+
+
+    /* ============================================================
+       INICIALIZAÇÃO DEV
+       ============================================================ */
+
+    function initializeDeveloperCommandsSafely() {
+
+        try {
+
+            if (
+                typeof createDevCommandPanel ===
+                    "function"
+            ) {
+
+                createDevCommandPanel();
+
+            }
+
+        } catch (error) {
+
+            /*
+                Cheat nunca pode derrubar jogo.
+            */
+            console.error(
+                "VEYRA — erro ao iniciar COMANDOS:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       RENDERER UI REFS
+
+       Os nomes inventoryContent/shopContent/mapContent
+       ficam NULL de propósito.
+
+       Usamos os containers reais do HTML
+       através das funções finais acima.
+       ============================================================ */
+
+    function getRendererUIRefs() {
+
+        return {
+
+            inventoryContent:
+                null,
+
+            statusContent:
+                null,
+
+            shopContent:
+                null,
+
+            mapContent:
+                null
+
+        };
+
+    }
+
+
+    /* ============================================================
+       REPARO VISUAL DOS ELEMENTOS LEGACY
+
+       O HUD HTML permanece.
+
+       Diálogo/interação/morte legacy ficam
+       escondidos porque agora são desenhados
+       no Canvas.
+       ============================================================ */
+
+    function configureLegacyOverlays() {
+
+        const refs =
+            finalUIRuntime.refs;
+
+
+        if (
+            refs.interactionHint
+        ) {
+
+            setHidden(
+                refs.interactionHint,
+                true
+            );
+
+        }
+
+
+        if (
+            refs.dialogueBox
+        ) {
+
+            setHidden(
+                refs.dialogueBox,
+                true
+            );
+
+        }
+
+
+        /*
+            Tela de morte agora é cinematográfica
+            no canvas.
+
+            O botão E e respawnBtn continuam
+            disponíveis logicamente.
+        */
+        if (
+            refs.deathPanel
+        ) {
+
+            setHidden(
+                refs.deathPanel,
+                true
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       REPARO DE SAVE DUPLICADO DE UNIQUE
+       ============================================================ */
+
+    function normalizeUniqueInventoryItems() {
+
+        const player =
+            state.player;
+
+
+        if (!player) {
+            return;
+        }
+
+
+        for (
+            const item of
+            Object.values(
+                ITEMS
+            )
+        ) {
+
+            if (
+                !item?.unique
+            ) {
+                continue;
+            }
+
+
+            const count =
+                getRealItemCount(
+                    item.id
+                );
+
+
+            if (
+                count > 1
+            ) {
+
+                player.inventory[
+                    item.id
+                ] =
+                    1;
+
+            }
+
+        }
+
+    }
+
+
+    /* ============================================================
+       MONITOR DE MUDANÇA DE QUEST
+       ============================================================ */
+
+    function syncMiguelQuestRuntime() {
+
+        const player =
+            state.player;
+
+
+        if (
+            !player ||
+            !player.miguelQuest
+        ) {
+
+            return;
+
+        }
+
+
+        const quest =
+            player.miguelQuest;
+
+
+        /*
+            Dash obtido = missão disponível.
+            Não aparece antes.
+        */
+        if (
+            (
+                player.abilities.dashV1 ||
+                player.abilities.dashV2
+            ) &&
+            !quest.completed
+        ) {
+
+            quest.missionAvailable =
+                true;
+
+        }
+
+
+        /*
+            Sem Dash = sem marcador.
+        */
+        if (
+            !player.abilities.dashV1 &&
+            !player.abilities.dashV2 &&
+            !quest.completed
+        ) {
+
+            quest.missionAvailable =
+                false;
+
+        }
+
+
+        /*
+            Garantia anti-loop de missão.
+        */
+        if (
+            quest.completed
+        ) {
+
+            quest.missionAccepted =
+                true;
+
+
+            quest.trackerVisible =
+                false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       REFRESH APÓS COMPRAR / COLETAR / PROGREDIR
+       ============================================================ */
+
+    function finalRuntimeMaintenance() {
+
+        if (
+            !state.player
+        ) {
+            return;
+        }
+
+
+        syncMiguelQuestRuntime();
+
+        normalizeUniqueInventoryItems();
+
+
+        if (
+            typeof sanitizeVaelkorState ===
+                "function"
+        ) {
+
+            sanitizeVaelkorState();
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOOP AJUSTADO COM MANUTENÇÃO
+
+       Guardamos o loop criado acima e usamos
+       este como loop REAL.
+       ============================================================ */
+
+    function mainAnimationLoop(
+        timestamp
+    ) {
+
+        requestAnimationFrame(
+            mainAnimationLoop
+        );
+
+
+        if (
+            !finalUIRuntime.initialized
+        ) {
+
+            return;
+
+        }
+
+
+        const previous =
+            finiteNumber(
+                state.lastTime,
+                timestamp
+            );
+
+
+        let dt =
+            (
+                timestamp -
+                previous
+            ) /
+            1000;
+
+
+        state.lastTime =
+            timestamp;
+
+
+        dt =
+            clamp(
+                dt,
+                0,
+                finiteNumber(
+                    GAME_CONFIG
+                        .maxDeltaTime,
+                    0.05
+                )
+            );
+
+
+        if (
+            !state.running
+        ) {
+
+            return;
+
+        }
+
+
+        const frozen =
+            shouldFreezeCombatSimulation();
+
+
+        /*
+            Diálogo:
+            mundo congela, mas typewriter continua.
+
+            Cutscene/minigame/morte:
+            gameplay update contém os timers.
+        */
+        if (
+            !frozen ||
+            state.cutscene ||
+            state.fragmentMinigame
+                ?.active ||
+            state.deathState
+        ) {
+
+            try {
+
+                updateGameplaySystems(
+                    dt
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "VEYRA — erro no updateGameplaySystems:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        try {
+
+            updatePresentationSystems(
+                dt
+            );
+
+        } catch (error) {
+
+            console.error(
+                "VEYRA — erro no updatePresentationSystems:",
+                error
+            );
+
+        }
+
+
+        if (
+            !frozen
+        ) {
+
+            maybePromptNearbyBoss();
+
+        }
+
+
+        finalRuntimeMaintenance();
+
+
+        updateAutosave(
+            dt
+        );
+
+
+        updateDOMInterfaces();
+
+
+        try {
+
+            renderGameFrame();
+
+        } catch (error) {
+
+            console.error(
+                "VEYRA — erro de renderização:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       INICIALIZAÇÃO FINAL
+
+       ORDEM IMPORTANTE:
+
+       1. resolve HTML
+       2. cria status
+       3. BIND BOTÕES
+       4. só então inicializa Canvas
+
+       ASSIM um problema no Canvas NÃO impede
+       NOVO JOGO / COMO JOGAR / CRÉDITOS
+       de terem listeners.
+       ============================================================ */
+
+    function initializeVeyraFinal() {
+
+        if (
+            finalUIRuntime.initialized
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+            1 — HTML
+        */
+        resolveCurrentUI();
+
+
+        /*
+            2 — componentes extras
+        */
+        ensureStatusInterface();
+
+
+        /*
+            refs mudaram após criação.
+        */
+        finalUIRuntime.refs =
+            {
+
+                ...finalUIRuntime.refs,
+
+                statusPanel:
+                    document.getElementById(
+                        "statusPanel"
+                    ),
+
+                statusContent:
+                    document.getElementById(
+                        "statusContent"
+                    ),
+
+                statusBtn:
+                    document.getElementById(
+                        "statusBtn"
+                    )
+
+            };
+
+
+        /*
+            3 — EVENTOS PRIMEIRO.
+        */
+        bindFinalEvents();
+
+
+        /*
+            4 — seleção
+        */
+        renderCharacterCards();
+
+
+        /*
+            5 — continue
+        */
+        refreshContinueButton();
+
+
+        /*
+            6 — overlays
+        */
+        configureLegacyOverlays();
+
+
+        /*
+            7 — comandos privados
+        */
+        initializeDeveloperCommandsSafely();
+
+
+        /*
+            8 — renderer
+        */
+        const canvas =
+            finalUIRuntime
+                .refs
+                .gameCanvas;
+
+
+        if (canvas) {
+
+            const attached =
+                attachRenderer(
+                    canvas,
+                    getRendererUIRefs()
+                );
+
+
+            if (!attached) {
+
+                console.error(
+                    "VEYRA — renderer não inicializado."
+                );
+
+            }
+
+        } else {
+
+            console.error(
+                "VEYRA — #gameCanvas não encontrado."
+            );
+
+        }
+
+
+        /*
+            9 — deixa menu como tela inicial
+            SEM adicionar .hidden nas sections.
+        */
+        showScreen(
+            finalUIRuntime
+                .refs
+                .menuScreen
+        );
+
+
+        /*
+            10 — ponteiro inicial.
+        */
+        state.pointer.x =
+            renderRuntime.width /
+            2;
+
+
+        state.pointer.y =
+            renderRuntime.height /
+            2;
+
+
+        state.pointer.worldX =
+            state.camera.x;
+
+
+        state.pointer.worldY =
+            state.camera.y;
+
+
+        /*
+            11 — runtime pronto.
+        */
+        finalUIRuntime.initialized =
+            true;
+
+
+        state.lastTime =
+            performance.now();
+
+
+        /*
+            12 — auditoria.
+            Não interrompe botões caso um
+            validador secundário falhe.
+        */
+        const report =
+            runFinalCompatibilityAudit();
+
+
+        if (
+            report.htmlMissing.length >
+            0
+        ) {
+
+            if (
+                finalUIRuntime
+                    .refs
+                    .continueHint
+            ) {
+
+                finalUIRuntime
+                    .refs
+                    .continueHint
+                    .textContent =
+                    `Aviso técnico: HTML incompleto (${report.htmlMissing.join(", ")}).`;
+
+            }
+
+        }
+
+
+        /*
+            13 — loop.
+        */
+        requestAnimationFrame(
+            mainAnimationLoop
+        );
+
+
+        console.log(
+            "VEYRA — inicialização final concluída."
+        );
+
+    }
+
+
+    /* ============================================================
+       INICIALIZAÇÃO SEGURA
+
+       script.js está no final do body no HTML,
+       mas mesmo assim aguardamos DOMContentLoaded
+       quando necessário.
+       ============================================================ */
+
+    if (
+        document.readyState ===
+            "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+
+                try {
+
+                    initializeVeyraFinal();
+
+                } catch (error) {
+
+                    console.error(
+                        "VEYRA — FALHA CRÍTICA DE INICIALIZAÇÃO:",
+                        error
+                    );
+
+
+                    const hint =
+                        document.getElementById(
+                            "continueHint"
+                        );
+
+
+                    if (hint) {
+
+                        hint.textContent =
+                            "Erro ao iniciar o JavaScript. Abra o console para ver o ponto exato.";
+
+                    }
+
+                }
+
+            },
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        try {
+
+            initializeVeyraFinal();
+
+        } catch (error) {
+
+            console.error(
+                "VEYRA — FALHA CRÍTICA DE INICIALIZAÇÃO:",
+                error
+            );
+
+
+            const hint =
+                document.getElementById(
+                    "continueHint"
+                );
+
+
+            if (hint) {
+
+                hint.textContent =
+                    "Erro ao iniciar o JavaScript. Abra o console para ver o ponto exato.";
+
+            }
+
+        }
+
+    }
+
+
+})();
