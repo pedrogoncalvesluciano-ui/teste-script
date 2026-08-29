@@ -15351,3 +15351,11721 @@
        - minério
        - Chave Obscura
        ============================================================ */
+    /* ============================================================
+       VEYRA: A QUIETUDE
+       V30 — RECONSTRUÇÃO UNIFICADA
+
+       SCRIPT.JS — PARTE 3/5
+
+       SISTEMAS:
+       - movimentação
+       - colisão
+       - ataque básico
+       - habilidades Q/R/F
+       - Dash V1
+       - Dash V2
+       - projéteis
+       - IA dos inimigos
+       - habilidades das espécies
+       - bosses
+       - Vaelkor
+       - fases de Vaelkor
+       - cutscenes runtime
+       - morte de Vaelkor
+       - Fragmento do Vazio
+       - minigame
+       - coleta segurando E
+       - madeira/minérios
+       - Essência Sombria
+       - sangue
+       - dano
+       - morte do jogador
+       - perda parcial de materiais
+       - fome/cansaço
+       - hordas do Céu
+
+       CONTINUA O MESMO IIFE.
+
+       NÃO COLOQUE (() => {
+       NÃO COLOQUE })();
+       ============================================================ */
+
+
+    /* ============================================================
+       CONTROLE / PAUSA
+       ============================================================ */
+
+    function addPauseReason(reason) {
+        if (!reason) {
+            return;
+        }
+
+        state.pauseReasons.add(reason);
+
+        state.paused =
+            state.pauseReasons.size > 0;
+    }
+
+
+    function removePauseReason(reason) {
+        if (!reason) {
+            return;
+        }
+
+        state.pauseReasons.delete(reason);
+
+        state.paused =
+            state.pauseReasons.size > 0;
+    }
+
+
+    function clearPauseReasons() {
+        state.pauseReasons.clear();
+
+        state.paused = false;
+    }
+
+
+    function isPlayerControlBlocked() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return true;
+        }
+
+        if (player.dead) {
+            return true;
+        }
+
+        if (state.cutscene) {
+            return true;
+        }
+
+        if (state.dialogue) {
+            return true;
+        }
+
+        if (state.activePanel) {
+            return true;
+        }
+
+        if (state.travel) {
+            return true;
+        }
+
+        if (state.battle) {
+            return true;
+        }
+
+        if (
+            state.fragmentMinigame
+                ?.active
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /* ============================================================
+       NOTIFICAÇÕES
+       ============================================================ */
+
+    function pushNotification(
+        title,
+        text = "",
+        type = "info",
+        duration = 3
+    ) {
+        state.notifications.push({
+            id:
+                uid("notification"),
+
+            title:
+                String(title || ""),
+
+            text:
+                String(text || ""),
+
+            type,
+
+            timer:
+                Math.max(
+                    0.1,
+                    finiteNumber(
+                        duration,
+                        3
+                    )
+                )
+        });
+    }
+
+
+    function updateNotifications(dt) {
+        for (
+            const notification of
+            state.notifications
+        ) {
+            notification.timer -= dt;
+        }
+
+        state.notifications =
+            state.notifications.filter(
+                notification =>
+                    notification.timer > 0
+            );
+    }
+
+
+    /* ============================================================
+       PARTÍCULAS / EFEITOS
+       ============================================================ */
+
+    function addWorldParticle(
+        particle
+    ) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return null;
+        }
+
+        if (
+            world.particles.length >=
+            MAX_WORLD_PARTICLES
+        ) {
+            world.particles.shift();
+        }
+
+        const entity = {
+            id:
+                uid("particle"),
+
+            x: 0,
+            y: 0,
+
+            vx: 0,
+            vy: 0,
+
+            size: 4,
+
+            life: 0.5,
+            maxLife: 0.5,
+
+            gravity: 0,
+
+            friction: 1,
+
+            alpha: 1,
+
+            ...particle
+        };
+
+        entity.maxLife =
+            entity.life;
+
+        world.particles.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function addWorldEffect(
+        effect
+    ) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return null;
+        }
+
+        if (
+            world.effects.length >=
+            MAX_WORLD_EFFECTS
+        ) {
+            world.effects.shift();
+        }
+
+        const entity = {
+            id:
+                uid("effect"),
+
+            timer: 0,
+            duration: 0.5,
+
+            ...effect
+        };
+
+        world.effects.push(
+            entity
+        );
+
+        return entity;
+    }
+
+
+    function spawnBurstParticles(
+        x,
+        y,
+        options = {}
+    ) {
+        const amount =
+            Math.max(
+                1,
+                integer(
+                    options.amount,
+                    10
+                )
+            );
+
+        for (
+            let index = 0;
+            index < amount;
+            index += 1
+        ) {
+            const angle =
+                random(
+                    0,
+                    Math.PI * 2
+                );
+
+            const speed =
+                random(
+                    options.speedMin ??
+                        40,
+                    options.speedMax ??
+                        160
+                );
+
+            addWorldParticle({
+                type:
+                    options.type ||
+                    "spark",
+
+                x:
+                    x +
+                    random(-5, 5),
+
+                y:
+                    y +
+                    random(-5, 5),
+
+                vx:
+                    Math.cos(angle) *
+                    speed,
+
+                vy:
+                    Math.sin(angle) *
+                    speed,
+
+                size:
+                    random(
+                        options.sizeMin ??
+                            2,
+                        options.sizeMax ??
+                            6
+                    ),
+
+                life:
+                    random(
+                        options.lifeMin ??
+                            0.25,
+                        options.lifeMax ??
+                            0.75
+                    ),
+
+                gravity:
+                    options.gravity ??
+                    0,
+
+                friction:
+                    options.friction ??
+                    0.94,
+
+                color:
+                    options.color ||
+                    "#ffffff",
+
+                alpha:
+                    options.alpha ??
+                    1
+            });
+        }
+    }
+
+
+    function updateWorldParticles(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const particle of
+            world.particles
+        ) {
+            particle.life -= dt;
+
+            particle.vx *=
+                Math.pow(
+                    particle.friction,
+                    dt * 60
+                );
+
+            particle.vy *=
+                Math.pow(
+                    particle.friction,
+                    dt * 60
+                );
+
+            particle.vy +=
+                particle.gravity *
+                dt;
+
+            particle.x +=
+                particle.vx *
+                dt;
+
+            particle.y +=
+                particle.vy *
+                dt;
+        }
+
+        world.particles =
+            world.particles.filter(
+                particle =>
+                    particle.life > 0
+            );
+    }
+
+
+    function updateWorldEffects(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const effect of
+            world.effects
+        ) {
+            effect.timer += dt;
+        }
+
+        world.effects =
+            world.effects.filter(
+                effect =>
+                    effect.timer <
+                    effect.duration
+            );
+    }
+
+
+    /* ============================================================
+       BLOOD / IMPACTO
+       ============================================================ */
+
+    function createBloodMark(
+        x,
+        y,
+        amount = 4
+    ) {
+        const count =
+            clamp(
+                integer(
+                    amount,
+                    4
+                ),
+                1,
+                9
+            );
+
+        for (
+            let index = 0;
+            index < count;
+            index += 1
+        ) {
+            if (
+                state.bloodMarks.length >=
+                MAX_BLOOD_MARKS
+            ) {
+                state.bloodMarks.shift();
+            }
+
+            state.bloodMarks.push({
+                id:
+                    uid("blood"),
+
+                x:
+                    x +
+                    random(-18, 18),
+
+                y:
+                    y +
+                    random(-18, 18),
+
+                radius:
+                    random(
+                        VISUAL_CONFIG
+                            .blood
+                            .markMin,
+
+                        VISUAL_CONFIG
+                            .blood
+                            .markMax
+                    ),
+
+                life:
+                    random(
+                        VISUAL_CONFIG
+                            .blood
+                            .markLifeMin,
+
+                        VISUAL_CONFIG
+                            .blood
+                            .markLifeMax
+                    ),
+
+                maxLife: 0,
+
+                rotation:
+                    random(
+                        0,
+                        Math.PI * 2
+                    )
+            });
+
+            const mark =
+                state.bloodMarks[
+                    state.bloodMarks.length -
+                    1
+                ];
+
+            mark.maxLife =
+                mark.life;
+        }
+    }
+
+
+    function updateBloodMarks(dt) {
+        for (
+            const mark of
+            state.bloodMarks
+        ) {
+            mark.life -= dt;
+        }
+
+        state.bloodMarks =
+            state.bloodMarks.filter(
+                mark =>
+                    mark.life > 0
+            );
+    }
+
+
+    function triggerScreenShake(
+        power = 5,
+        duration = 0.15
+    ) {
+        state.screenShake =
+            Math.max(
+                state.screenShake,
+                duration
+            );
+
+        state.screenShakePower =
+            Math.max(
+                state.screenShakePower,
+                power
+            );
+    }
+
+
+    function updateScreenShake(dt) {
+        if (
+            state.screenShake <= 0
+        ) {
+            state.screenShake = 0;
+            state.screenShakePower = 0;
+            return;
+        }
+
+        state.screenShake -= dt;
+
+        if (
+            state.screenShake <= 0
+        ) {
+            state.screenShake = 0;
+            state.screenShakePower = 0;
+        }
+    }
+
+
+    /* ============================================================
+       DIREÇÃO
+       ============================================================ */
+
+    function vectorToFacing(
+        x,
+        y,
+        fallback = "down"
+    ) {
+        if (
+            Math.abs(x) <
+                0.001 &&
+            Math.abs(y) <
+                0.001
+        ) {
+            return fallback;
+        }
+
+        if (
+            Math.abs(x) >
+            Math.abs(y)
+        ) {
+            return x >= 0
+                ? "right"
+                : "left";
+        }
+
+        return y >= 0
+            ? "down"
+            : "up";
+    }
+
+
+    function facingToVector(
+        facing
+    ) {
+        switch (facing) {
+            case "up":
+                return {
+                    x: 0,
+                    y: -1
+                };
+
+            case "down":
+                return {
+                    x: 0,
+                    y: 1
+                };
+
+            case "left":
+                return {
+                    x: -1,
+                    y: 0
+                };
+
+            case "right":
+                return {
+                    x: 1,
+                    y: 0
+                };
+
+            default:
+                return {
+                    x: 0,
+                    y: 1
+                };
+        }
+    }
+
+
+    /* ============================================================
+       MOVIMENTAÇÃO COM COLISÃO SEPARADA EM X/Y
+       ============================================================ */
+
+    function moveCircleWithCollision(
+        entity,
+        moveX,
+        moveY,
+        radius = entity?.radius || 16,
+        world = state.world
+    ) {
+        if (
+            !entity ||
+            !world
+        ) {
+            return {
+                x: 0,
+                y: 0
+            };
+        }
+
+        let appliedX = 0;
+        let appliedY = 0;
+
+        if (
+            Math.abs(moveX) >
+            0.0001
+        ) {
+            const candidateX =
+                entity.x +
+                moveX;
+
+            if (
+                !isCircleBlocked(
+                    candidateX,
+                    entity.y,
+                    radius,
+                    world
+                )
+            ) {
+                entity.x =
+                    candidateX;
+
+                appliedX =
+                    moveX;
+            }
+        }
+
+        if (
+            Math.abs(moveY) >
+            0.0001
+        ) {
+            const candidateY =
+                entity.y +
+                moveY;
+
+            if (
+                !isCircleBlocked(
+                    entity.x,
+                    candidateY,
+                    radius,
+                    world
+                )
+            ) {
+                entity.y =
+                    candidateY;
+
+                appliedY =
+                    moveY;
+            }
+        }
+
+        return {
+            x: appliedX,
+            y: appliedY
+        };
+    }
+
+
+    function getPlayerMovementInput() {
+        let x = 0;
+        let y = 0;
+
+        if (
+            state.keys.has("KeyA") ||
+            state.keys.has("ArrowLeft")
+        ) {
+            x -= 1;
+        }
+
+        if (
+            state.keys.has("KeyD") ||
+            state.keys.has("ArrowRight")
+        ) {
+            x += 1;
+        }
+
+        if (
+            state.keys.has("KeyW") ||
+            state.keys.has("ArrowUp")
+        ) {
+            y -= 1;
+        }
+
+        if (
+            state.keys.has("KeyS") ||
+            state.keys.has("ArrowDown")
+        ) {
+            y += 1;
+        }
+
+        return normalize(x, y);
+    }
+
+
+    function getPlayerMovementSpeed() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return 0;
+        }
+
+        let multiplier = 1;
+
+        if (
+            player.hunger <=
+                SURVIVAL_CONFIG
+                    .lowHungerThreshold ||
+            player.fatigue <=
+                SURVIVAL_CONFIG
+                    .lowFatigueThreshold
+        ) {
+            multiplier *=
+                SURVIVAL_CONFIG
+                    .lowNeedMoveMultiplier;
+        }
+
+        if (
+            player.movementSlowTimer >
+            0
+        ) {
+            multiplier *=
+                clamp(
+                    player
+                        .movementSlowMultiplier,
+                    0.25,
+                    1
+                );
+        }
+
+        return (
+            player.speed *
+            multiplier
+        );
+    }
+
+
+    function updatePlayerMovement(dt) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            isPlayerControlBlocked()
+        ) {
+            return;
+        }
+
+        /*
+            Dash possui movimentação própria.
+        */
+        if (
+            player.dashRuntime
+        ) {
+            return;
+        }
+
+        const input =
+            getPlayerMovementInput();
+
+        if (
+            input.length <=
+            0
+        ) {
+            return;
+        }
+
+        const speed =
+            getPlayerMovementSpeed();
+
+        const moveX =
+            input.x *
+            speed *
+            dt;
+
+        const moveY =
+            input.y *
+            speed *
+            dt;
+
+        const moved =
+            moveCircleWithCollision(
+                player,
+                moveX,
+                moveY,
+                player.radius
+            );
+
+        if (
+            Math.abs(moved.x) >
+                0.001 ||
+            Math.abs(moved.y) >
+                0.001
+        ) {
+            player.facing =
+                vectorToFacing(
+                    moved.x,
+                    moved.y,
+                    player.facing
+                );
+
+            player.walkTime += dt;
+        }
+    }
+
+
+    /* ============================================================
+       DASH
+       ============================================================ */
+
+    function canPlayerDash() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            isPlayerControlBlocked()
+        ) {
+            return false;
+        }
+
+        if (
+            !player.abilities.dashV1 &&
+            !player.abilities.dashV2
+        ) {
+            return false;
+        }
+
+        if (
+            player.dashRuntime
+        ) {
+            return false;
+        }
+
+        if (
+            player.universalDashCooldown >
+            0
+        ) {
+            return false;
+        }
+
+        const config =
+            getDashConfig(player);
+
+        if (
+            !state.dev.infiniteEnergy &&
+            player.energy <
+                config.energyCost
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    function getDashDirection() {
+        const movement =
+            getPlayerMovementInput();
+
+        if (
+            movement.length > 0
+        ) {
+            return {
+                x:
+                    movement.x,
+
+                y:
+                    movement.y
+            };
+        }
+
+        const player =
+            state.player;
+
+        if (!player) {
+            return {
+                x: 0,
+                y: -1
+            };
+        }
+
+        /*
+            Sem WASD:
+            Dash tenta usar direção do mouse.
+        */
+        const towardMouse =
+            normalize(
+                state.pointer.worldX -
+                    player.x,
+
+                state.pointer.worldY -
+                    player.y
+            );
+
+        if (
+            towardMouse.length >
+            10
+        ) {
+            return {
+                x:
+                    towardMouse.x,
+
+                y:
+                    towardMouse.y
+            };
+        }
+
+        return facingToVector(
+            player.facing
+        );
+    }
+
+
+    function beginPlayerDash() {
+        if (
+            !canPlayerDash()
+        ) {
+            return false;
+        }
+
+        const player =
+            state.player;
+
+        const config =
+            getDashConfig(player);
+
+        const direction =
+            getDashDirection();
+
+        if (
+            !state.dev.infiniteEnergy
+        ) {
+            player.energy =
+                Math.max(
+                    0,
+                    player.energy -
+                    config.energyCost
+                );
+        }
+
+        player.universalDashCooldown =
+            config.cooldown;
+
+        player.dashRuntime = {
+            version:
+                getDashVersion(
+                    player
+                ),
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            travelled: 0,
+
+            elapsed: 0,
+
+            maxDistance:
+                config.distance,
+
+            speed:
+                config.speed,
+
+            projectilePhaseWindow:
+                config
+                    .projectilePhaseWindow,
+
+            projectilePhaseActive:
+                false,
+
+            afterimageTimer: 0
+        };
+
+        player.facing =
+            vectorToFacing(
+                direction.x,
+                direction.y,
+                player.facing
+            );
+
+        addWorldEffect({
+            type:
+                player.abilities
+                    .dashV2
+                    ? "dashV2Start"
+                    : "dashV1Start",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            duration:
+                0.24
+        });
+
+        spawnBurstParticles(
+            player.x,
+            player.y,
+            {
+                amount:
+                    player.abilities
+                        .dashV2
+                        ? 16
+                        : 9,
+
+                speedMin: 45,
+                speedMax: 180,
+
+                sizeMin: 2,
+                sizeMax: 5,
+
+                lifeMin: 0.15,
+                lifeMax: 0.42,
+
+                color:
+                    config
+                        .coreColor
+            }
+        );
+
+        return true;
+    }
+
+
+    function isPlayerPhasingThroughProjectiles() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !player.dashRuntime ||
+            !player.abilities.dashV2
+        ) {
+            return false;
+        }
+
+        return Boolean(
+            player
+                .dashRuntime
+                .projectilePhaseActive
+        );
+    }
+
+
+    function endPlayerDash() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !player.dashRuntime
+        ) {
+            return;
+        }
+
+        const version =
+            player.dashRuntime.version;
+
+        player.dashRuntime = null;
+
+        addWorldEffect({
+            type:
+                version === 2
+                    ? "dashV2End"
+                    : "dashV1End",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            duration:
+                0.22
+        });
+    }
+
+
+    function updatePlayerDash(dt) {
+        const player =
+            state.player;
+
+        const dash =
+            player?.dashRuntime;
+
+        if (
+            !player ||
+            !dash
+        ) {
+            return;
+        }
+
+        dash.elapsed += dt;
+
+        dash.projectilePhaseActive =
+            Boolean(
+                dash.version === 2 &&
+                dash.elapsed <=
+                    dash
+                        .projectilePhaseWindow
+            );
+
+        const remaining =
+            dash.maxDistance -
+            dash.travelled;
+
+        if (
+            remaining <=
+            0
+        ) {
+            endPlayerDash();
+            return;
+        }
+
+        /*
+            Divide movimento em pequenos passos
+            para impedir atravessar parede por
+            causa de um frame grande.
+        */
+        const frameDistance =
+            Math.min(
+                remaining,
+                dash.speed * dt
+            );
+
+        const stepSize = 7;
+
+        const steps =
+            Math.max(
+                1,
+                Math.ceil(
+                    frameDistance /
+                    stepSize
+                )
+            );
+
+        const movementPerStep =
+            frameDistance /
+            steps;
+
+        let movedTotal = 0;
+
+        for (
+            let index = 0;
+            index < steps;
+            index += 1
+        ) {
+            const previousX =
+                player.x;
+
+            const previousY =
+                player.y;
+
+            const moved =
+                moveCircleWithCollision(
+                    player,
+
+                    dash.directionX *
+                        movementPerStep,
+
+                    dash.directionY *
+                        movementPerStep,
+
+                    player.radius
+                );
+
+            const actual =
+                Math.hypot(
+                    moved.x,
+                    moved.y
+                );
+
+            movedTotal +=
+                actual;
+
+            if (
+                actual <
+                movementPerStep *
+                0.35
+            ) {
+                player.x =
+                    previousX +
+                    moved.x;
+
+                player.y =
+                    previousY +
+                    moved.y;
+
+                break;
+            }
+        }
+
+        dash.travelled +=
+            movedTotal;
+
+        dash.afterimageTimer -= dt;
+
+        if (
+            dash.afterimageTimer <= 0
+        ) {
+            dash.afterimageTimer =
+                dash.version === 2
+                    ? 0.025
+                    : 0.045;
+
+            addWorldEffect({
+                type:
+                    dash.version === 2
+                        ? "voidAfterimage"
+                        : "dashAfterimage",
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                facing:
+                    player.facing,
+
+                characterId:
+                    player.characterId,
+
+                duration:
+                    dash.version === 2
+                        ? 0.32
+                        : 0.2
+            });
+
+            if (
+                dash.version === 2
+            ) {
+                addWorldParticle({
+                    type:
+                        "voidDashParticle",
+
+                    x:
+                        player.x +
+                        random(-10, 10),
+
+                    y:
+                        player.y +
+                        random(-10, 10),
+
+                    vx:
+                        -dash.directionX *
+                        random(40, 120),
+
+                    vy:
+                        -dash.directionY *
+                        random(40, 120),
+
+                    size:
+                        random(2, 6),
+
+                    life:
+                        random(
+                            0.18,
+                            0.45
+                        ),
+
+                    color:
+                        "#765690"
+                });
+            }
+        }
+
+        if (
+            movedTotal <=
+                0.1 ||
+            dash.travelled >=
+                dash.maxDistance -
+                0.1
+        ) {
+            endPlayerDash();
+        }
+    }
+
+
+    /* ============================================================
+       COOLDOWNS DO PLAYER
+       ============================================================ */
+
+    function updatePlayerCooldowns(dt) {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        player.attackCooldown =
+            Math.max(
+                0,
+                player.attackCooldown -
+                dt
+            );
+
+        player.universalDashCooldown =
+            Math.max(
+                0,
+                player
+                    .universalDashCooldown -
+                    dt
+            );
+
+        for (
+            const key of
+            [
+                "q",
+                "r",
+                "f"
+            ]
+        ) {
+            player.skillCooldowns[key] =
+                Math.max(
+                    0,
+                    finiteNumber(
+                        player
+                            .skillCooldowns
+                            [key],
+                        0
+                    ) -
+                    dt
+                );
+        }
+
+        if (
+            player.invincible >
+            0
+        ) {
+            player.invincible =
+                Math.max(
+                    0,
+                    player.invincible -
+                    dt
+                );
+        }
+
+        if (
+            player.hurtAnim >
+            0
+        ) {
+            player.hurtAnim =
+                Math.max(
+                    0,
+                    player.hurtAnim -
+                    dt
+                );
+        }
+
+        if (
+            player.movementSlowTimer >
+            0
+        ) {
+            player.movementSlowTimer =
+                Math.max(
+                    0,
+                    player
+                        .movementSlowTimer -
+                        dt
+                );
+
+            if (
+                player
+                    .movementSlowTimer <=
+                0
+            ) {
+                player
+                    .movementSlowMultiplier =
+                    1;
+            }
+        }
+    }
+
+
+    /* ============================================================
+       PROJÉTEIS
+       ============================================================ */
+
+    function createProjectile(
+        options = {}
+    ) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return null;
+        }
+
+        if (
+            world.projectiles.length >=
+            MAX_PROJECTILES
+        ) {
+            world.projectiles.shift();
+        }
+
+        const direction =
+            normalize(
+                options.dx ?? 1,
+                options.dy ?? 0
+            );
+
+        const projectile = {
+            id:
+                uid("projectile"),
+
+            team:
+                options.team ||
+                "player",
+
+            ownerId:
+                options.ownerId ||
+                null,
+
+            x:
+                finiteNumber(
+                    options.x,
+                    0
+                ),
+
+            y:
+                finiteNumber(
+                    options.y,
+                    0
+                ),
+
+            previousX:
+                finiteNumber(
+                    options.x,
+                    0
+                ),
+
+            previousY:
+                finiteNumber(
+                    options.y,
+                    0
+                ),
+
+            dx:
+                direction.x,
+
+            dy:
+                direction.y,
+
+            speed:
+                options.speed ||
+                350,
+
+            radius:
+                options.radius ||
+                7,
+
+            damage:
+                options.damage ||
+                1,
+
+            maxDistance:
+                options.maxDistance ||
+                options.range ||
+                500,
+
+            travelled: 0,
+
+            life:
+                options.life ||
+                5,
+
+            color:
+                options.color ||
+                "#ffffff",
+
+            secondaryColor:
+                options.secondaryColor ||
+                options.color ||
+                "#ffffff",
+
+            type:
+                options.type ||
+                "normal",
+
+            piercing:
+                Boolean(
+                    options.piercing
+                ),
+
+            ignoresWalls:
+                Boolean(
+                    options.ignoresWalls
+                ),
+
+            canPhaseThroughDashV2:
+                options
+                    .canPhaseThroughDashV2 !==
+                false,
+
+            hitIds:
+                new Set(),
+
+            dead: false,
+
+            ...options
+        };
+
+        world.projectiles.push(
+            projectile
+        );
+
+        return projectile;
+    }
+
+
+    function removeProjectilesOwnedBy(
+        ownerId
+    ) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        world.projectiles =
+            world.projectiles.filter(
+                projectile =>
+                    projectile.ownerId !==
+                    ownerId
+            );
+    }
+
+
+    /* ============================================================
+       DEFESA / FÓRMULA DE DANO
+       ============================================================ */
+
+    function reduceDamageByDefense(
+        rawDamage,
+        defense
+    ) {
+        const damage =
+            Math.max(
+                0,
+                finiteNumber(
+                    rawDamage,
+                    0
+                )
+            );
+
+        const safeDefense =
+            Math.max(
+                0,
+                finiteNumber(
+                    defense,
+                    0
+                )
+            );
+
+        const multiplier =
+            100 /
+            (
+                100 +
+                safeDefense * 2.35
+            );
+
+        return Math.max(
+            1,
+            damage *
+            multiplier
+        );
+    }
+
+
+    /* ============================================================
+       DANO NO PLAYER
+       ============================================================ */
+
+    function damagePlayer(
+        rawDamage,
+        source = null,
+        options = {}
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.dead
+        ) {
+            return false;
+        }
+
+        if (
+            devShouldIgnorePlayerDamage()
+        ) {
+            return false;
+        }
+
+        if (
+            player.invincible > 0 &&
+            options.ignoreInvincible !==
+                true
+        ) {
+            return false;
+        }
+
+        const damage =
+            reduceDamageByDefense(
+                rawDamage,
+                options.ignoreDefense
+                    ? 0
+                    : player.defense
+            );
+
+        player.hp =
+            Math.max(
+                0,
+                player.hp -
+                damage
+            );
+
+        player.hurtAnim =
+            0.22;
+
+        /*
+            Pequeno intervalo contra hits repetidos
+            da MESMA colisão física.
+
+            Isso NÃO é a invulnerabilidade do Dash.
+        */
+        if (
+            options.noHitCooldown !==
+            true
+        ) {
+            player.invincible =
+                Math.max(
+                    player.invincible,
+                    0.16
+                );
+        }
+
+        state.damageFlash =
+            Math.max(
+                state.damageFlash,
+                Math.min(
+                    VISUAL_CONFIG
+                        .blood
+                        .flashMax,
+
+                    0.12 +
+                    damage / 240
+                )
+            );
+
+        triggerScreenShake(
+            clamp(
+                damage * 0.2,
+                2,
+                10
+            ),
+            0.14
+        );
+
+        createBloodMark(
+            player.x,
+            player.y,
+            clamp(
+                Math.round(
+                    damage / 12
+                ),
+                2,
+                6
+            )
+        );
+
+        spawnBurstParticles(
+            player.x,
+            player.y,
+            {
+                amount: 6,
+                speedMin: 40,
+                speedMax: 110,
+                color: "#8e3139",
+                lifeMin: 0.16,
+                lifeMax: 0.38
+            }
+        );
+
+        if (
+            source?.x !==
+                undefined &&
+            source?.y !==
+                undefined
+        ) {
+            const away =
+                normalize(
+                    player.x -
+                        source.x,
+
+                    player.y -
+                        source.y
+                );
+
+            /*
+                Knockback pequeno.
+            */
+            moveCircleWithCollision(
+                player,
+
+                away.x *
+                    Math.min(
+                        20,
+                        damage * 0.4
+                    ),
+
+                away.y *
+                    Math.min(
+                        20,
+                        damage * 0.4
+                    ),
+
+                player.radius
+            );
+        }
+
+        if (
+            player.hp <= 0
+        ) {
+            killPlayer(
+                source
+            );
+        }
+
+        return true;
+    }
+
+
+    /* ============================================================
+       DANO EM INIMIGO / BOSS
+       ============================================================ */
+
+    function damageEnemy(
+        enemy,
+        rawDamage,
+        options = {}
+    ) {
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+            return false;
+        }
+
+        if (
+            enemy.state ===
+                "dormant"
+        ) {
+            return false;
+        }
+
+        const modified =
+            devModifyOutgoingDamage(
+                rawDamage
+            );
+
+        const damage =
+            reduceDamageByDefense(
+                modified,
+                enemy.defense || 0
+            );
+
+        enemy.hp =
+            Math.max(
+                0,
+                enemy.hp -
+                damage
+            );
+
+        enemy.hurtTimer =
+            0.14;
+
+        enemy.aggro = true;
+
+        addWorldEffect({
+            type:
+                "hitFlash",
+
+            x:
+                enemy.x,
+
+            y:
+                enemy.y,
+
+            radius:
+                enemy.radius,
+
+            duration:
+                0.12
+        });
+
+        spawnBurstParticles(
+            enemy.x,
+            enemy.y,
+            {
+                amount:
+                    enemy.radius >= 40
+                        ? 10
+                        : 6,
+
+                speedMin: 35,
+                speedMax: 135,
+
+                color:
+                    options.color ||
+                    "#a1454a",
+
+                lifeMin:
+                    0.14,
+
+                lifeMax:
+                    0.38
+            }
+        );
+
+        if (
+            enemy.radius < 40
+        ) {
+            createBloodMark(
+                enemy.x,
+                enemy.y,
+                2
+            );
+        }
+
+        if (
+            enemy.hp <= 0
+        ) {
+            if (
+                BOSS_REGISTRY[
+                    enemy.id
+                ]
+            ) {
+                beginBossDeath(
+                    enemy
+                );
+            } else {
+                killEnemy(
+                    enemy
+                );
+            }
+        } else if (
+            enemy.id ===
+                "vaelkor"
+        ) {
+            checkVaelkorPhaseTransition(
+                enemy
+            );
+        }
+
+        return true;
+    }
+
+
+    /* ============================================================
+       ATAQUES EM ÁREA
+       ============================================================ */
+
+    function getLivingCombatTargets() {
+        const world =
+            state.world;
+
+        if (!world) {
+            return [];
+        }
+
+        return [
+            ...world.enemies.filter(
+                enemy =>
+                    !enemy.dead
+            ),
+
+            ...world.bosses.filter(
+                boss =>
+                    !boss.dead &&
+                    boss.state !==
+                        "dormant"
+            )
+        ];
+    }
+
+
+    function damageTargetsInCircle(
+        x,
+        y,
+        radius,
+        damage,
+        options = {}
+    ) {
+        const hit = [];
+
+        for (
+            const target of
+            getLivingCombatTargets()
+        ) {
+            if (
+                circleCircleCollision(
+                    x,
+                    y,
+                    radius,
+                    target.x,
+                    target.y,
+                    target.radius
+                )
+            ) {
+                if (
+                    damageEnemy(
+                        target,
+                        damage,
+                        options
+                    )
+                ) {
+                    hit.push(
+                        target
+                    );
+                }
+            }
+        }
+
+        return hit;
+    }
+
+
+    function damageTargetsInArc(
+        originX,
+        originY,
+        directionAngle,
+        range,
+        arcWidth,
+        damage,
+        options = {}
+    ) {
+        const hit = [];
+
+        for (
+            const target of
+            getLivingCombatTargets()
+        ) {
+            const dx =
+                target.x -
+                originX;
+
+            const dy =
+                target.y -
+                originY;
+
+            const dist =
+                Math.hypot(
+                    dx,
+                    dy
+                );
+
+            if (
+                dist >
+                range +
+                target.radius
+            ) {
+                continue;
+            }
+
+            const angle =
+                Math.atan2(
+                    dy,
+                    dx
+                );
+
+            let difference =
+                angle -
+                directionAngle;
+
+            while (
+                difference >
+                Math.PI
+            ) {
+                difference -=
+                    Math.PI * 2;
+            }
+
+            while (
+                difference <
+                -Math.PI
+            ) {
+                difference +=
+                    Math.PI * 2;
+            }
+
+            if (
+                Math.abs(
+                    difference
+                ) <=
+                arcWidth / 2
+            ) {
+                if (
+                    damageEnemy(
+                        target,
+                        damage,
+                        options
+                    )
+                ) {
+                    hit.push(
+                        target
+                    );
+                }
+            }
+        }
+
+        return hit;
+    }
+
+
+    /* ============================================================
+       ATAQUE BÁSICO
+
+       1 chamada = 1 ataque.
+
+       A Parte 5 chamará isso SOMENTE no pointerdown.
+       NÃO será chamado continuamente enquanto mouse estiver segurado.
+       ============================================================ */
+
+    function performBasicAttack() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            isPlayerControlBlocked()
+        ) {
+            return false;
+        }
+
+        if (
+            player.dashRuntime
+        ) {
+            return false;
+        }
+
+        if (
+            player.attackCooldown >
+            0
+        ) {
+            return false;
+        }
+
+        const character =
+            currentCharacter();
+
+        const attack =
+            character
+                .basicAttack;
+
+        const aim =
+            normalize(
+                state.pointer.worldX -
+                    player.x,
+
+                state.pointer.worldY -
+                    player.y
+            );
+
+        const direction =
+            aim.length > 0
+                ? aim
+                : normalize(
+                    facingToVector(
+                        player.facing
+                    ).x,
+
+                    facingToVector(
+                        player.facing
+                    ).y
+                );
+
+        const attackAngle =
+            Math.atan2(
+                direction.y,
+                direction.x
+            );
+
+        player.facing =
+            vectorToFacing(
+                direction.x,
+                direction.y,
+                player.facing
+            );
+
+        player.attackCooldown =
+            GAME_CONFIG
+                .baseAttackCooldown;
+
+        const damage =
+            player.damage *
+            finiteNumber(
+                attack
+                    .damageMultiplier,
+                1
+            );
+
+        addWorldEffect({
+            type:
+                "playerAttack",
+
+            attackType:
+                attack.type,
+
+            characterId:
+                player.characterId,
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            angle:
+                attackAngle,
+
+            duration:
+                0.24,
+
+            range:
+                attack.range,
+
+            color:
+                attack.color
+        });
+
+        switch (
+            attack.type
+        ) {
+            case "projectile":
+                createProjectile({
+                    team:
+                        "player",
+
+                    ownerId:
+                        "player",
+
+                    type:
+                        attack.id,
+
+                    x:
+                        player.x +
+                        direction.x *
+                        25,
+
+                    y:
+                        player.y +
+                        direction.y *
+                        25,
+
+                    dx:
+                        direction.x,
+
+                    dy:
+                        direction.y,
+
+                    speed:
+                        attack.speed,
+
+                    radius:
+                        attack.radius,
+
+                    hitRadius:
+                        attack.hitRadius,
+
+                    range:
+                        attack.range,
+
+                    maxDistance:
+                        attack.range,
+
+                    damage,
+
+                    color:
+                        attack.color,
+
+                    secondaryColor:
+                        attack
+                            .secondaryColor
+                });
+                break;
+
+
+            case "arc":
+                damageTargetsInArc(
+                    player.x,
+                    player.y,
+                    attackAngle,
+                    attack.range,
+                    attack.arc,
+                    damage,
+                    {
+                        color:
+                            attack.color
+                    }
+                );
+                break;
+
+
+            case "smash":
+                damageTargetsInCircle(
+                    player.x +
+                        direction.x *
+                        35,
+
+                    player.y +
+                        direction.y *
+                        35,
+
+                    attack.hitRadius,
+                    damage,
+                    {
+                        color:
+                            attack.color
+                    }
+                );
+
+                triggerScreenShake(
+                    5,
+                    0.14
+                );
+                break;
+
+
+            case "doubleSlash":
+                damageTargetsInArc(
+                    player.x,
+                    player.y,
+                    attackAngle,
+                    attack.range,
+                    attack.arc,
+                    damage * 0.58,
+                    {
+                        color:
+                            attack.color
+                    }
+                );
+
+                addWorldEffect({
+                    type:
+                        "delayedSecondSlash",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    angle:
+                        attackAngle,
+
+                    timer: 0,
+
+                    triggerAt:
+                        0.09,
+
+                    triggered:
+                        false,
+
+                    duration:
+                        0.22,
+
+                    range:
+                        attack.range,
+
+                    arc:
+                        attack.arc,
+
+                    damage:
+                        damage * 0.58,
+
+                    color:
+                        attack
+                            .secondaryColor
+                });
+                break;
+        }
+
+        return true;
+    }
+
+
+    /* ============================================================
+       EFEITOS COM GATILHO DE COMBATE
+       ============================================================ */
+
+    function updateCombatEffects(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const effect of
+            world.effects
+        ) {
+            if (
+                effect.type ===
+                    "delayedSecondSlash" &&
+                !effect.triggered &&
+                effect.timer >=
+                    effect.triggerAt
+            ) {
+                effect.triggered = true;
+
+                damageTargetsInArc(
+                    effect.x,
+                    effect.y,
+                    effect.angle,
+                    effect.range,
+                    effect.arc,
+                    effect.damage,
+                    {
+                        color:
+                            effect.color
+                    }
+                );
+            }
+        }
+    }
+
+
+    /* ============================================================
+       HABILIDADES Q / R / F
+       ============================================================ */
+
+    function getPlayerSkill(
+        key
+    ) {
+        const player =
+            state.player;
+
+        if (!player) {
+            return null;
+        }
+
+        return (
+            CLASS_SKILLS[
+                player.characterId
+            ]?.[key] ||
+            null
+        );
+    }
+
+
+    function canUsePlayerSkill(
+        key
+    ) {
+        const player =
+            state.player;
+
+        const skill =
+            getPlayerSkill(key);
+
+        if (
+            !player ||
+            !skill ||
+            isPlayerControlBlocked() ||
+            player.dashRuntime
+        ) {
+            return false;
+        }
+
+        if (
+            player.skillCooldowns[
+                key
+            ] > 0
+        ) {
+            return false;
+        }
+
+        if (
+            skill.costType ===
+                "magic" &&
+            !state.dev
+                .infiniteMagic &&
+            player.magic <
+                skill.cost
+        ) {
+            return false;
+        }
+
+        if (
+            skill.costType ===
+                "energy" &&
+            !state.dev
+                .infiniteEnergy &&
+            player.energy <
+                skill.cost
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    function consumeSkillCost(
+        skill
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !skill
+        ) {
+            return;
+        }
+
+        if (
+            skill.costType ===
+                "magic" &&
+            !state.dev
+                .infiniteMagic
+        ) {
+            player.magic =
+                Math.max(
+                    0,
+                    player.magic -
+                    skill.cost
+                );
+        }
+
+        if (
+            skill.costType ===
+                "energy" &&
+            !state.dev
+                .infiniteEnergy
+        ) {
+            player.energy =
+                Math.max(
+                    0,
+                    player.energy -
+                    skill.cost
+                );
+        }
+    }
+
+
+    function getPlayerAimDirection() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return {
+                x: 0,
+                y: -1
+            };
+        }
+
+        const aim =
+            normalize(
+                state.pointer.worldX -
+                    player.x,
+
+                state.pointer.worldY -
+                    player.y
+            );
+
+        if (
+            aim.length > 0
+        ) {
+            return {
+                x: aim.x,
+                y: aim.y
+            };
+        }
+
+        return facingToVector(
+            player.facing
+        );
+    }
+
+
+    function activatePlayerSkill(
+        key
+    ) {
+        if (
+            !canUsePlayerSkill(
+                key
+            )
+        ) {
+            return false;
+        }
+
+        const player =
+            state.player;
+
+        const skill =
+            getPlayerSkill(key);
+
+        consumeSkillCost(
+            skill
+        );
+
+        player.skillCooldowns[
+            key
+        ] =
+            skill.cooldown;
+
+        const aim =
+            getPlayerAimDirection();
+
+        const angle =
+            Math.atan2(
+                aim.y,
+                aim.x
+            );
+
+        player.facing =
+            vectorToFacing(
+                aim.x,
+                aim.y,
+                player.facing
+            );
+
+        switch (
+            skill.id
+        ) {
+            /* ====================================================
+               KAELION
+               ==================================================== */
+
+            case "memoryRay":
+                createProjectile({
+                    team: "player",
+                    ownerId: "player",
+
+                    type:
+                        "memoryRay",
+
+                    x:
+                        player.x +
+                        aim.x * 28,
+
+                    y:
+                        player.y +
+                        aim.y * 28,
+
+                    dx:
+                        aim.x,
+
+                    dy:
+                        aim.y,
+
+                    speed: 660,
+                    radius: 7,
+
+                    maxDistance:
+                        480,
+
+                    damage:
+                        player.damage *
+                        1.36,
+
+                    color:
+                        "#ffad61",
+
+                    secondaryColor:
+                        "#fff0bd",
+
+                    piercing:
+                        true
+                });
+                break;
+
+
+            case "arcaneCircle":
+                addWorldEffect({
+                    type:
+                        "arcaneCircle",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    radius: 130,
+
+                    duration:
+                        0.72
+                });
+
+                damageTargetsInCircle(
+                    player.x,
+                    player.y,
+                    130,
+                    player.damage *
+                        1.52,
+                    {
+                        color:
+                            "#e89555"
+                    }
+                );
+                break;
+
+
+            case "memoryExplosion":
+                addWorldEffect({
+                    type:
+                        "memoryExplosionCharge",
+
+                    x:
+                        player.x +
+                        aim.x * 145,
+
+                    y:
+                        player.y +
+                        aim.y * 145,
+
+                    radius: 145,
+
+                    duration:
+                        0.5,
+
+                    delayedDamage:
+                        true,
+
+                    damage:
+                        player.damage *
+                        2.1,
+
+                    triggerAt:
+                        0.25,
+
+                    triggered:
+                        false
+                });
+                break;
+
+
+            /* ====================================================
+               THERON
+               ==================================================== */
+
+            case "guardianStrike":
+                damageTargetsInArc(
+                    player.x,
+                    player.y,
+                    angle,
+                    122,
+                    Math.PI * 0.8,
+                    player.damage *
+                        1.62,
+                    {
+                        color:
+                            "#e4e7e8"
+                    }
+                );
+
+                addWorldEffect({
+                    type:
+                        "guardianStrike",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    angle,
+
+                    duration:
+                        0.28
+                });
+                break;
+
+
+            case "ironGuard":
+                player.classBuffs.push({
+                    id:
+                        uid("ironGuard"),
+
+                    type:
+                        "ironGuard",
+
+                    defenseBonus:
+                        22,
+
+                    damageMultiplier:
+                        1,
+
+                    speedMultiplier:
+                        0.92,
+
+                    remaining:
+                        4.2
+                });
+
+                recalculatePlayerStats();
+
+                addWorldEffect({
+                    type:
+                        "ironGuard",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    duration:
+                        0.55
+                });
+                break;
+
+
+            case "guardianRush":
+                /*
+                    Investida própria de Theron.
+                    NÃO é o Dash universal.
+                */
+                player.classBuffs.push({
+                    id:
+                        uid("guardianRush"),
+
+                    type:
+                        "guardianRush",
+
+                    remaining:
+                        0.34,
+
+                    directionX:
+                        aim.x,
+
+                    directionY:
+                        aim.y,
+
+                    hitIds: []
+                });
+                break;
+
+
+            /* ====================================================
+               GRUMGAR
+               ==================================================== */
+
+            case "crushingBlow":
+                damageTargetsInCircle(
+                    player.x +
+                        aim.x * 62,
+
+                    player.y +
+                        aim.y * 62,
+
+                    82,
+
+                    player.damage *
+                        1.68,
+                    {
+                        color:
+                            "#988b69"
+                    }
+                );
+
+                triggerScreenShake(
+                    6,
+                    0.17
+                );
+
+                addWorldEffect({
+                    type:
+                        "crushingBlow",
+
+                    x:
+                        player.x +
+                        aim.x * 62,
+
+                    y:
+                        player.y +
+                        aim.y * 62,
+
+                    radius: 86,
+
+                    duration:
+                        0.35
+                });
+                break;
+
+
+            case "stoneRoar":
+                for (
+                    const enemy of
+                    getLivingCombatTargets()
+                ) {
+                    if (
+                        distance(
+                            player.x,
+                            player.y,
+                            enemy.x,
+                            enemy.y
+                        ) <= 190
+                    ) {
+                        enemy.state =
+                            "stunned";
+
+                        enemy.stateTimer =
+                            Math.max(
+                                enemy
+                                    .stateTimer,
+                                1.1
+                            );
+
+                        damageEnemy(
+                            enemy,
+                            player.damage *
+                                0.48,
+                            {
+                                color:
+                                    "#ae9d76"
+                            }
+                        );
+                    }
+                }
+
+                addWorldEffect({
+                    type:
+                        "stoneRoar",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    radius:
+                        195,
+
+                    duration:
+                        0.55
+                });
+                break;
+
+
+            case "earthBreaker":
+                damageTargetsInCircle(
+                    player.x,
+                    player.y,
+                    175,
+                    player.damage *
+                        2.05,
+                    {
+                        color:
+                            "#81755a"
+                    }
+                );
+
+                triggerScreenShake(
+                    9,
+                    0.28
+                );
+
+                addWorldEffect({
+                    type:
+                        "earthBreaker",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    radius:
+                        180,
+
+                    duration:
+                        0.75
+                });
+                break;
+
+
+            /* ====================================================
+               LIRAEL
+               ==================================================== */
+
+            case "vitalLight":
+                player.hp =
+                    clamp(
+                        player.hp +
+                        player.maxHp *
+                        0.18 +
+                        16,
+
+                        0,
+                        player.maxHp
+                    );
+
+                addWorldEffect({
+                    type:
+                        "vitalLight",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    duration:
+                        0.7
+                });
+                break;
+
+
+            case "fairyBurst":
+                for (
+                    let index = -2;
+                    index <= 2;
+                    index += 1
+                ) {
+                    const spread =
+                        index * 0.12;
+
+                    const shotAngle =
+                        angle +
+                        spread;
+
+                    createProjectile({
+                        team:
+                            "player",
+
+                        ownerId:
+                            "player",
+
+                        type:
+                            "fairyBurst",
+
+                        x:
+                            player.x,
+
+                        y:
+                            player.y,
+
+                        dx:
+                            Math.cos(
+                                shotAngle
+                            ),
+
+                        dy:
+                            Math.sin(
+                                shotAngle
+                            ),
+
+                        speed:
+                            600,
+
+                        radius:
+                            5,
+
+                        maxDistance:
+                            360,
+
+                        damage:
+                            player.damage *
+                            0.48,
+
+                        color:
+                            "#efa3d5"
+                    });
+                }
+                break;
+
+
+            case "starRain":
+                addWorldEffect({
+                    type:
+                        "starRain",
+
+                    x:
+                        state.pointer
+                            .worldX,
+
+                    y:
+                        state.pointer
+                            .worldY,
+
+                    radius: 145,
+
+                    duration:
+                        1.15,
+
+                    tickTimer: 0,
+
+                    ticks: 0
+                });
+                break;
+
+
+            /* ====================================================
+               ZEPHYR
+               ==================================================== */
+
+            case "adaptiveCut":
+                damageTargetsInArc(
+                    player.x,
+                    player.y,
+                    angle,
+                    128,
+                    Math.PI *
+                        0.72,
+
+                    player.damage *
+                        1.48,
+
+                    {
+                        color:
+                            "#a37aca"
+                    }
+                );
+
+                addWorldEffect({
+                    type:
+                        "adaptiveCut",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    angle,
+
+                    duration:
+                        0.32
+                });
+                break;
+
+
+            case "adaptiveForm":
+                player.classBuffs.push({
+                    id:
+                        uid("adaptiveForm"),
+
+                    type:
+                        "adaptiveForm",
+
+                    defenseBonus:
+                        7,
+
+                    damageMultiplier:
+                        1.12,
+
+                    speedMultiplier:
+                        1.08,
+
+                    remaining:
+                        5.5
+                });
+
+                recalculatePlayerStats();
+
+                addWorldEffect({
+                    type:
+                        "adaptiveForm",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    duration:
+                        0.6
+                });
+                break;
+
+
+            case "riftStep":
+                /*
+                    Habilidade própria de Zephyr.
+                    NÃO desbloqueia Dash universal.
+                */
+                performZephyrRiftStep(
+                    aim.x,
+                    aim.y
+                );
+                break;
+        }
+
+        return true;
+    }
+
+
+    function performZephyrRiftStep(
+        directionX,
+        directionY
+    ) {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        const direction =
+            normalize(
+                directionX,
+                directionY
+            );
+
+        const distanceToMove =
+            115;
+
+        const steps = 16;
+
+        const step =
+            distanceToMove /
+            steps;
+
+        for (
+            let index = 0;
+            index < steps;
+            index += 1
+        ) {
+            const moved =
+                moveCircleWithCollision(
+                    player,
+
+                    direction.x *
+                    step,
+
+                    direction.y *
+                    step,
+
+                    player.radius
+                );
+
+            if (
+                Math.hypot(
+                    moved.x,
+                    moved.y
+                ) <
+                step * 0.4
+            ) {
+                break;
+            }
+        }
+
+        addWorldEffect({
+            type:
+                "riftStep",
+
+            x:
+                player.x,
+
+            y:
+                player.y,
+
+            duration:
+                0.42
+        });
+    }
+
+
+    /* ============================================================
+       EFEITOS DE HABILIDADES
+       ============================================================ */
+
+    function updateSkillEffects(dt) {
+        const world =
+            state.world;
+
+        const player =
+            state.player;
+
+        if (
+            !world ||
+            !player
+        ) {
+            return;
+        }
+
+        for (
+            const effect of
+            world.effects
+        ) {
+            if (
+                effect.type ===
+                    "memoryExplosionCharge" &&
+                !effect.triggered &&
+                effect.timer >=
+                    effect.triggerAt
+            ) {
+                effect.triggered = true;
+
+                damageTargetsInCircle(
+                    effect.x,
+                    effect.y,
+                    effect.radius,
+                    effect.damage,
+                    {
+                        color:
+                            "#ef8d46"
+                    }
+                );
+
+                triggerScreenShake(
+                    7,
+                    0.22
+                );
+
+                spawnBurstParticles(
+                    effect.x,
+                    effect.y,
+                    {
+                        amount: 24,
+                        speedMin: 70,
+                        speedMax: 240,
+                        sizeMin: 3,
+                        sizeMax: 8,
+                        color:
+                            "#f09c52"
+                    }
+                );
+            }
+
+
+            if (
+                effect.type ===
+                    "starRain"
+            ) {
+                effect.tickTimer -=
+                    dt;
+
+                if (
+                    effect.tickTimer <=
+                        0 &&
+                    effect.ticks < 5
+                ) {
+                    effect.tickTimer =
+                        0.16;
+
+                    effect.ticks += 1;
+
+                    const hitX =
+                        effect.x +
+                        random(
+                            -80,
+                            80
+                        );
+
+                    const hitY =
+                        effect.y +
+                        random(
+                            -80,
+                            80
+                        );
+
+                    damageTargetsInCircle(
+                        hitX,
+                        hitY,
+                        55,
+                        player.damage *
+                            0.58,
+                        {
+                            color:
+                                "#f0acd9"
+                        }
+                    );
+
+                    addWorldEffect({
+                        type:
+                            "starStrike",
+
+                        x:
+                            hitX,
+
+                        y:
+                            hitY,
+
+                        duration:
+                            0.25
+                    });
+                }
+            }
+        }
+    }
+
+
+    /* ============================================================
+       BUFFS
+       ============================================================ */
+
+    function updatePlayerBuffs(dt) {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        let needsRecalculate = false;
+
+        for (
+            const buff of
+            player.classBuffs
+        ) {
+            buff.remaining -= dt;
+        }
+
+        const beforeClass =
+            player.classBuffs.length;
+
+        player.classBuffs =
+            player.classBuffs.filter(
+                buff =>
+                    buff.remaining > 0
+            );
+
+        if (
+            player.classBuffs.length !==
+            beforeClass
+        ) {
+            needsRecalculate = true;
+        }
+
+
+        for (
+            const buff of
+            player.activePotionBuffs
+        ) {
+            buff.remaining -= dt;
+        }
+
+        const beforePotions =
+            player
+                .activePotionBuffs
+                .length;
+
+        player.activePotionBuffs =
+            player.activePotionBuffs.filter(
+                buff =>
+                    buff.remaining > 0
+            );
+
+        if (
+            player
+                .activePotionBuffs
+                .length !==
+            beforePotions
+        ) {
+            needsRecalculate = true;
+        }
+
+
+        /*
+            Investida de Theron.
+        */
+        const rush =
+            player.classBuffs.find(
+                buff =>
+                    buff.type ===
+                    "guardianRush"
+            );
+
+        if (rush) {
+            const speed =
+                390;
+
+            moveCircleWithCollision(
+                player,
+
+                rush.directionX *
+                    speed *
+                    dt,
+
+                rush.directionY *
+                    speed *
+                    dt,
+
+                player.radius
+            );
+
+            for (
+                const target of
+                getLivingCombatTargets()
+            ) {
+                if (
+                    rush.hitIds.includes(
+                        target.entityId ||
+                        target.id
+                    )
+                ) {
+                    continue;
+                }
+
+                if (
+                    circleCircleCollision(
+                        player.x,
+                        player.y,
+                        player.radius + 16,
+
+                        target.x,
+                        target.y,
+                        target.radius
+                    )
+                ) {
+                    rush.hitIds.push(
+                        target.entityId ||
+                        target.id
+                    );
+
+                    damageEnemy(
+                        target,
+                        player.damage *
+                            1.5,
+                        {
+                            color:
+                                "#d8dddf"
+                        }
+                    );
+                }
+            }
+        }
+
+
+        if (
+            needsRecalculate
+        ) {
+            recalculatePlayerStats();
+        }
+    }
+
+
+    /* ============================================================
+       USO DE ITENS
+       ============================================================ */
+
+    function useInventoryItem(
+        itemId
+    ) {
+        const player =
+            state.player;
+
+        const item =
+            ITEMS[itemId];
+
+        if (
+            !player ||
+            !item ||
+            getRealItemCount(
+                itemId
+            ) <= 0
+        ) {
+            return false;
+        }
+
+        if (
+            item.category ===
+                "food"
+        ) {
+            if (
+                !removeItem(
+                    itemId,
+                    1
+                )
+            ) {
+                return false;
+            }
+
+            player.hunger =
+                clamp(
+                    player.hunger +
+                    finiteNumber(
+                        item.hunger,
+                        0
+                    ),
+
+                    0,
+                    player.maxHunger
+                );
+
+            player.fatigue =
+                clamp(
+                    player.fatigue +
+                    finiteNumber(
+                        item.fatigue,
+                        0
+                    ),
+
+                    0,
+                    player.maxFatigue
+                );
+
+            return true;
+        }
+
+
+        if (
+            item.heal
+        ) {
+            if (
+                player.hp >=
+                player.maxHp
+            ) {
+                return false;
+            }
+
+            if (
+                !removeItem(
+                    itemId,
+                    1
+                )
+            ) {
+                return false;
+            }
+
+            player.hp =
+                clamp(
+                    player.hp +
+                    item.heal,
+                    0,
+                    player.maxHp
+                );
+
+            return true;
+        }
+
+
+        if (
+            item.energy
+        ) {
+            if (
+                player.energy >=
+                player.maxEnergy
+            ) {
+                return false;
+            }
+
+            if (
+                !removeItem(
+                    itemId,
+                    1
+                )
+            ) {
+                return false;
+            }
+
+            player.energy =
+                clamp(
+                    player.energy +
+                    item.energy,
+                    0,
+                    player.maxEnergy
+                );
+
+            return true;
+        }
+
+
+        if (item.buff) {
+            if (
+                player
+                    .activePotionBuffs
+                    .length >=
+                MAX_ACTIVE_POTION_BUFFS
+            ) {
+                pushNotification(
+                    "LIMITE DE EFEITOS",
+                    `Você pode manter apenas ${MAX_ACTIVE_POTION_BUFFS} efeitos de poção ativos.`,
+                    "warning"
+                );
+
+                return false;
+            }
+
+            if (
+                !removeItem(
+                    itemId,
+                    1
+                )
+            ) {
+                return false;
+            }
+
+            player.activePotionBuffs.push({
+                id:
+                    uid("potion"),
+
+                type:
+                    item.buff,
+
+                multiplier:
+                    item.multiplier,
+
+                defenseBonus:
+                    item.defenseBonus,
+
+                speedMultiplier:
+                    item
+                        .speedMultiplier,
+
+                remaining:
+                    item.duration
+            });
+
+            recalculatePlayerStats();
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    function equipWeapon(
+        itemId
+    ) {
+        const player =
+            state.player;
+
+        const item =
+            ITEMS[itemId];
+
+        if (
+            !player ||
+            !item ||
+            item.category !==
+                "weapons" ||
+            getRealItemCount(
+                itemId
+            ) <= 0
+        ) {
+            return false;
+        }
+
+        player.equipment.weapon =
+            itemId;
+
+        recalculatePlayerStats();
+
+        return true;
+    }
+
+
+    function equipArmor(
+        itemId
+    ) {
+        const player =
+            state.player;
+
+        const armor =
+            ARMOR_DATA[itemId];
+
+        if (
+            !player ||
+            !armor ||
+            !playerOwnsArmor(
+                itemId,
+                player
+            )
+        ) {
+            return false;
+        }
+
+        player.equipment.armor =
+            itemId;
+
+        player.armorHighestTierEver =
+            Math.max(
+                player
+                    .armorHighestTierEver,
+
+                armor.tier
+            );
+
+        recalculatePlayerStats();
+
+        return true;
+    }
+
+
+    /* ============================================================
+       PROJÉTEIS — COLISÃO
+       ============================================================ */
+
+    function projectileHitsWall(
+        projectile
+    ) {
+        if (
+            projectile.ignoresWalls
+        ) {
+            return false;
+        }
+
+        return isCircleBlocked(
+            projectile.x,
+            projectile.y,
+            projectile.radius,
+            state.world
+        );
+    }
+
+
+    function handlePlayerProjectileCollision(
+        projectile
+    ) {
+        const targets =
+            getLivingCombatTargets();
+
+        for (
+            const target of
+            targets
+        ) {
+            const targetId =
+                target.entityId ||
+                target.id;
+
+            if (
+                projectile
+                    .hitIds
+                    .has(
+                        targetId
+                    )
+            ) {
+                continue;
+            }
+
+            if (
+                !circleCircleCollision(
+                    projectile.x,
+                    projectile.y,
+                    projectile.hitRadius ||
+                        projectile.radius,
+
+                    target.x,
+                    target.y,
+                    target.radius
+                )
+            ) {
+                continue;
+            }
+
+            projectile
+                .hitIds
+                .add(
+                    targetId
+                );
+
+            damageEnemy(
+                target,
+                projectile.damage,
+                {
+                    color:
+                        projectile.color
+                }
+            );
+
+            if (
+                !projectile.piercing
+            ) {
+                projectile.dead =
+                    true;
+            }
+
+            return;
+        }
+    }
+
+
+    function handleEnemyProjectileCollision(
+        projectile
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.dead
+        ) {
+            return;
+        }
+
+        if (
+            !circleCircleCollision(
+                projectile.x,
+                projectile.y,
+                projectile.radius,
+
+                player.x,
+                player.y,
+                player.radius
+            )
+        ) {
+            return;
+        }
+
+        /*
+            MECÂNICA EXCLUSIVA DO DASH V2.
+
+            Não existe invulnerabilidade geral.
+
+            Somente projéteis com esta flag podem
+            atravessar durante a pequena janela
+            de precisão do Dash V2.
+        */
+        if (
+            projectile
+                .canPhaseThroughDashV2 &&
+            isPlayerPhasingThroughProjectiles()
+        ) {
+            projectile.dead =
+                true;
+
+            addWorldEffect({
+                type:
+                    "perfectVoidPhase",
+
+                x:
+                    player.x,
+
+                y:
+                    player.y,
+
+                duration:
+                    0.34
+            });
+
+            spawnBurstParticles(
+                player.x,
+                player.y,
+                {
+                    amount: 12,
+                    speedMin: 50,
+                    speedMax: 170,
+                    color:
+                        "#7d5a98",
+                    lifeMin:
+                        0.15,
+                    lifeMax:
+                        0.4
+                }
+            );
+
+            return;
+        }
+
+        damagePlayer(
+            projectile.damage,
+            projectile,
+            {
+                noHitCooldown:
+                    false
+            }
+        );
+
+        if (
+            !projectile.piercing
+        ) {
+            projectile.dead =
+                true;
+        }
+    }
+
+
+    function updateProjectiles(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const projectile of
+            world.projectiles
+        ) {
+            if (
+                projectile.dead
+            ) {
+                continue;
+            }
+
+            projectile.life -= dt;
+
+            if (
+                projectile.life <= 0
+            ) {
+                projectile.dead =
+                    true;
+                continue;
+            }
+
+            const frameDistance =
+                projectile.speed *
+                dt;
+
+            const steps =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        frameDistance /
+                        9
+                    )
+                );
+
+            const step =
+                frameDistance /
+                steps;
+
+            for (
+                let index = 0;
+                index < steps;
+                index += 1
+            ) {
+                projectile.previousX =
+                    projectile.x;
+
+                projectile.previousY =
+                    projectile.y;
+
+                projectile.x +=
+                    projectile.dx *
+                    step;
+
+                projectile.y +=
+                    projectile.dy *
+                    step;
+
+                projectile.travelled +=
+                    step;
+
+                if (
+                    projectileHitsWall(
+                        projectile
+                    )
+                ) {
+                    projectile.dead =
+                        true;
+
+                    break;
+                }
+
+                if (
+                    projectile.team ===
+                    "player"
+                ) {
+                    handlePlayerProjectileCollision(
+                        projectile
+                    );
+                } else {
+                    handleEnemyProjectileCollision(
+                        projectile
+                    );
+                }
+
+                if (
+                    projectile.dead
+                ) {
+                    break;
+                }
+
+                if (
+                    projectile.travelled >=
+                    projectile.maxDistance
+                ) {
+                    projectile.dead =
+                        true;
+
+                    break;
+                }
+            }
+        }
+
+        world.projectiles =
+            world.projectiles.filter(
+                projectile =>
+                    !projectile.dead
+            );
+    }
+
+
+    /* ============================================================
+       INIMIGOS — UTILIDADES
+       ============================================================ */
+
+    function getEnemyDistanceToPlayer(
+        enemy
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !enemy
+        ) {
+            return Infinity;
+        }
+
+        return distance(
+            enemy.x,
+            enemy.y,
+            player.x,
+            player.y
+        );
+    }
+
+
+    function faceEntityToward(
+        entity,
+        x,
+        y
+    ) {
+        if (!entity) {
+            return;
+        }
+
+        const direction =
+            normalize(
+                x -
+                    entity.x,
+
+                y -
+                    entity.y
+            );
+
+        entity.facing =
+            vectorToFacing(
+                direction.x,
+                direction.y,
+                entity.facing
+            );
+    }
+
+
+    function moveEnemyToward(
+        enemy,
+        targetX,
+        targetY,
+        speed,
+        dt
+    ) {
+        const direction =
+            normalize(
+                targetX -
+                    enemy.x,
+
+                targetY -
+                    enemy.y
+            );
+
+        if (
+            direction.length <=
+            0
+        ) {
+            return;
+        }
+
+        faceEntityToward(
+            enemy,
+            targetX,
+            targetY
+        );
+
+        moveCircleWithCollision(
+            enemy,
+
+            direction.x *
+                speed *
+                dt,
+
+            direction.y *
+                speed *
+                dt,
+
+            enemy.radius
+        );
+    }
+
+
+    function moveEnemyAway(
+        enemy,
+        targetX,
+        targetY,
+        speed,
+        dt
+    ) {
+        const direction =
+            normalize(
+                enemy.x -
+                    targetX,
+
+                enemy.y -
+                    targetY
+            );
+
+        moveCircleWithCollision(
+            enemy,
+
+            direction.x *
+                speed *
+                dt,
+
+            direction.y *
+                speed *
+                dt,
+
+            enemy.radius
+        );
+    }
+
+
+    /* ============================================================
+       ATAQUE FÍSICO DE INIMIGO
+       ============================================================ */
+
+    function enemyMeleeAttack(
+        enemy,
+        multiplier = 1
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !enemy ||
+            player.dead
+        ) {
+            return false;
+        }
+
+        const range =
+            enemy.attackRange +
+            player.radius;
+
+        if (
+            getEnemyDistanceToPlayer(
+                enemy
+            ) >
+            range
+        ) {
+            return false;
+        }
+
+        return damagePlayer(
+            enemy.damage *
+                multiplier,
+            enemy
+        );
+    }
+
+
+    /* ============================================================
+       INVESTIDA
+       ============================================================ */
+
+    function beginEnemyCharge(
+        enemy,
+        ability
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !enemy ||
+            !player ||
+            enemy.charge
+        ) {
+            return;
+        }
+
+        const direction =
+            normalize(
+                player.x -
+                    enemy.x,
+
+                player.y -
+                    enemy.y
+            );
+
+        enemy.state =
+            "chargeTelegraph";
+
+        enemy.stateTimer =
+            ability.telegraph;
+
+        enemy.charge = {
+            stage:
+                "telegraph",
+
+            directionX:
+                direction.x,
+
+            directionY:
+                direction.y,
+
+            speed:
+                ability.speed,
+
+            duration:
+                ability.duration,
+
+            remaining:
+                ability.duration,
+
+            damageMultiplier:
+                ability
+                    .damageMultiplier ||
+                1,
+
+            hitPlayer:
+                false
+        };
+
+        addWorldEffect({
+            type:
+                "chargeTelegraph",
+
+            x:
+                enemy.x,
+
+            y:
+                enemy.y,
+
+            dx:
+                direction.x,
+
+            dy:
+                direction.y,
+
+            length:
+                ability.speed *
+                ability.duration,
+
+            duration:
+                ability.telegraph,
+
+            enemyId:
+                enemy.id
+        });
+    }
+
+
+    function updateEnemyCharge(
+        enemy,
+        dt
+    ) {
+        const charge =
+            enemy.charge;
+
+        const player =
+            state.player;
+
+        if (
+            !charge ||
+            !player
+        ) {
+            return false;
+        }
+
+        if (
+            charge.stage ===
+                "telegraph"
+        ) {
+            enemy.stateTimer -=
+                dt;
+
+            faceEntityToward(
+                enemy,
+                player.x,
+                player.y
+            );
+
+            if (
+                enemy.stateTimer <= 0
+            ) {
+                charge.stage =
+                    "moving";
+
+                enemy.state =
+                    "charging";
+            }
+
+            return true;
+        }
+
+
+        if (
+            charge.stage ===
+                "moving"
+        ) {
+            charge.remaining -= dt;
+
+            const frameDistance =
+                charge.speed *
+                dt;
+
+            const steps =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        frameDistance /
+                        GAME_CONFIG
+                            .enemyChargeStep
+                    )
+                );
+
+            const step =
+                frameDistance /
+                steps;
+
+            for (
+                let index = 0;
+                index < steps;
+                index += 1
+            ) {
+                const oldX =
+                    enemy.x;
+
+                const oldY =
+                    enemy.y;
+
+                const moved =
+                    moveCircleWithCollision(
+                        enemy,
+
+                        charge.directionX *
+                            step,
+
+                        charge.directionY *
+                            step,
+
+                        enemy.radius
+                    );
+
+                const actual =
+                    Math.hypot(
+                        moved.x,
+                        moved.y
+                    );
+
+                if (
+                    !charge.hitPlayer &&
+                    circleCircleCollision(
+                        enemy.x,
+                        enemy.y,
+                        enemy.radius,
+
+                        player.x,
+                        player.y,
+                        player.radius
+                    )
+                ) {
+                    charge.hitPlayer =
+                        true;
+
+                    damagePlayer(
+                        enemy.damage *
+                            charge
+                                .damageMultiplier,
+
+                        enemy
+                    );
+                }
+
+                if (
+                    actual <
+                    step * 0.3
+                ) {
+                    enemy.x =
+                        oldX +
+                        moved.x;
+
+                    enemy.y =
+                        oldY +
+                        moved.y;
+
+                    charge.remaining = 0;
+
+                    break;
+                }
+            }
+
+
+            if (
+                charge.remaining <= 0
+            ) {
+                enemy.charge = null;
+
+                enemy.state =
+                    "chase";
+
+                /*
+                    NÃO há grande recuperação
+                    obrigatória após errar.
+                */
+                enemy.stateTimer =
+                    0.05;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /* ============================================================
+       HABILIDADES DAS ESPÉCIES
+       ============================================================ */
+
+    function activateEnemyAbility(
+        enemy
+    ) {
+        const ability =
+            enemy.ability;
+
+        const player =
+            state.player;
+
+        if (
+            !ability ||
+            !player
+        ) {
+            return false;
+        }
+
+        switch (
+            ability.type
+        ) {
+            case "charge":
+            case "heavyCharge":
+            case "burningCharge":
+                beginEnemyCharge(
+                    enemy,
+                    ability
+                );
+                return true;
+
+
+            case "rootProjectile": {
+                const aim =
+                    normalize(
+                        player.x -
+                            enemy.x,
+
+                        player.y -
+                            enemy.y
+                    );
+
+                createProjectile({
+                    team:
+                        "enemy",
+
+                    ownerId:
+                        enemy.id,
+
+                    type:
+                        "rootShot",
+
+                    x:
+                        enemy.x,
+
+                    y:
+                        enemy.y,
+
+                    dx:
+                        aim.x,
+
+                    dy:
+                        aim.y,
+
+                    speed:
+                        250,
+
+                    radius:
+                        8,
+
+                    maxDistance:
+                        400,
+
+                    damage:
+                        enemy.damage *
+                        0.78,
+
+                    color:
+                        "#6e8b58",
+
+                    onHitEffect:
+                        "slow"
+                });
+
+                return true;
+            }
+
+
+            case "groundSlam":
+                addWorldEffect({
+                    type:
+                        "enemyGroundSlam",
+
+                    x:
+                        enemy.x,
+
+                    y:
+                        enemy.y,
+
+                    radius: 105,
+
+                    duration:
+                        0.48
+                });
+
+                if (
+                    getEnemyDistanceToPlayer(
+                        enemy
+                    ) <= 115
+                ) {
+                    damagePlayer(
+                        enemy.damage *
+                            1.25,
+                        enemy
+                    );
+                }
+
+                return true;
+
+
+            case "oreBurst":
+                for (
+                    let index = 0;
+                    index < 7;
+                    index += 1
+                ) {
+                    const angle =
+                        (
+                            index /
+                            7
+                        ) *
+                        Math.PI *
+                        2;
+
+                    createProjectile({
+                        team:
+                            "enemy",
+
+                        ownerId:
+                            enemy.id,
+
+                        type:
+                            "oreShard",
+
+                        x:
+                            enemy.x,
+
+                        y:
+                            enemy.y,
+
+                        dx:
+                            Math.cos(
+                                angle
+                            ),
+
+                        dy:
+                            Math.sin(
+                                angle
+                            ),
+
+                        speed:
+                            210,
+
+                        radius:
+                            7,
+
+                        maxDistance:
+                            280,
+
+                        damage:
+                            enemy.damage *
+                            0.62,
+
+                        color:
+                            "#8c8982"
+                    });
+                }
+
+                return true;
+
+
+            case "webSlow": {
+                const aim =
+                    normalize(
+                        player.x -
+                            enemy.x,
+
+                        player.y -
+                            enemy.y
+                    );
+
+                createProjectile({
+                    team:
+                        "enemy",
+
+                    ownerId:
+                        enemy.id,
+
+                    type:
+                        "web",
+
+                    x:
+                        enemy.x,
+
+                    y:
+                        enemy.y,
+
+                    dx:
+                        aim.x,
+
+                    dy:
+                        aim.y,
+
+                    speed:
+                        245,
+
+                    radius:
+                        9,
+
+                    maxDistance:
+                        350,
+
+                    damage:
+                        enemy.damage *
+                        0.5,
+
+                    color:
+                        "#d4ced2",
+
+                    status:
+                        "slow"
+                });
+
+                return true;
+            }
+
+
+            case "poison":
+                if (
+                    getEnemyDistanceToPlayer(
+                        enemy
+                    ) <= 90
+                ) {
+                    if (
+                        damagePlayer(
+                            enemy.damage *
+                                0.72,
+                            enemy
+                        )
+                    ) {
+                        player.poisonEffect = {
+                            remaining:
+                                5,
+
+                            tickTimer:
+                                1,
+
+                            damagePerTick:
+                                Math.max(
+                                    1,
+                                    enemy.damage *
+                                        0.18
+                                )
+                        };
+                    }
+                }
+
+                return true;
+
+
+            case "dive":
+                beginEnemyCharge(
+                    enemy,
+                    {
+                        telegraph:
+                            0.36,
+
+                        speed:
+                            440,
+
+                        duration:
+                            0.32,
+
+                        damageMultiplier:
+                            1.12
+                    }
+                );
+
+                return true;
+
+
+            case "quickStrike":
+                if (
+                    getEnemyDistanceToPlayer(
+                        enemy
+                    ) <= 85
+                ) {
+                    enemyMeleeAttack(
+                        enemy,
+                        1.12
+                    );
+                }
+
+                return true;
+
+
+            case "voidWeb": {
+                const baseAngle =
+                    angleTo(
+                        enemy.x,
+                        enemy.y,
+                        player.x,
+                        player.y
+                    );
+
+                for (
+                    let index = -1;
+                    index <= 1;
+                    index += 1
+                ) {
+                    const angle =
+                        baseAngle +
+                        index * 0.18;
+
+                    createProjectile({
+                        team:
+                            "enemy",
+
+                        ownerId:
+                            enemy.id,
+
+                        type:
+                            "voidWeb",
+
+                        x:
+                            enemy.x,
+
+                        y:
+                            enemy.y,
+
+                        dx:
+                            Math.cos(
+                                angle
+                            ),
+
+                        dy:
+                            Math.sin(
+                                angle
+                            ),
+
+                        speed:
+                            285,
+
+                        radius:
+                            8,
+
+                        maxDistance:
+                            410,
+
+                        damage:
+                            enemy.damage *
+                            0.54,
+
+                        color:
+                            "#806399",
+
+                        status:
+                            "voidSlow"
+                    });
+                }
+
+                return true;
+            }
+
+
+            case "voidBlinkStrike":
+                /*
+                    Não é teleporte atravessando
+                    o mapa.
+
+                    É um avanço curto e visível.
+                */
+                beginEnemyCharge(
+                    enemy,
+                    {
+                        telegraph:
+                            0.3,
+
+                        speed:
+                            510,
+
+                        duration:
+                            0.22,
+
+                        damageMultiplier:
+                            1.18
+                    }
+                );
+
+                return true;
+
+
+            case "voidWave":
+                for (
+                    let index = 0;
+                    index < 10;
+                    index += 1
+                ) {
+                    const angle =
+                        (
+                            index /
+                            10
+                        ) *
+                        Math.PI *
+                        2;
+
+                    createProjectile({
+                        team:
+                            "enemy",
+
+                        ownerId:
+                            enemy.id,
+
+                        type:
+                            "voidWave",
+
+                        x:
+                            enemy.x,
+
+                        y:
+                            enemy.y,
+
+                        dx:
+                            Math.cos(
+                                angle
+                            ),
+
+                        dy:
+                            Math.sin(
+                                angle
+                            ),
+
+                        speed:
+                            235,
+
+                        radius:
+                            7,
+
+                        maxDistance:
+                            340,
+
+                        damage:
+                            enemy.damage *
+                            0.56,
+
+                        color:
+                            "#6d4f86"
+                    });
+                }
+
+                return true;
+        }
+
+        return false;
+    }
+
+
+    /* ============================================================
+       STATUS DE PROJÉTEIS
+       ============================================================ */
+
+    function applyProjectileStatus(
+        projectile
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !projectile?.status
+        ) {
+            return;
+        }
+
+        if (
+            projectile.status ===
+                "slow"
+        ) {
+            player.movementSlowTimer =
+                Math.max(
+                    player
+                        .movementSlowTimer,
+                    2.2
+                );
+
+            player.movementSlowMultiplier =
+                Math.min(
+                    player
+                        .movementSlowMultiplier,
+                    0.68
+                );
+        }
+
+
+        if (
+            projectile.status ===
+                "voidSlow"
+        ) {
+            player.movementSlowTimer =
+                Math.max(
+                    player
+                        .movementSlowTimer,
+                    1.6
+                );
+
+            player.movementSlowMultiplier =
+                Math.min(
+                    player
+                        .movementSlowMultiplier,
+                    0.74
+                );
+        }
+    }
+
+
+    /*
+        Substitui somente a função de colisão inimiga
+        definida acima, adicionando o status.
+    */
+    const _baseHandleEnemyProjectileCollision =
+        handleEnemyProjectileCollision;
+
+
+    handleEnemyProjectileCollision =
+        function patchedEnemyProjectileCollision(
+            projectile
+        ) {
+            const player =
+                state.player;
+
+            if (
+                !player ||
+                player.dead
+            ) {
+                return;
+            }
+
+            if (
+                !circleCircleCollision(
+                    projectile.x,
+                    projectile.y,
+                    projectile.radius,
+
+                    player.x,
+                    player.y,
+                    player.radius
+                )
+            ) {
+                return;
+            }
+
+            if (
+                projectile
+                    .canPhaseThroughDashV2 &&
+                isPlayerPhasingThroughProjectiles()
+            ) {
+                projectile.dead =
+                    true;
+
+                addWorldEffect({
+                    type:
+                        "perfectVoidPhase",
+
+                    x:
+                        player.x,
+
+                    y:
+                        player.y,
+
+                    duration:
+                        0.34
+                });
+
+                spawnBurstParticles(
+                    player.x,
+                    player.y,
+                    {
+                        amount: 12,
+                        speedMin: 50,
+                        speedMax: 170,
+                        color:
+                            "#7d5a98",
+                        lifeMin:
+                            0.15,
+                        lifeMax:
+                            0.4
+                    }
+                );
+
+                return;
+            }
+
+            const damaged =
+                damagePlayer(
+                    projectile.damage,
+                    projectile
+                );
+
+            if (damaged) {
+                applyProjectileStatus(
+                    projectile
+                );
+            }
+
+            if (
+                !projectile.piercing
+            ) {
+                projectile.dead =
+                    true;
+            }
+        };
+
+
+    /* ============================================================
+       IA DOS INIMIGOS
+
+       IMPORTANTE:
+       A IA NÃO depende do player estar apertando WASD.
+       ============================================================ */
+
+    function updateEnemyAI(
+        enemy,
+        dt
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !enemy ||
+            enemy.dead ||
+            !player ||
+            player.dead
+        ) {
+            return;
+        }
+
+        if (
+            enemy.hurtTimer > 0
+        ) {
+            enemy.hurtTimer =
+                Math.max(
+                    0,
+                    enemy.hurtTimer -
+                    dt
+                );
+        }
+
+        enemy.attackCooldown =
+            Math.max(
+                0,
+                enemy.attackCooldown -
+                    dt
+            );
+
+        enemy.abilityCooldown =
+            Math.max(
+                0,
+                enemy.abilityCooldown -
+                    dt
+            );
+
+
+        if (
+            enemy.state ===
+                "stunned"
+        ) {
+            enemy.stateTimer -= dt;
+
+            if (
+                enemy.stateTimer <= 0
+            ) {
+                enemy.state =
+                    "idle";
+            }
+
+            return;
+        }
+
+
+        if (
+            enemy.charge
+        ) {
+            updateEnemyCharge(
+                enemy,
+                dt
+            );
+
+            return;
+        }
+
+
+        const dist =
+            getEnemyDistanceToPlayer(
+                enemy
+            );
+
+
+        if (
+            dist <=
+            enemy.vision
+        ) {
+            enemy.aggro = true;
+        }
+
+
+        if (
+            enemy.aggro &&
+            dist >
+                enemy.vision *
+                1.65
+        ) {
+            enemy.aggro = false;
+        }
+
+
+        if (!enemy.aggro) {
+            enemy.state =
+                "idle";
+
+            return;
+        }
+
+
+        faceEntityToward(
+            enemy,
+            player.x,
+            player.y
+        );
+
+
+        /*
+            Habilidade baseada em:
+            DISTÂNCIA + COOLDOWN.
+
+            NÃO em movimento do jogador.
+        */
+        if (
+            enemy.ability &&
+            enemy.abilityCooldown <=
+                0
+        ) {
+            let abilityRange =
+                enemy.vision *
+                0.72;
+
+            if (
+                enemy.ability.type ===
+                    "groundSlam" ||
+                enemy.ability.type ===
+                    "poison" ||
+                enemy.ability.type ===
+                    "quickStrike"
+            ) {
+                abilityRange =
+                    100;
+            }
+
+            if (
+                dist <= abilityRange
+            ) {
+                const activated =
+                    activateEnemyAbility(
+                        enemy
+                    );
+
+                if (activated) {
+                    enemy.abilityCooldown =
+                        enemy.ability
+                            .cooldown ||
+                        random(
+                            2.2,
+                            3.2
+                        );
+
+                    return;
+                }
+            }
+        }
+
+
+        if (
+            dist <=
+            enemy.attackRange +
+                player.radius
+        ) {
+            enemy.state =
+                "attack";
+
+            if (
+                enemy.attackCooldown <=
+                0
+            ) {
+                enemyMeleeAttack(
+                    enemy,
+                    1
+                );
+
+                enemy.attackCooldown =
+                    random(
+                        0.85,
+                        1.25
+                    );
+            }
+
+            return;
+        }
+
+
+        enemy.state =
+            "chase";
+
+        moveEnemyToward(
+            enemy,
+            player.x,
+            player.y,
+            enemy.speed,
+            dt
+        );
+    }
+
+
+    function updateEnemies(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const enemy of
+            world.enemies
+        ) {
+            updateEnemyAI(
+                enemy,
+                dt
+            );
+        }
+    }
+
+
+    /* ============================================================
+       DROP DE INIMIGOS
+       ============================================================ */
+
+    function shouldDropQuestItem(
+        drop
+    ) {
+        if (
+            !drop.requiresQuest
+        ) {
+            return true;
+        }
+
+        if (
+            drop.requiresQuest ===
+                "voidTrial"
+        ) {
+            return Boolean(
+                state.player
+                    ?.miguelQuest
+                    ?.missionAccepted &&
+                !state.player
+                    ?.miguelQuest
+                    ?.keyCollected
+            );
+        }
+
+        return false;
+    }
+
+
+    function processEnemyDropTable(
+        enemy
+    ) {
+        if (
+            !enemy?.dropTable
+        ) {
+            return;
+        }
+
+        for (
+            const drop of
+            enemy.dropTable
+        ) {
+            if (
+                !shouldDropQuestItem(
+                    drop
+                )
+            ) {
+                continue;
+            }
+
+            if (
+                Math.random() >
+                drop.chance
+            ) {
+                continue;
+            }
+
+            const amount =
+                randomInt(
+                    drop.min || 1,
+                    drop.max || 1
+                );
+
+            /*
+                Drop direto para inventário.
+
+                Como Essência Sombria é item
+                de missão, não queremos que o
+                jogador perca o drop por peso.
+            */
+            const item =
+                ITEMS[drop.item];
+
+            if (!item) {
+                continue;
+            }
+
+            if (
+                item.questItem
+            ) {
+                state.player
+                    .inventory
+                    [drop.item] =
+                    getRealItemCount(
+                        drop.item
+                    ) +
+                    amount;
+
+                pushNotification(
+                    item.name,
+                    `+${amount}`,
+                    "item",
+                    2
+                );
+            } else {
+                addItem(
+                    drop.item,
+                    amount
+                );
+            }
+        }
+
+        updateDarkKeyMissionRequirement();
+    }
+
+
+    function updateDarkKeyMissionRequirement() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        if (
+            !quest.missionAccepted ||
+            quest.keyCollected ||
+            quest.keyConsumed
+        ) {
+            return;
+        }
+
+        if (
+            quest.keyLocationDiscovered &&
+            hasEnoughShadowEssence()
+        ) {
+            /*
+                Não pega a chave automaticamente.
+                Apenas informa que já pode retornar.
+            */
+            quest.trackerObjective =
+                "Retorne à Chave Obscura.";
+
+            quest.objectiveRevision +=
+                1;
+
+            pushNotification(
+                "OBJETIVO ATUALIZADO",
+                "As 15 Essências Sombrias foram reunidas.",
+                "objective",
+                3.8
+            );
+        }
+    }
+
+
+    /* ============================================================
+       MORTE DE INIMIGO
+       ============================================================ */
+
+    function killEnemy(
+        enemy
+    ) {
+        if (
+            !enemy ||
+            enemy.dead
+        ) {
+            return false;
+        }
+
+        enemy.dead = true;
+
+        enemy.state =
+            "dead";
+
+        gainXP(
+            enemy.xp || 0
+        );
+
+        addMoney(
+            enemy.money || 0
+        );
+
+        processEnemyDropTable(
+            enemy
+        );
+
+        if (
+            enemy.persistentKillId &&
+            state.area ===
+                "voidDungeon"
+        ) {
+            const quest =
+                state.player
+                    ?.miguelQuest;
+
+            if (
+                quest &&
+                !quest
+                    .clearedDungeonEnemyIds
+                    .includes(
+                        enemy
+                            .persistentKillId
+                    )
+            ) {
+                quest
+                    .clearedDungeonEnemyIds
+                    .push(
+                        enemy
+                            .persistentKillId
+                    );
+            }
+        }
+
+        spawnBurstParticles(
+            enemy.x,
+            enemy.y,
+            {
+                amount:
+                    enemy.speciesId
+                        ?.startsWith(
+                            "void"
+                        )
+                        ? 14
+                        : 8,
+
+                speedMin: 40,
+                speedMax: 170,
+
+                color:
+                    enemy.speciesId
+                        ?.startsWith(
+                            "void"
+                        )
+                        ? "#72558a"
+                        : "#963d43",
+
+                lifeMin:
+                    0.2,
+
+                lifeMax:
+                    0.55
+            }
+        );
+
+        return true;
+    }
+
+
+    function cleanupDeadEnemies() {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        world.enemies =
+            world.enemies.filter(
+                enemy =>
+                    !enemy.dead
+            );
+    }
+
+
+    /* ============================================================
+       BOSSES GENÉRICOS
+       ============================================================ */
+
+    function updateGenericBoss(
+        boss,
+        dt
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !boss ||
+            boss.dead ||
+            !player ||
+            player.dead
+        ) {
+            return;
+        }
+
+        if (
+            boss.id ===
+                "vaelkor"
+        ) {
+            updateVaelkor(
+                boss,
+                dt
+            );
+
+            return;
+        }
+
+        if (
+            boss.state ===
+                "dormant"
+        ) {
+            return;
+        }
+
+        boss.hurtTimer =
+            Math.max(
+                0,
+                boss.hurtTimer -
+                    dt
+            );
+
+        boss.attackCooldown =
+            Math.max(
+                0,
+                boss.attackCooldown -
+                    dt
+            );
+
+
+        if (
+            boss.charge
+        ) {
+            updateEnemyCharge(
+                boss,
+                dt
+            );
+
+            return;
+        }
+
+
+        const dist =
+            distance(
+                boss.x,
+                boss.y,
+                player.x,
+                player.y
+            );
+
+        faceEntityToward(
+            boss,
+            player.x,
+            player.y
+        );
+
+
+        /*
+            Bosses com Dash próprio.
+        */
+        if (
+            boss.usesDash &&
+            boss.attackCooldown <=
+                0 &&
+            dist >
+                110 &&
+            dist <
+                460
+        ) {
+            beginEnemyCharge(
+                boss,
+                {
+                    telegraph:
+                        0.48,
+
+                    speed:
+                        500,
+
+                    duration:
+                        0.34,
+
+                    damageMultiplier:
+                        1.35
+                }
+            );
+
+            boss.attackCooldown =
+                random(
+                    2.2,
+                    3
+                );
+
+            return;
+        }
+
+
+        /*
+            Ataque em área.
+        */
+        if (
+            dist <= 115 &&
+            boss.attackCooldown <=
+                0
+        ) {
+            addWorldEffect({
+                type:
+                    "bossSlam",
+
+                x:
+                    boss.x,
+
+                y:
+                    boss.y,
+
+                radius:
+                    125,
+
+                duration:
+                    0.45,
+
+                bossId:
+                    boss.id
+            });
+
+            if (
+                distance(
+                    boss.x,
+                    boss.y,
+                    player.x,
+                    player.y
+                ) <=
+                130 +
+                player.radius
+            ) {
+                damagePlayer(
+                    boss.damage *
+                        1.2,
+                    boss
+                );
+            }
+
+            triggerScreenShake(
+                7,
+                0.2
+            );
+
+            boss.attackCooldown =
+                random(
+                    1.6,
+                    2.5
+                );
+
+            return;
+        }
+
+
+        /*
+            Projétil ocasional.
+        */
+        if (
+            dist >
+                150 &&
+            dist <
+                480 &&
+            boss.attackCooldown <=
+                0 &&
+            Math.random() <
+                0.38
+        ) {
+            const aim =
+                normalize(
+                    player.x -
+                        boss.x,
+
+                    player.y -
+                        boss.y
+                );
+
+            createProjectile({
+                team:
+                    "enemy",
+
+                ownerId:
+                    boss.id,
+
+                type:
+                    "bossProjectile",
+
+                x:
+                    boss.x,
+
+                y:
+                    boss.y,
+
+                dx:
+                    aim.x,
+
+                dy:
+                    aim.y,
+
+                speed:
+                    280,
+
+                radius:
+                    10,
+
+                maxDistance:
+                    520,
+
+                damage:
+                    boss.damage *
+                    0.86,
+
+                color:
+                    boss.aura
+            });
+
+            boss.attackCooldown =
+                random(
+                    1.4,
+                    2.2
+                );
+
+            return;
+        }
+
+
+        if (
+            dist > 92
+        ) {
+            moveEnemyToward(
+                boss,
+                player.x,
+                player.y,
+                boss.speed,
+                dt
+            );
+        }
+    }
+
+
+    function updateBosses(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const boss of
+            world.bosses
+        ) {
+            updateGenericBoss(
+                boss,
+                dt
+            );
+        }
+    }
+
+
+    /* ============================================================
+       RECOMPENSAS DE BOSS
+       ============================================================ */
+
+    function handleBossDefeatRewards(
+        boss
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !boss
+        ) {
+            return;
+        }
+
+        switch (
+            boss.id
+        ) {
+            case "road_guardian":
+                player.gateUnlocks.east =
+                    true;
+
+                unlockArea(
+                    "forest"
+                );
+
+                pushNotification(
+                    "CAMINHO LIBERADO",
+                    "A estrada leste está aberta.",
+                    "progress",
+                    4
+                );
+                break;
+
+
+            case "forest_warden":
+                unlockArea(
+                    "grove"
+                );
+                break;
+
+
+            case "grove_heart":
+                unlockArea(
+                    "mountains"
+                );
+                break;
+
+
+            case "mountain_titan":
+                unlockArea(
+                    "iron"
+                );
+                break;
+
+
+            case "iron_colossus":
+                unlockArea(
+                    "ruby"
+                );
+                break;
+
+
+            case "ruby_chimera":
+                unlockArea(
+                    "preMonarch"
+                );
+
+                unlockArea(
+                    "monarchMaze"
+                );
+                break;
+
+
+            case "monarch":
+                player.monarchDefeated =
+                    true;
+
+                pushNotification(
+                    "O MONARCA CAIU",
+                    "Retorne ao altar. A oferenda ainda o aguarda.",
+                    "progress",
+                    5
+                );
+                break;
+
+
+            case "gnome_guardian":
+                unlockArea(
+                    "fairyKingdom"
+                );
+                break;
+
+
+            case "fairy_guardian":
+                unlockArea(
+                    "celestialFrontier"
+                );
+                break;
+
+
+            case "celestial_dash_guardian":
+                unlockArea(
+                    "celestialStair"
+                );
+                break;
+
+
+            case "stair_guardian":
+                unlockArea(
+                    "sky1"
+                );
+                break;
+
+
+            case "path_guardian":
+                if (
+                    !player
+                        .fluteRewardGranted
+                ) {
+                    player
+                        .inventory
+                        .flautaMemoria =
+                        1;
+
+                    player
+                        .fluteRewardGranted =
+                        true;
+
+                    state.itemPresentation = {
+                        title:
+                            "ITEM OBTIDO",
+
+                        itemId:
+                            "flautaMemoria",
+
+                        name:
+                            "FLAUTA DA MEMÓRIA",
+
+                        description:
+                            "Uma melodia esquecida parece repousar dentro do instrumento.",
+
+                        timer: 0,
+
+                        duration: 4
+                    };
+                }
+
+                break;
+        }
+    }
+
+
+    /* ============================================================
+       MORTE DE BOSS
+       ============================================================ */
+
+    function beginBossDeath(
+        boss
+    ) {
+        if (
+            !boss ||
+            boss.dead
+        ) {
+            return;
+        }
+
+        if (
+            boss.id ===
+                "vaelkor"
+        ) {
+            beginVaelkorDeath(
+                boss
+            );
+
+            return;
+        }
+
+        boss.dead = true;
+
+        boss.state =
+            "defeated";
+
+        markBossDefeated(
+            boss.id
+        );
+
+        handleBossDefeatRewards(
+            boss
+        );
+
+        gainXP(
+            180 +
+            (
+                REGION_META[
+                    state.area
+                ]?.order ||
+                1
+            ) *
+            45
+        );
+
+        addMoney(
+            80 +
+            (
+                REGION_META[
+                    state.area
+                ]?.order ||
+                1
+            ) *
+            22
+        );
+
+        triggerScreenShake(
+            10,
+            0.35
+        );
+
+        spawnBurstParticles(
+            boss.x,
+            boss.y,
+            {
+                amount: 30,
+                speedMin: 60,
+                speedMax: 260,
+                sizeMin: 3,
+                sizeMax: 9,
+                color:
+                    boss.aura,
+                lifeMin:
+                    0.3,
+                lifeMax:
+                    1
+            }
+        );
+    }
+
+
+    function cleanupDeadBosses() {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        world.bosses =
+            world.bosses.filter(
+                boss =>
+                    !boss.dead ||
+                    boss.id ===
+                        "vaelkor"
+            );
+    }
+
+
+    /* ============================================================
+       CUTSCENE RUNTIME
+       ============================================================ */
+
+    function startCutscene(
+        cutscene
+    ) {
+        if (!cutscene) {
+            return false;
+        }
+
+        if (state.cutscene) {
+            state.cutsceneQueue.push(
+                cutscene
+            );
+
+            return true;
+        }
+
+        state.cutscene = {
+            id:
+                uid("cutscene"),
+
+            timer: 0,
+
+            duration:
+                cutscene.duration ||
+                1,
+
+            skippable:
+                cutscene.skippable !==
+                false,
+
+            ...cutscene
+        };
+
+        return true;
+    }
+
+
+    function finishCurrentCutscene() {
+        const finished =
+            state.cutscene;
+
+        state.cutscene = null;
+
+        if (
+            typeof finished
+                ?.onFinish ===
+            "function"
+        ) {
+            finished.onFinish();
+        }
+
+        if (
+            state.cutsceneQueue
+                .length > 0
+        ) {
+            const next =
+                state
+                    .cutsceneQueue
+                    .shift();
+
+            startCutscene(
+                next
+            );
+        }
+    }
+
+
+    function skipCurrentCutscene() {
+        if (
+            !state.cutscene ||
+            state.cutscene.skippable ===
+                false
+        ) {
+            return false;
+        }
+
+        finishCurrentCutscene();
+
+        return true;
+    }
+
+
+    function updateCutsceneRuntime(dt) {
+        const cutscene =
+            state.cutscene;
+
+        if (!cutscene) {
+            return;
+        }
+
+        cutscene.timer += dt;
+
+        /*
+            Algumas cutscenes possuem
+            atualizações próprias.
+        */
+        if (
+            typeof cutscene
+                .onUpdate ===
+            "function"
+        ) {
+            cutscene.onUpdate(
+                cutscene,
+                dt
+            );
+        }
+
+        if (
+            cutscene.timer >=
+            cutscene.duration
+        ) {
+            finishCurrentCutscene();
+        }
+    }
+
+
+    /* ============================================================
+       VAELKOR — INÍCIO DA ARENA
+       ============================================================ */
+
+    function getVaelkor() {
+        return (
+            state.world
+                ?.bosses
+                ?.find(
+                    boss =>
+                        boss.id ===
+                        "vaelkor"
+                ) ||
+            null
+        );
+    }
+
+
+    function checkVaelkorArenaTrigger() {
+        if (
+            state.area !==
+                "voidDungeon" ||
+            !state.world?.arena ||
+            !state.player ||
+            state.player
+                .miguelQuest
+                .vaelkorDefeated
+        ) {
+            return;
+        }
+
+        if (
+            state.voidRuntime
+                .arenaEntered
+        ) {
+            return;
+        }
+
+        if (
+            !isPlayerInsideVaelkorArena()
+        ) {
+            return;
+        }
+
+        state.voidRuntime
+            .arenaEntered =
+            true;
+
+        triggerVaelkorIntro();
+    }
+
+
+    function triggerVaelkorIntro() {
+        const boss =
+            getVaelkor();
+
+        const player =
+            state.player;
+
+        if (
+            !boss ||
+            !player
+        ) {
+            return false;
+        }
+
+        lockVaelkorArena();
+
+        player.miguelQuest
+            .vaelkorActivated =
+            true;
+
+        setMiguelQuestStage(
+            MIGUEL_QUEST_STAGE
+                .VAELKOR_ACTIVE
+        );
+
+        const repeatedAttempt =
+            state.voidRuntime
+                .respawnAttempt > 0;
+
+        const duration =
+            repeatedAttempt
+                ? 2.6
+                : 6.4;
+
+        boss.state =
+            "dormant";
+
+        boss.hp =
+            boss.maxHp;
+
+        boss.phase = 1;
+
+        boss.patterns = [];
+
+        boss.attackCooldown =
+            2;
+
+        state.voidRuntime
+            .vaelkorIntroPlayedThisAttempt =
+            true;
+
+        startCutscene({
+            type:
+                "vaelkorIntro",
+
+            bossId:
+                "vaelkor",
+
+            duration,
+
+            skippable:
+                repeatedAttempt,
+
+            repeatedAttempt,
+
+            onFinish() {
+                const current =
+                    getVaelkor();
+
+                if (
+                    !current ||
+                    current.dead
+                ) {
+                    return;
+                }
+
+                current.state =
+                    "active";
+
+                current.attackCooldown =
+                    1.6;
+
+                state.voidRuntime
+                    .vaelkorFightStarted =
+                    true;
+
+                state.bossBarTarget =
+                    current;
+
+                markBossDiscovered(
+                    "vaelkor"
+                );
+            }
+        });
+
+        return true;
+    }
+
+
+    /* ============================================================
+       VAELKOR — PADRÕES
+       ============================================================ */
+
+    function ensureVaelkorRuntime(
+        boss
+    ) {
+        if (!boss) {
+            return;
+        }
+
+        if (
+            !Array.isArray(
+                boss.patterns
+            )
+        ) {
+            boss.patterns = [];
+        }
+
+        if (
+            !Number.isFinite(
+                boss.patternSequence
+            )
+        ) {
+            boss.patternSequence = 0;
+        }
+    }
+
+
+    function startVaelkorPattern(
+        boss,
+        type,
+        startDelay = 0
+    ) {
+        if (!boss) {
+            return null;
+        }
+
+        ensureVaelkorRuntime(
+            boss
+        );
+
+        const definition =
+            BOSS_REGISTRY
+                .vaelkor
+                .attacks[type];
+
+        if (!definition) {
+            return null;
+        }
+
+        const pattern = {
+            id:
+                uid(
+                    `vaelkor_${type}`
+                ),
+
+            type,
+
+            stage:
+                startDelay > 0
+                    ? "delay"
+                    : "telegraph",
+
+            delay:
+                startDelay,
+
+            timer: 0,
+
+            fired: false,
+
+            completed: false,
+
+            phase:
+                boss.phase,
+
+            definition
+        };
+
+
+        if (
+            type ===
+                "voidBeam"
+        ) {
+            pattern.angle =
+                angleTo(
+                    boss.x,
+                    boss.y,
+                    state.player.x,
+                    state.player.y
+                );
+
+            pattern.lockedAngle =
+                false;
+
+            pattern.hitPlayer =
+                false;
+        }
+
+
+        if (
+            type ===
+                "voidBarrage"
+        ) {
+            pattern.safeAngle =
+                angleTo(
+                    boss.x,
+                    boss.y,
+                    state.player.x,
+                    state.player.y
+                ) +
+                Math.PI * 0.5;
+        }
+
+
+        boss.patterns.push(
+            pattern
+        );
+
+        return pattern;
+    }
+
+
+    function angleDifference(
+        a,
+        b
+    ) {
+        let diff =
+            a - b;
+
+        while (
+            diff >
+            Math.PI
+        ) {
+            diff -=
+                Math.PI * 2;
+        }
+
+        while (
+            diff <
+            -Math.PI
+        ) {
+            diff +=
+                Math.PI * 2;
+        }
+
+        return diff;
+    }
+
+
+    function fireVaelkorBarrage(
+        boss,
+        pattern
+    ) {
+        const definition =
+            pattern.definition;
+
+        const phaseTwo =
+            boss.phase >= 2;
+
+        const count =
+            phaseTwo
+                ? definition
+                    .phaseTwoOrbCount
+                : definition
+                    .baseOrbCount;
+
+        const speed =
+            phaseTwo
+                ? definition
+                    .phaseTwoProjectileSpeed
+                : definition
+                    .projectileSpeed;
+
+        const safeGap =
+            definition
+                .minSafeGapRadians;
+
+        /*
+            1) padrão circular com corredor seguro
+        */
+        for (
+            let index = 0;
+            index < count;
+            index += 1
+        ) {
+            const angle =
+                (
+                    index /
+                    count
+                ) *
+                Math.PI *
+                2 +
+                boss.patternSequence *
+                0.19;
+
+            if (
+                Math.abs(
+                    angleDifference(
+                        angle,
+                        pattern.safeAngle
+                    )
+                ) <
+                safeGap
+            ) {
+                continue;
+            }
+
+            createProjectile({
+                team:
+                    "enemy",
+
+                ownerId:
+                    "vaelkor",
+
+                type:
+                    "voidOrb",
+
+                x:
+                    boss.x +
+                    Math.cos(angle) *
+                    55,
+
+                y:
+                    boss.y +
+                    Math.sin(angle) *
+                    55,
+
+                dx:
+                    Math.cos(angle),
+
+                dy:
+                    Math.sin(angle),
+
+                speed,
+
+                radius:
+                    phaseTwo
+                        ? 10
+                        : 9,
+
+                maxDistance:
+                    850,
+
+                damage:
+                    boss.damage *
+                    definition
+                        .damageMultiplier,
+
+                color:
+                    "#17121d",
+
+                secondaryColor:
+                    "#7c5c97",
+
+                canPhaseThroughDashV2:
+                    true
+            });
+        }
+
+
+        /*
+            2) poucas esferas direcionadas.
+        */
+        const aimedCount =
+            phaseTwo
+                ? 4
+                : 2;
+
+        const baseAim =
+            angleTo(
+                boss.x,
+                boss.y,
+                state.player.x,
+                state.player.y
+            );
+
+        for (
+            let index = 0;
+            index < aimedCount;
+            index += 1
+        ) {
+            const spread =
+                (
+                    index -
+                    (
+                        aimedCount -
+                        1
+                    ) /
+                    2
+                ) *
+                0.11;
+
+            const angle =
+                baseAim +
+                spread;
+
+            createProjectile({
+                team:
+                    "enemy",
+
+                ownerId:
+                    "vaelkor",
+
+                type:
+                    "aimedVoidOrb",
+
+                x:
+                    boss.x,
+
+                y:
+                    boss.y,
+
+                dx:
+                    Math.cos(angle),
+
+                dy:
+                    Math.sin(angle),
+
+                speed:
+                    speed * 1.04,
+
+                radius: 9,
+
+                maxDistance:
+                    870,
+
+                damage:
+                    boss.damage *
+                    definition
+                        .damageMultiplier,
+
+                color:
+                    "#0d0a11",
+
+                secondaryColor:
+                    "#8a64a7",
+
+                canPhaseThroughDashV2:
+                    true
+            });
+        }
+
+        boss.patternSequence += 1;
+
+        triggerScreenShake(
+            3,
+            0.12
+        );
+    }
+
+
+    function pointDistanceToSegment(
+        px,
+        py,
+        x1,
+        y1,
+        x2,
+        y2
+    ) {
+        const vx =
+            x2 - x1;
+
+        const vy =
+            y2 - y1;
+
+        const wx =
+            px - x1;
+
+        const wy =
+            py - y1;
+
+        const lengthSquared =
+            vx * vx +
+            vy * vy;
+
+        if (
+            lengthSquared <=
+            0.0001
+        ) {
+            return distance(
+                px,
+                py,
+                x1,
+                y1
+            );
+        }
+
+        const t =
+            clamp(
+                (
+                    wx * vx +
+                    wy * vy
+                ) /
+                lengthSquared,
+
+                0,
+                1
+            );
+
+        const closestX =
+            x1 +
+            vx * t;
+
+        const closestY =
+            y1 +
+            vy * t;
+
+        return distance(
+            px,
+            py,
+            closestX,
+            closestY
+        );
+    }
+
+
+    function isPlayerInsideVaelkorBeam(
+        boss,
+        pattern
+    ) {
+        const player =
+            state.player;
+
+        const definition =
+            pattern.definition;
+
+        if (
+            !player ||
+            !boss
+        ) {
+            return false;
+        }
+
+        const x2 =
+            boss.x +
+            Math.cos(
+                pattern.angle
+            ) *
+            definition.length;
+
+        const y2 =
+            boss.y +
+            Math.sin(
+                pattern.angle
+            ) *
+            definition.length;
+
+        const dist =
+            pointDistanceToSegment(
+                player.x,
+                player.y,
+
+                boss.x,
+                boss.y,
+
+                x2,
+                y2
+            );
+
+        return (
+            dist <=
+            definition.width / 2 +
+                player.radius
+        );
+    }
+
+
+    function summonVaelkorCreatures(
+        boss,
+        pattern
+    ) {
+        const world =
+            state.world;
+
+        if (
+            !world ||
+            !boss
+        ) {
+            return;
+        }
+
+        const definition =
+            pattern.definition;
+
+        const existing =
+            world.enemies.filter(
+                enemy =>
+                    enemy.summonOwner ===
+                    "vaelkor" &&
+                    !enemy.dead
+            );
+
+        const remainingSlots =
+            Math.max(
+                0,
+                definition
+                    .maxAliveSummons -
+                    existing.length
+            );
+
+        const desired =
+            boss.phase >= 2
+                ? definition
+                    .phaseTwoCount
+                : definition
+                    .phaseOneCount;
+
+        const count =
+            Math.min(
+                remainingSlots,
+                desired
+            );
+
+        for (
+            let index = 0;
+            index < count;
+            index += 1
+        ) {
+            const speciesId =
+                choose(
+                    definition
+                        .species
+                );
+
+            const angle =
+                (
+                    index /
+                    Math.max(
+                        1,
+                        count
+                    )
+                ) *
+                Math.PI *
+                2 +
+                random(
+                    -0.35,
+                    0.35
+                );
+
+            const radius =
+                random(
+                    260,
+                    390
+                );
+
+            const desiredX =
+                boss.x +
+                Math.cos(angle) *
+                radius;
+
+            const desiredY =
+                boss.y +
+                Math.sin(angle) *
+                radius;
+
+            const species =
+                ENEMY_SPECIES[
+                    speciesId
+                ];
+
+            if (!species) {
+                continue;
+            }
+
+            const safe =
+                findSafePosition(
+                    desiredX,
+                    desiredY,
+                    species.radius,
+                    world
+                );
+
+            const summon =
+                createEnemyFromSpecies(
+                    speciesId,
+                    safe.x,
+                    safe.y,
+                    {
+                        summonOwner:
+                            "vaelkor",
+
+                        respawn:
+                            false,
+
+                        money:
+                            0,
+
+                        xp:
+                            Math.round(
+                                species.xp *
+                                0.3
+                            )
+                    }
+                );
+
+            if (summon) {
+                world.enemies.push(
+                    summon
+                );
+
+                addWorldEffect({
+                    type:
+                        "voidPortal",
+
+                    x:
+                        safe.x,
+
+                    y:
+                        safe.y,
+
+                    duration:
+                        definition
+                            .portalDuration
+                });
+            }
+        }
+    }
+
+
+    function updateVaelkorPattern(
+        boss,
+        pattern,
+        dt
+    ) {
+        if (
+            pattern.completed
+        ) {
+            return;
+        }
+
+        if (
+            pattern.stage ===
+                "delay"
+        ) {
+            pattern.delay -= dt;
+
+            if (
+                pattern.delay <=
+                0
+            ) {
+                pattern.stage =
+                    "telegraph";
+
+                pattern.timer = 0;
+            }
+
+            return;
+        }
+
+        pattern.timer += dt;
+
+
+        switch (
+            pattern.type
+        ) {
+            /* ====================================================
+               RAJADA
+               ==================================================== */
+
+            case "voidBarrage": {
+                const telegraph =
+                    pattern
+                        .definition
+                        .telegraph;
+
+                if (
+                    pattern.stage ===
+                        "telegraph"
+                ) {
+                    if (
+                        pattern.timer >=
+                        telegraph
+                    ) {
+                        fireVaelkorBarrage(
+                            boss,
+                            pattern
+                        );
+
+                        pattern.stage =
+                            "fired";
+
+                        pattern.timer = 0;
+
+                        pattern.fired =
+                            true;
+                    }
+
+                    return;
+                }
+
+                if (
+                    pattern.stage ===
+                        "fired" &&
+                    pattern.timer >
+                        0.2
+                ) {
+                    pattern.completed =
+                        true;
+                }
+
+                break;
+            }
+
+
+            /* ====================================================
+               FEIXE
+               ==================================================== */
+
+            case "voidBeam": {
+                const definition =
+                    pattern.definition;
+
+                const telegraph =
+                    boss.phase >= 2
+                        ? definition
+                            .phaseTwoTelegraph
+                        : definition
+                            .telegraph;
+
+                if (
+                    pattern.stage ===
+                        "telegraph"
+                ) {
+                    const remaining =
+                        telegraph -
+                        pattern.timer;
+
+                    /*
+                        Laser acompanha o jogador
+                        SOMENTE na primeira parte
+                        do carregamento.
+
+                        Depois a direção trava.
+                    */
+                    if (
+                        remaining >
+                        definition
+                            .trackingStopsBeforeFire
+                    ) {
+                        pattern.angle =
+                            angleTo(
+                                boss.x,
+                                boss.y,
+                                state.player.x,
+                                state.player.y
+                            );
+                    } else {
+                        pattern.lockedAngle =
+                            true;
+                    }
+
+                    if (
+                        pattern.timer >=
+                        telegraph
+                    ) {
+                        pattern.stage =
+                            "beam";
+
+                        pattern.timer = 0;
+
+                        triggerScreenShake(
+                            8,
+                            definition
+                                .duration
+                        );
+                    }
+
+                    return;
+                }
+
+
+                if (
+                    pattern.stage ===
+                        "beam"
+                ) {
+                    if (
+                        !pattern.hitPlayer &&
+                        isPlayerInsideVaelkorBeam(
+                            boss,
+                            pattern
+                        )
+                    ) {
+                        /*
+                            NÃO é projétil.
+                            Dash V2 não atravessa
+                            o laser por imunidade.
+                        */
+                        pattern.hitPlayer =
+                            damagePlayer(
+                                boss.damage *
+                                definition
+                                    .damageMultiplier,
+
+                                boss,
+
+                                {
+                                    noHitCooldown:
+                                        true
+                                }
+                            );
+                    }
+
+                    if (
+                        pattern.timer >=
+                        definition.duration
+                    ) {
+                        pattern.completed =
+                            true;
+                    }
+                }
+
+                break;
+            }
+
+
+            /* ====================================================
+               INVOCAÇÃO
+               ==================================================== */
+
+            case "shadowSummon": {
+                const telegraph =
+                    pattern
+                        .definition
+                        .telegraph;
+
+                if (
+                    !pattern.fired &&
+                    pattern.timer >=
+                        telegraph
+                ) {
+                    pattern.fired =
+                        true;
+
+                    summonVaelkorCreatures(
+                        boss,
+                        pattern
+                    );
+                }
+
+                if (
+                    pattern.timer >
+                    telegraph +
+                        0.4
+                ) {
+                    pattern.completed =
+                        true;
+                }
+
+                break;
+            }
+        }
+    }
+
+
+    function updateVaelkorPatterns(
+        boss,
+        dt
+    ) {
+        ensureVaelkorRuntime(
+            boss
+        );
+
+        for (
+            const pattern of
+            boss.patterns
+        ) {
+            updateVaelkorPattern(
+                boss,
+                pattern,
+                dt
+            );
+        }
+
+        boss.patterns =
+            boss.patterns.filter(
+                pattern =>
+                    !pattern.completed
+            );
+    }
+
+
+    function getVaelkorActivePatternCount(
+        boss
+    ) {
+        ensureVaelkorRuntime(
+            boss
+        );
+
+        return boss.patterns.filter(
+            pattern =>
+                !pattern.completed
+        ).length;
+    }
+
+
+    function chooseVaelkorPhaseOnePattern() {
+        return choose([
+            "voidBarrage",
+            "voidBeam",
+            "shadowSummon"
+        ]);
+    }
+
+
+    function startVaelkorPhaseTwoCombination(
+        boss
+    ) {
+        const definition =
+            BOSS_REGISTRY
+                .vaelkor
+                .phaseTwo;
+
+        const hpRatio =
+            boss.hp /
+            boss.maxHp;
+
+        let combination;
+
+        if (
+            hpRatio <=
+            definition
+                .finalHealthThreshold &&
+            Math.random() <
+                0.38
+        ) {
+            combination =
+                definition
+                    .finalCombination;
+        } else {
+            combination =
+                choose(
+                    definition
+                        .combinations
+                );
+        }
+
+        if (
+            !combination
+        ) {
+            return;
+        }
+
+        /*
+            Pequenas diferenças de tempo
+            impedem ataques de nascerem todos
+            exatamente no mesmo frame.
+        */
+        combination.forEach(
+            (
+                type,
+                index
+            ) => {
+                startVaelkorPattern(
+                    boss,
+                    type,
+                    index *
+                    definition
+                        .safetyWindow *
+                    0.55
+                );
+            }
+        );
+    }
+
+
+    /* ============================================================
+       VAELKOR — FASE II
+       ============================================================ */
+
+    function checkVaelkorPhaseTransition(
+        boss
+    ) {
+        if (
+            !boss ||
+            boss.id !==
+                "vaelkor" ||
+            boss.phase >= 2 ||
+            boss.phaseTransition ||
+            boss.dead
+        ) {
+            return;
+        }
+
+        const ratio =
+            boss.hp /
+            boss.maxHp;
+
+        if (
+            ratio >
+            BOSS_REGISTRY
+                .vaelkor
+                .phaseTwoAt
+        ) {
+            return;
+        }
+
+        beginVaelkorPhaseTwo(
+            boss
+        );
+    }
+
+
+    function removeVaelkorSummons() {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const enemy of
+            world.enemies
+        ) {
+            if (
+                enemy.summonOwner ===
+                "vaelkor"
+            ) {
+                enemy.dead = true;
+
+                spawnBurstParticles(
+                    enemy.x,
+                    enemy.y,
+                    {
+                        amount: 8,
+                        speedMin: 40,
+                        speedMax: 140,
+                        color:
+                            "#715487"
+                    }
+                );
+            }
+        }
+
+        cleanupDeadEnemies();
+    }
+
+
+    function beginVaelkorPhaseTwo(
+        boss
+    ) {
+        if (
+            !boss ||
+            boss.phaseTransition
+        ) {
+            return;
+        }
+
+        boss.phaseTransition =
+            true;
+
+        boss.state =
+            "phaseTransition";
+
+        boss.patterns = [];
+
+        removeProjectilesOwnedBy(
+            "vaelkor"
+        );
+
+        removeVaelkorSummons();
+
+        state.player
+            .miguelQuest
+            .vaelkorPhaseTwoSeen =
+            true;
+
+        const transition =
+            BOSS_REGISTRY
+                .vaelkor
+                .transition;
+
+        startCutscene({
+            type:
+                "vaelkorPhaseTwo",
+
+            bossId:
+                "vaelkor",
+
+            duration:
+                transition
+                    .duration,
+
+            skippable:
+                false,
+
+            dialogue:
+                transition
+                    .dialogue,
+
+            onFinish() {
+                const current =
+                    getVaelkor();
+
+                if (
+                    !current ||
+                    current.dead
+                ) {
+                    return;
+                }
+
+                current.phase = 2;
+
+                current.phaseTransition =
+                    false;
+
+                current.state =
+                    "active";
+
+                current.attackCooldown =
+                    1.1;
+
+                addWorldEffect({
+                    type:
+                        "vaelkorPhaseTwoAura",
+
+                    x:
+                        current.x,
+
+                    y:
+                        current.y,
+
+                    duration:
+                        1.2
+                });
+
+                triggerScreenShake(
+                    10,
+                    0.45
+                );
+            }
+        });
+    }
+
+
+    /* ============================================================
+       VAELKOR — IA
+       ============================================================ */
+
+    function updateVaelkor(
+        boss,
+        dt
+    ) {
+        if (
+            !boss ||
+            boss.dead
+        ) {
+            return;
+        }
+
+        /*
+            Fica no centro.
+        */
+        if (
+            state.world?.arena
+        ) {
+            const center =
+                state.world
+                    .arena
+                    .bossCenter;
+
+            boss.x =
+                lerp(
+                    boss.x,
+                    center.x,
+                    clamp(
+                        dt * 2.5,
+                        0,
+                        1
+                    )
+                );
+
+            /*
+                Levitação fica no render.
+            */
+            boss.y =
+                lerp(
+                    boss.y,
+                    center.y,
+                    clamp(
+                        dt * 2.5,
+                        0,
+                        1
+                    )
+                );
+        }
+
+
+        if (
+            boss.state ===
+                "dormant" ||
+            boss.state ===
+                "phaseTransition" ||
+            boss.state ===
+                "dying"
+        ) {
+            return;
+        }
+
+
+        boss.hurtTimer =
+            Math.max(
+                0,
+                boss.hurtTimer -
+                    dt
+            );
+
+        updateVaelkorPatterns(
+            boss,
+            dt
+        );
+
+        boss.attackCooldown =
+            Math.max(
+                0,
+                boss.attackCooldown -
+                    dt
+            );
+
+
+        const activePatterns =
+            getVaelkorActivePatternCount(
+                boss
+            );
+
+
+        if (
+            boss.phase === 1
+        ) {
+            const config =
+                BOSS_REGISTRY
+                    .vaelkor
+                    .phaseOne;
+
+            if (
+                boss.attackCooldown <=
+                    0 &&
+                activePatterns <
+                    config
+                        .maxConcurrentPatterns
+            ) {
+                const pattern =
+                    chooseVaelkorPhaseOnePattern();
+
+                startVaelkorPattern(
+                    boss,
+                    pattern
+                );
+
+                boss.attackCooldown =
+                    random(
+                        config
+                            .attackIntervalMin,
+
+                        config
+                            .attackIntervalMax
+                    );
+            }
+
+            return;
+        }
+
+
+        if (
+            boss.phase === 2
+        ) {
+            const config =
+                BOSS_REGISTRY
+                    .vaelkor
+                    .phaseTwo;
+
+            if (
+                boss.attackCooldown <=
+                    0 &&
+                activePatterns === 0
+            ) {
+                startVaelkorPhaseTwoCombination(
+                    boss
+                );
+
+                boss.attackCooldown =
+                    random(
+                        config
+                            .attackIntervalMin,
+
+                        config
+                            .attackIntervalMax
+                    );
+            }
+        }
+    }
+
+
+    /* ============================================================
+       VAELKOR — MORTE CINEMATOGRÁFICA
+       ============================================================ */
+
+    function beginVaelkorDeath(
+        boss
+    ) {
+        if (
+            !boss ||
+            boss.state ===
+                "dying" ||
+            boss.dead
+        ) {
+            return;
+        }
+
+        boss.hp = 0;
+
+        boss.state =
+            "dying";
+
+        boss.patterns = [];
+
+        removeProjectilesOwnedBy(
+            "vaelkor"
+        );
+
+        removeVaelkorSummons();
+
+        state.bossBarTarget =
+            boss;
+
+        const sequence =
+            BOSS_REGISTRY
+                .vaelkor
+                .deathSequence;
+
+        const totalDuration =
+            sequence
+                .fragmentScatterDuration +
+            sequence
+                .fragmentGatherDuration +
+            sequence
+                .implosionDuration +
+            sequence
+                .explosionDuration +
+            0.7;
+
+        startCutscene({
+            type:
+                "vaelkorDeath",
+
+            bossId:
+                "vaelkor",
+
+            duration:
+                totalDuration,
+
+            skippable:
+                false,
+
+            stages: {
+                scatterEnd:
+                    sequence
+                        .fragmentScatterDuration,
+
+                gatherEnd:
+                    sequence
+                        .fragmentScatterDuration +
+                    sequence
+                        .fragmentGatherDuration,
+
+                implosionEnd:
+                    sequence
+                        .fragmentScatterDuration +
+                    sequence
+                        .fragmentGatherDuration +
+                    sequence
+                        .implosionDuration,
+
+                explosionEnd:
+                    sequence
+                        .fragmentScatterDuration +
+                    sequence
+                        .fragmentGatherDuration +
+                    sequence
+                        .implosionDuration +
+                    sequence
+                        .explosionDuration
+            },
+
+            onUpdate(
+                cutscene
+            ) {
+                /*
+                    Cria partículas diferentes
+                    de acordo com estágio.
+                */
+                const current =
+                    getVaelkor();
+
+                if (!current) {
+                    return;
+                }
+
+                if (
+                    cutscene.timer <
+                    cutscene
+                        .stages
+                        .scatterEnd
+                ) {
+                    if (
+                        Math.random() <
+                        0.55
+                    ) {
+                        addWorldParticle({
+                            type:
+                                "vaelkorFragment",
+
+                            x:
+                                current.x +
+                                random(
+                                    -30,
+                                    30
+                                ),
+
+                            y:
+                                current.y +
+                                random(
+                                    -45,
+                                    45
+                                ),
+
+                            vx:
+                                random(
+                                    -180,
+                                    180
+                                ),
+
+                            vy:
+                                random(
+                                    -180,
+                                    180
+                                ),
+
+                            size:
+                                random(
+                                    3,
+                                    10
+                                ),
+
+                            life:
+                                1.8,
+
+                            color:
+                                "#6e5287"
+                        });
+                    }
+                }
+
+                if (
+                    cutscene.timer >=
+                        cutscene
+                            .stages
+                            .gatherEnd &&
+                    !cutscene
+                        .implosionTriggered
+                ) {
+                    cutscene
+                        .implosionTriggered =
+                        true;
+
+                    triggerScreenShake(
+                        12,
+                        0.4
+                    );
+
+                    addWorldEffect({
+                        type:
+                            "voidImplosion",
+
+                        x:
+                            current.x,
+
+                        y:
+                            current.y,
+
+                        duration:
+                            0.8
+                    });
+                }
+
+                if (
+                    cutscene.timer >=
+                        cutscene
+                            .stages
+                            .implosionEnd &&
+                    !cutscene
+                        .explosionTriggered
+                ) {
+                    cutscene
+                        .explosionTriggered =
+                        true;
+
+                    triggerScreenShake(
+                        18,
+                        0.7
+                    );
+
+                    spawnBurstParticles(
+                        current.x,
+                        current.y,
+                        {
+                            amount:
+                                48,
+
+                            speedMin:
+                                90,
+
+                            speedMax:
+                                360,
+
+                            sizeMin:
+                                3,
+
+                            sizeMax:
+                                11,
+
+                            color:
+                                "#75558e",
+
+                            lifeMin:
+                                0.4,
+
+                            lifeMax:
+                                1.25
+                        }
+                    );
+
+                    addWorldEffect({
+                        type:
+                            "voidExplosion",
+
+                        x:
+                            current.x,
+
+                        y:
+                            current.y,
+
+                        duration:
+                            1
+                    });
+                }
+            },
+
+            onFinish() {
+                finalizeVaelkorDeath();
+            }
+        });
+    }
+
+
+    function finalizeVaelkorDeath() {
+        const player =
+            state.player;
+
+        const boss =
+            getVaelkor();
+
+        if (!player) {
+            return;
+        }
+
+        if (boss) {
+            boss.dead = true;
+
+            boss.state =
+                "defeated";
+        }
+
+        markBossDefeated(
+            "vaelkor"
+        );
+
+        player
+            .miguelQuest
+            .vaelkorDefeated =
+            true;
+
+        player
+            .miguelQuest
+            .vaelkorDeathCutscenePlayed =
+            true;
+
+        player
+            .miguelQuest
+            .fragmentSpawned =
+            true;
+
+        gainXP(
+            650
+        );
+
+        setMiguelQuestStage(
+            MIGUEL_QUEST_STAGE
+                .FRAGMENT_READY
+        );
+
+        state.bossBarTarget =
+            null;
+
+        unlockVaelkorArena();
+
+        spawnVoidFragmentEntity();
+    }
+
+
+    /* ============================================================
+       FRAGMENTO DO VAZIO
+       ============================================================ */
+
+    function spawnVoidFragmentEntity() {
+        const world =
+            state.world;
+
+        const player =
+            state.player;
+
+        if (
+            !world ||
+            !player ||
+            state.area !==
+                "voidDungeon"
+        ) {
+            return false;
+        }
+
+        if (
+            !player
+                .miguelQuest
+                .vaelkorDefeated ||
+            player
+                .miguelQuest
+                .fragmentCollected
+        ) {
+            return false;
+        }
+
+        if (
+            world.landmarks.some(
+                landmark =>
+                    landmark.id ===
+                    "voidFragment"
+            )
+        ) {
+            return true;
+        }
+
+        const arena =
+            world.arena;
+
+        if (!arena) {
+            return false;
+        }
+
+        addLandmark(
+            world,
+            {
+                id:
+                    "voidFragment",
+
+                type:
+                    "voidFragment",
+
+                name:
+                    "FRAGMENTO DO VAZIO",
+
+                x:
+                    arena.x,
+
+                y:
+                    arena.y,
+
+                radius: 42,
+
+                mapVisible:
+                    false,
+
+                interactable:
+                    true
+            }
+        );
+
+        state.voidRuntime
+            .fragmentEntityCreated =
+            true;
+
+        return true;
+    }
+
+
+    function getVoidFragmentLandmark() {
+        return (
+            state.world
+                ?.landmarks
+                ?.find(
+                    landmark =>
+                        landmark.id ===
+                        "voidFragment"
+                ) ||
+            null
+        );
+    }
+
+
+    function canStartFragmentMinigame() {
+        const player =
+            state.player;
+
+        const fragment =
+            getVoidFragmentLandmark();
+
+        if (
+            !player ||
+            !fragment ||
+            state.fragmentMinigame
+                ?.active
+        ) {
+            return false;
+        }
+
+        if (
+            !player
+                .miguelQuest
+                .vaelkorDefeated ||
+            player
+                .miguelQuest
+                .fragmentCollected
+        ) {
+            return false;
+        }
+
+        return (
+            distance(
+                player.x,
+                player.y,
+                fragment.x,
+                fragment.y
+            ) <= 90
+        );
+    }
+
+
+    function startFragmentMinigame() {
+        if (
+            !canStartFragmentMinigame()
+        ) {
+            return false;
+        }
+
+        state.fragmentMinigame =
+            createFragmentMiniGameState();
+
+        return true;
+    }
+
+
+    function circularAngleDistance(
+        a,
+        b
+    ) {
+        return Math.abs(
+            angleDifference(
+                a,
+                b
+            )
+        );
+    }
+
+
+    function updateFragmentMinigame(dt) {
+        const game =
+            state.fragmentMinigame;
+
+        if (
+            !game ||
+            !game.active ||
+            game.completed
+        ) {
+            return;
+        }
+
+        const config =
+            getFragmentRoundConfig(
+                game.round
+            );
+
+        game.pointerAngle +=
+            game.direction *
+            config.speed *
+            Math.PI *
+            2 *
+            dt;
+
+        while (
+            game.pointerAngle >
+            Math.PI * 2
+        ) {
+            game.pointerAngle -=
+                Math.PI * 2;
+        }
+
+        while (
+            game.pointerAngle < 0
+        ) {
+            game.pointerAngle +=
+                Math.PI * 2;
+        }
+    }
+
+
+    function attemptFragmentTiming() {
+        const game =
+            state.fragmentMinigame;
+
+        if (
+            !game ||
+            !game.active ||
+            game.locked
+        ) {
+            return false;
+        }
+
+        game.attempts += 1;
+
+        const round =
+            getFragmentRoundConfig(
+                game.round
+            );
+
+        const targetRadians =
+            round.targetSize *
+            Math.PI *
+            2;
+
+        const difference =
+            circularAngleDistance(
+                game.pointerAngle,
+                game.targetAngle
+            );
+
+        const hit =
+            difference <=
+            targetRadians / 2;
+
+        if (!hit) {
+            game.misses += 1;
+
+            addWorldEffect({
+                type:
+                    "fragmentMiss",
+
+                x:
+                    getVoidFragmentLandmark()
+                        ?.x ||
+                    0,
+
+                y:
+                    getVoidFragmentLandmark()
+                        ?.y ||
+                    0,
+
+                duration:
+                    0.35
+            });
+
+            /*
+                REGRA DEFINIDA:
+                ERROU QUALQUER RODADA?
+                VOLTA PARA A 1.
+            */
+            resetFragmentMiniGameToRoundOne(
+                game
+            );
+
+            pushNotification(
+                "A ENERGIA SE DESFEZ",
+                "O vínculo voltou ao início.",
+                "warning",
+                2
+            );
+
+            return false;
+        }
+
+
+        addWorldEffect({
+            type:
+                "fragmentTimingHit",
+
+            x:
+                getVoidFragmentLandmark()
+                    ?.x ||
+                0,
+
+            y:
+                getVoidFragmentLandmark()
+                    ?.y ||
+                0,
+
+            round:
+                game.round,
+
+            duration:
+                0.35
+        });
+
+
+        if (
+            game.round >=
+            game.totalRounds
+        ) {
+            completeFragmentMinigame();
+
+            return true;
+        }
+
+
+        game.round += 1;
+
+        game.pointerAngle =
+            random(
+                0,
+                Math.PI * 2
+            );
+
+        game.targetAngle =
+            random(
+                0,
+                Math.PI * 2
+            );
+
+        game.direction *= -1;
+
+        return true;
+    }
+
+
+    function completeFragmentMinigame() {
+        const player =
+            state.player;
+
+        const game =
+            state.fragmentMinigame;
+
+        if (
+            !player ||
+            !game
+        ) {
+            return;
+        }
+
+        game.completed =
+            true;
+
+        game.active =
+            false;
+
+        player
+            .miguelQuest
+            .fragmentMiniGameCompleted =
+            true;
+
+        const fragment =
+            getVoidFragmentLandmark();
+
+        if (fragment) {
+            startCutscene({
+                type:
+                    "voidFragmentCondense",
+
+                duration:
+                    2.4,
+
+                skippable:
+                    false,
+
+                x:
+                    fragment.x,
+
+                y:
+                    fragment.y,
+
+                onFinish() {
+                    const collected =
+                        collectVoidFragment();
+
+                    if (!collected) {
+                        return;
+                    }
+
+                    state.itemPresentation = {
+                        title:
+                            "ITEM OBTIDO",
+
+                        itemId:
+                            "fragmentoVazio",
+
+                        name:
+                            "FRAGMENTO DO VAZIO",
+
+                        description:
+                            "Um fragmento que parece absorver a própria luz. Miguel talvez saiba o que fazer com isso.",
+
+                        timer: 0,
+
+                        duration:
+                            5
+                    };
+
+                    if (
+                        state.world
+                    ) {
+                        state.world.landmarks =
+                            state
+                                .world
+                                .landmarks
+                                .filter(
+                                    landmark =>
+                                        landmark.id !==
+                                        "voidFragment"
+                                );
+                    }
+
+                    state.fragmentMinigame =
+                        null;
+                }
+            });
+        }
+    }
+
+
+    /* ============================================================
+       STATUS DE VENENO
+       ============================================================ */
+
+    function updatePoisonEffect(dt) {
+        const player =
+            state.player;
+
+        const poison =
+            player?.poisonEffect;
+
+        if (
+            !player ||
+            !poison ||
+            player.dead
+        ) {
+            return;
+        }
+
+        poison.remaining -= dt;
+
+        poison.tickTimer -= dt;
+
+        if (
+            poison.tickTimer <= 0
+        ) {
+            poison.tickTimer =
+                1;
+
+            damagePlayer(
+                poison.damagePerTick,
+                null,
+                {
+                    noHitCooldown:
+                        true
+                }
+            );
+        }
+
+        if (
+            poison.remaining <= 0
+        ) {
+            player.poisonEffect =
+                null;
+        }
+    }
+
+
+    /* ============================================================
+       SOBREVIVÊNCIA
+       ============================================================ */
+
+    function updateSurvival(dt) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.dead ||
+            state.cutscene ||
+            state.dialogue ||
+            state.activePanel
+        ) {
+            return;
+        }
+
+        if (
+            !state.dev
+                .infiniteHunger
+        ) {
+            player.hunger =
+                Math.max(
+                    0,
+                    player.hunger -
+                    SURVIVAL_CONFIG
+                        .hungerDrainPerSecond *
+                    dt
+                );
+        }
+
+
+        if (
+            !state.dev
+                .infiniteFatigue
+        ) {
+            player.fatigue =
+                Math.max(
+                    0,
+                    player.fatigue -
+                    SURVIVAL_CONFIG
+                        .fatigueDrainPerSecond *
+                    dt
+                );
+        }
+
+
+        /*
+            Regeneração natural moderada.
+        */
+        if (
+            !state.dev
+                .infiniteMagic
+        ) {
+            player.magic =
+                Math.min(
+                    player.maxMagic,
+                    player.magic +
+                    SURVIVAL_CONFIG
+                        .magicRegenPerSecond *
+                    dt
+                );
+        }
+
+
+        if (
+            !state.dev
+                .infiniteEnergy &&
+            !player.dashRuntime
+        ) {
+            player.energy =
+                Math.min(
+                    player.maxEnergy,
+                    player.energy +
+                    SURVIVAL_CONFIG
+                        .energyRegenPerSecond *
+                    dt
+                );
+        }
+
+
+        if (
+            player.hunger <= 0 ||
+            player.fatigue <= 0
+        ) {
+            damagePlayer(
+                SURVIVAL_CONFIG
+                    .emptyNeedHpDrainPerSecond *
+                dt,
+
+                null,
+
+                {
+                    ignoreDefense:
+                        true,
+
+                    noHitCooldown:
+                        true
+                }
+            );
+        }
+    }
+
+
+    /* ============================================================
+       COLETA SEGURANDO E
+       ============================================================ */
+
+    function cancelHoldAction() {
+        state.holdAction = null;
+    }
+
+
+    function startHoldAction(
+        target,
+        type
+    ) {
+        if (
+            !target ||
+            !state.player
+        ) {
+            return false;
+        }
+
+        if (
+            state.holdAction
+        ) {
+            return false;
+        }
+
+        let duration =
+            GAME_CONFIG
+                .resourceHoldSeconds;
+
+        if (
+            type === "tree"
+        ) {
+            duration =
+                GAME_CONFIG
+                    .treeHoldSeconds;
+        }
+
+        if (
+            type === "darkKey"
+        ) {
+            duration =
+                VOID_MISSION_CONFIG
+                    .keyHoldSeconds;
+        }
+
+        state.holdAction = {
+            targetId:
+                target.id,
+
+            type,
+
+            progress: 0,
+
+            duration,
+
+            startX:
+                state.player.x,
+
+            startY:
+                state.player.y
+        };
+
+        return true;
+    }
+
+
+    function getNearestCollectableResource() {
+        const player =
+            state.player;
+
+        const world =
+            state.world;
+
+        if (
+            !player ||
+            !world
+        ) {
+            return null;
+        }
+
+        let nearest = null;
+        let bestDistance = Infinity;
+
+        for (
+            const resource of
+            world.resources
+        ) {
+            if (
+                !resource.active
+            ) {
+                continue;
+            }
+
+            const dist =
+                distance(
+                    player.x,
+                    player.y,
+                    resource.x,
+                    resource.y
+                );
+
+            if (
+                dist <= 88 &&
+                dist <
+                    bestDistance
+            ) {
+                nearest =
+                    resource;
+
+                bestDistance =
+                    dist;
+            }
+        }
+
+        return nearest;
+    }
+
+
+    function attemptStartHoldInteraction() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            isPlayerControlBlocked() ||
+            state.holdAction
+        ) {
+            return false;
+        }
+
+        /*
+            CHAVE OBSCURA TEM PRIORIDADE.
+        */
+        if (
+            state.world?.darkKey &&
+            isDarkKeyVisible()
+        ) {
+            const key =
+                state.world.darkKey;
+
+            if (
+                distance(
+                    player.x,
+                    player.y,
+                    key.x,
+                    key.y
+                ) <= 90
+            ) {
+                discoverDarkKeyLocation();
+
+                if (
+                    !hasEnoughShadowEssence()
+                ) {
+                    const current =
+                        getRealItemCount(
+                            "essenciaSombria"
+                        );
+
+                    const needed =
+                        VOID_MISSION_CONFIG
+                            .shadowEssenceRequired;
+
+                    setMiguelQuestStage(
+                        MIGUEL_QUEST_STAGE
+                            .KEY_FOUND_NEEDS_ESSENCE
+                    );
+
+                    pushNotification(
+                        "CHAVE OBSCURA",
+                        `A chave rejeita o contato. Essências Sombrias: ${current}/${needed}.`,
+                        "warning",
+                        4
+                    );
+
+                    return false;
+                }
+
+                return startHoldAction(
+                    key,
+                    "darkKey"
+                );
+            }
+        }
+
+
+        const resource =
+            getNearestCollectableResource();
+
+        if (!resource) {
+            return false;
+        }
+
+        return startHoldAction(
+            resource,
+            resource.type
+        );
+    }
+
+
+    function finishResourceCollection(
+        resource
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !resource ||
+            !resource.active
+        ) {
+            return false;
+        }
+
+        if (
+            resource.magicCost > 0 &&
+            !state.dev
+                .infiniteMagic &&
+            player.magic <
+                resource.magicCost
+        ) {
+            pushNotification(
+                "MAGIA INSUFICIENTE",
+                "Você está exausto demais para coletar este recurso.",
+                "warning"
+            );
+
+            return false;
+        }
+
+
+        if (
+            resource.magicCost > 0 &&
+            !state.dev
+                .infiniteMagic
+        ) {
+            player.magic =
+                Math.max(
+                    0,
+                    player.magic -
+                    resource.magicCost
+                );
+        }
+
+
+        const amount =
+            Math.max(
+                1,
+                integer(
+                    resource.quantity,
+                    1
+                )
+            );
+
+
+        if (
+            !canCarryItem(
+                resource.itemId,
+                amount
+            )
+        ) {
+            pushNotification(
+                "INVENTÁRIO PESADO",
+                "Você não consegue carregar mais.",
+                "warning"
+            );
+
+            return false;
+        }
+
+
+        if (
+            !addItem(
+                resource.itemId,
+                amount
+            )
+        ) {
+            return false;
+        }
+
+
+        resource.active =
+            false;
+
+        resource.respawnTimer =
+            resource
+                .respawnSeconds;
+
+
+        addWorldEffect({
+            type:
+                resource.type ===
+                    "tree"
+                    ? "treeHarvest"
+                    : "oreHarvest",
+
+            x:
+                resource.x,
+
+            y:
+                resource.y,
+
+            duration:
+                0.5
+        });
+
+
+        return true;
+    }
+
+
+    function finishDarkKeyCollection() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return false;
+        }
+
+        if (
+            !canClaimDarkKey()
+        ) {
+            return false;
+        }
+
+        const success =
+            claimDarkKey();
+
+        if (!success) {
+            return false;
+        }
+
+        if (
+            state.world
+        ) {
+            state.world.darkKey =
+                null;
+        }
+
+        state.itemPresentation = {
+            title:
+                "ITEM OBTIDO",
+
+            itemId:
+                "chaveObscura",
+
+            name:
+                "CHAVE OBSCURA",
+
+            description:
+                "Uma chave estranha envolvida por uma energia desconhecida. Miguel mencionou algo que permanecia trancado no Caminho 1.",
+
+            timer: 0,
+
+            duration:
+                5
+        };
+
+        startCutscene({
+            type:
+                "darkKeyObtained",
+
+            duration:
+                2.5,
+
+            skippable:
+                false
+        });
+
+        return true;
+    }
+
+
+    function updateHoldAction(dt) {
+        const action =
+            state.holdAction;
+
+        const player =
+            state.player;
+
+        if (
+            !action ||
+            !player
+        ) {
+            return;
+        }
+
+        /*
+            SOLTOU E?
+            CANCELA IMEDIATAMENTE.
+        */
+        if (
+            !state.keys.has(
+                "KeyE"
+            )
+        ) {
+            cancelHoldAction();
+
+            return;
+        }
+
+
+        let target = null;
+
+        if (
+            action.type ===
+                "darkKey"
+        ) {
+            target =
+                state.world
+                    ?.darkKey;
+        } else {
+            target =
+                state.world
+                    ?.resources
+                    ?.find(
+                        resource =>
+                            resource.id ===
+                            action.targetId
+                    );
+        }
+
+
+        if (!target) {
+            cancelHoldAction();
+
+            return;
+        }
+
+
+        const maxDistance =
+            action.type ===
+                "darkKey"
+                ? 95
+                : 92;
+
+
+        if (
+            distance(
+                player.x,
+                player.y,
+                target.x,
+                target.y
+            ) >
+            maxDistance
+        ) {
+            cancelHoldAction();
+
+            return;
+        }
+
+
+        /*
+            Se saiu andando muito durante
+            a coleta, também cancela.
+        */
+        if (
+            distance(
+                player.x,
+                player.y,
+                action.startX,
+                action.startY
+            ) >
+            24
+        ) {
+            cancelHoldAction();
+
+            return;
+        }
+
+
+        action.progress +=
+            dt;
+
+
+        if (
+            action.progress <
+            action.duration
+        ) {
+            return;
+        }
+
+
+        let success = false;
+
+
+        if (
+            action.type ===
+                "darkKey"
+        ) {
+            success =
+                finishDarkKeyCollection();
+        } else {
+            success =
+                finishResourceCollection(
+                    target
+                );
+        }
+
+
+        cancelHoldAction();
+
+        return success;
+    }
+
+
+    /* ============================================================
+       RESPAWN DE RECURSOS
+       ============================================================ */
+
+    function updateResourceRespawns(dt) {
+        const world =
+            state.world;
+
+        if (!world) {
+            return;
+        }
+
+        for (
+            const resource of
+            world.resources
+        ) {
+            if (
+                resource.active
+            ) {
+                continue;
+            }
+
+            resource.respawnTimer -=
+                dt;
+
+            if (
+                resource.respawnTimer <=
+                0
+            ) {
+                /*
+                    Só reaparece se ainda for
+                    posição válida.
+                */
+                if (
+                    !resourcePositionBlocked(
+                        world,
+                        resource.x,
+                        resource.y,
+                        resource.radius
+                    )
+                ) {
+                    resource.active =
+                        true;
+
+                    resource.respawnTimer =
+                        0;
+                } else {
+                    resource.respawnTimer =
+                        5;
+                }
+            }
+        }
+    }
+
+
+    /* ============================================================
+       MISSÕES BRAN / BORIN
+       ============================================================ */
+
+    function getQuestProgress(
+        questId
+    ) {
+        const config =
+            QUEST_CONFIG[
+                questId
+            ];
+
+        if (!config) {
+            return {
+                current: 0,
+                required: 0
+            };
+        }
+
+        return {
+            current:
+                Math.min(
+                    getRealItemCount(
+                        config.itemId
+                    ),
+                    config.amount
+                ),
+
+            required:
+                config.amount
+        };
+    }
+
+
+    function startBasicQuest(
+        questId
+    ) {
+        const player =
+            state.player;
+
+        const config =
+            QUEST_CONFIG[
+                questId
+            ];
+
+        const quest =
+            player
+                ?.quest
+                ?.[questId];
+
+        if (
+            !player ||
+            !config ||
+            !quest ||
+            quest.state !==
+                QUEST_STATE
+                    .NOT_STARTED
+        ) {
+            return false;
+        }
+
+        quest.state =
+            QUEST_STATE.ACTIVE;
+
+        pushNotification(
+            "MISSÃO INICIADA",
+            config.title,
+            "objective",
+            3.5
+        );
+
+        return true;
+    }
+
+
+    function completeBasicQuest(
+        questId
+    ) {
+        const player =
+            state.player;
+
+        const config =
+            QUEST_CONFIG[
+                questId
+            ];
+
+        const quest =
+            player
+                ?.quest
+                ?.[questId];
+
+        if (
+            !player ||
+            !config ||
+            !quest ||
+            quest.rewarded
+        ) {
+            return false;
+        }
+
+        if (
+            getItemCount(
+                config.itemId
+            ) <
+            config.amount
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                config.itemId,
+                config.amount
+            )
+        ) {
+            return false;
+        }
+
+        addMoney(
+            config.rewardCoins
+        );
+
+        gainXP(
+            config.rewardXp
+        );
+
+        quest.rewarded =
+            true;
+
+        quest.state =
+            QUEST_STATE.COMPLETE;
+
+        pushNotification(
+            "MISSÃO CONCLUÍDA",
+            `${config.title} • +${config.rewardCoins} moedas`,
+            "success",
+            4
+        );
+
+        return true;
+    }
+
+
+    /* ============================================================
+       MORTE DO PLAYER
+       ============================================================ */
+
+    function calculateDeathMaterialLoss(
+        player = state.player
+    ) {
+        if (!player) {
+            return [];
+        }
+
+        const lost = [];
+
+        for (
+            const [
+                id,
+                amount
+            ] of
+            Object.entries(
+                player.inventory
+            )
+        ) {
+            const item =
+                ITEMS[id];
+
+            if (
+                !item ||
+                item.category !==
+                    "materials" ||
+                item.questItem ||
+                amount <= 0
+            ) {
+                continue;
+            }
+
+            const calculated =
+                Math.floor(
+                    amount *
+                    GAME_CONFIG
+                        .deathMaterialLossRatio
+                );
+
+            const loss =
+                Math.min(
+                    amount,
+
+                    GAME_CONFIG
+                        .deathMaterialLossMaxPerType,
+
+                    calculated
+                );
+
+            if (
+                loss <= 0
+            ) {
+                continue;
+            }
+
+            lost.push({
+                id,
+                amount:
+                    loss
+            });
+        }
+
+        return lost;
+    }
+
+
+    function applyDeathMaterialLoss(
+        losses
+    ) {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        for (
+            const loss of
+            losses
+        ) {
+            player.inventory[
+                loss.id
+            ] =
+                Math.max(
+                    0,
+                    getRealItemCount(
+                        loss.id
+                    ) -
+                    loss.amount
+                );
+        }
+    }
+
+
+    function killPlayer(
+        source = null
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.dead
+        ) {
+            return false;
+        }
+
+        player.dead = true;
+
+        player.hp = 0;
+
+        player.dashRuntime =
+            null;
+
+        cancelHoldAction();
+
+        removeProjectilesOwnedBy(
+            "player"
+        );
+
+        const losses =
+            calculateDeathMaterialLoss(
+                player
+            );
+
+        applyDeathMaterialLoss(
+            losses
+        );
+
+
+        if (
+            state.area ===
+                "voidDungeon"
+        ) {
+            resetVoidDungeonAfterDeath();
+        }
+
+
+        state.deathState = {
+            source:
+                source?.name ||
+                source?.id ||
+                null,
+
+            losses,
+
+            timer: 0,
+
+            canRespawn: false
+        };
+
+
+        state.bossBarTarget =
+            null;
+
+        triggerScreenShake(
+            12,
+            0.4
+        );
+
+        return true;
+    }
+
+
+    function updateDeathState(dt) {
+        if (
+            !state.deathState
+        ) {
+            return;
+        }
+
+        state.deathState.timer +=
+            dt;
+
+        if (
+            state.deathState.timer >=
+            1.1
+        ) {
+            state.deathState
+                .canRespawn =
+                true;
+        }
+    }
+
+
+    function respawnPlayerAtHome() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !player.dead ||
+            !state.deathState
+                ?.canRespawn
+        ) {
+            return false;
+        }
+
+        clearPauseReasons();
+
+        state.dialogue = null;
+        state.activePanel = null;
+        state.travel = null;
+        state.battle = null;
+        state.cutscene = null;
+        state.cutsceneQueue = [];
+        state.fragmentMinigame = null;
+        state.holdAction = null;
+
+        /*
+            Carrega Vila e calcula a posição
+            REAL pela porta.
+        */
+        const village =
+            loadWorld(
+                "village",
+                "default"
+            );
+
+        const spawn =
+            calculateHomeRespawn(
+                village
+            );
+
+        const safe =
+            findSafePosition(
+                spawn.x,
+                spawn.y,
+                player.radius,
+                village
+            );
+
+        player.x =
+            safe.x;
+
+        player.y =
+            safe.y;
+
+        player.facing =
+            spawn.facing;
+
+        player.dead = false;
+
+        player.hp =
+            player.maxHp;
+
+        player.magic =
+            player.maxMagic;
+
+        player.energy =
+            player.maxEnergy;
+
+        player.hunger =
+            Math.max(
+                player.hunger,
+                player.maxHunger *
+                0.55
+            );
+
+        player.fatigue =
+            Math.max(
+                player.fatigue,
+                player.maxFatigue *
+                0.55
+            );
+
+        player.poisonEffect =
+            null;
+
+        player.movementSlowTimer =
+            0;
+
+        player.movementSlowMultiplier =
+            1;
+
+        player.invincible =
+            1.1;
+
+        state.deathState =
+            null;
+
+        state.houseMode =
+            false;
+
+        state.currentHouse =
+            null;
+
+        return true;
+    }
+
+
+    /* ============================================================
+       HORDAS DO CÉU
+       ============================================================ */
+
+    function ensureSkyTrialRuntime() {
+        if (
+            !state.skyTrialRuntime
+        ) {
+            state.skyTrialRuntime = {
+                active: false,
+
+                wave:
+                    state.player
+                        ?.skyTrial
+                        ?.wave ||
+                    0,
+
+                spawnedIds: []
+            };
+        }
+
+        return state.skyTrialRuntime;
+    }
+
+
+    function getSkyTrialArena() {
+        return (
+            state.world
+                ?.landmarks
+                ?.find(
+                    landmark =>
+                        landmark.type ===
+                        "trialArena"
+                ) ||
+            null
+        );
+    }
+
+
+    function getSkyWaveDefinition(
+        waveNumber
+    ) {
+        const waves =
+            state.world
+                ?.metadata
+                ?.skyTrialWaves;
+
+        if (
+            !Array.isArray(
+                waves
+            )
+        ) {
+            return null;
+        }
+
+        return (
+            waves.find(
+                wave =>
+                    wave.wave ===
+                    waveNumber
+            ) ||
+            null
+        );
+    }
+
+
+    function spawnSkyTrialWave(
+        waveDefinition
+    ) {
+        const world =
+            state.world;
+
+        const arena =
+            getSkyTrialArena();
+
+        const runtime =
+            ensureSkyTrialRuntime();
+
+        if (
+            !world ||
+            !arena ||
+            !waveDefinition
+        ) {
+            return false;
+        }
+
+        runtime.active = true;
+
+        runtime.wave =
+            waveDefinition.wave;
+
+        runtime.spawnedIds = [];
+
+        let offsetIndex = 0;
+
+        for (
+            const spawn of
+            waveDefinition.spawns
+        ) {
+            for (
+                let index = 0;
+                index <
+                    spawn.count;
+                index += 1
+            ) {
+                const angle =
+                    (
+                        offsetIndex /
+                        14
+                    ) *
+                    Math.PI *
+                    2;
+
+                offsetIndex += 1;
+
+                const radius =
+                    random(
+                        210,
+                        arena.radius -
+                            60
+                    );
+
+                const species =
+                    ENEMY_SPECIES[
+                        spawn.species
+                    ];
+
+                if (!species) {
+                    continue;
+                }
+
+                const desiredX =
+                    arena.x +
+                    Math.cos(angle) *
+                    radius;
+
+                const desiredY =
+                    arena.y +
+                    Math.sin(angle) *
+                    radius;
+
+                const safe =
+                    findSafePosition(
+                        desiredX,
+                        desiredY,
+                        species.radius,
+                        world
+                    );
+
+                const enemy =
+                    createEnemyFromSpecies(
+                        spawn.species,
+                        safe.x,
+                        safe.y,
+                        {
+                            skyTrialWave:
+                                waveDefinition
+                                    .wave,
+
+                            respawn:
+                                false
+                        }
+                    );
+
+                if (enemy) {
+                    world.enemies.push(
+                        enemy
+                    );
+
+                    runtime
+                        .spawnedIds
+                        .push(
+                            enemy.id
+                        );
+                }
+            }
+        }
+
+        state.player
+            .skyTrial
+            .started =
+            true;
+
+        state.player
+            .skyTrial
+            .activeWave =
+            waveDefinition.wave;
+
+        pushNotification(
+            `HORDA ${waveDefinition.wave}/5`,
+            "A provação celestial começou.",
+            "battle",
+            3
+        );
+
+        return true;
+    }
+
+
+    function updateSkyTrial() {
+        const player =
+            state.player;
+
+        const world =
+            state.world;
+
+        if (
+            !player ||
+            !world ||
+            ![
+                "sky1",
+                "sky2",
+                "sky3"
+            ].includes(
+                state.area
+            )
+        ) {
+            return;
+        }
+
+        const arena =
+            getSkyTrialArena();
+
+        if (!arena) {
+            return;
+        }
+
+        const runtime =
+            ensureSkyTrialRuntime();
+
+        const currentProgress =
+            player
+                .skyTrial
+                .wave;
+
+        /*
+            Se uma horda está ativa,
+            espera todos daquele grupo morrerem.
+        */
+        if (runtime.active) {
+            const living =
+                world.enemies.filter(
+                    enemy =>
+                        runtime
+                            .spawnedIds
+                            .includes(
+                                enemy.id
+                            ) &&
+                        !enemy.dead
+                );
+
+            if (
+                living.length === 0
+            ) {
+                runtime.active =
+                    false;
+
+                player
+                    .skyTrial
+                    .wave =
+                    runtime.wave;
+
+                player
+                    .skyTrial
+                    .activeWave =
+                    0;
+
+                pushNotification(
+                    "HORDA CONCLUÍDA",
+                    `${runtime.wave}/5`,
+                    "success",
+                    2.5
+                );
+
+                if (
+                    runtime.wave >= 5
+                ) {
+                    player
+                        .skyTrial
+                        .complete =
+                        true;
+
+                    /*
+                        Atualiza o Céu III para
+                        criar Guardião do Caminho.
+                    */
+                    if (
+                        state.area ===
+                            "sky3"
+                    ) {
+                        rebuildCurrentWorldKeepingPlayer();
+                    }
+                }
+            }
+
+            return;
+        }
+
+
+        /*
+            Só inicia quando jogador entra
+            fisicamente na arena.
+        */
+        if (
+            distance(
+                player.x,
+                player.y,
+                arena.x,
+                arena.y
+            ) >
+            arena.radius -
+                40
+        ) {
+            return;
+        }
+
+
+        const availableWaves =
+            state.world
+                .metadata
+                .skyTrialWaves ||
+            [];
+
+
+        const next =
+            availableWaves.find(
+                wave =>
+                    wave.wave ===
+                    currentProgress +
+                    1
+            );
+
+
+        if (next) {
+            spawnSkyTrialWave(
+                next
+            );
+        }
+    }
+
+
+    function rebuildCurrentWorldKeepingPlayer() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            state.houseMode
+        ) {
+            return false;
+        }
+
+        const x =
+            player.x;
+
+        const y =
+            player.y;
+
+        const facing =
+            player.facing;
+
+        rebuildWorld(
+            state.area
+        );
+
+        finalizeWorldBuild(
+            state.world
+        );
+
+        const safe =
+            findSafePosition(
+                x,
+                y,
+                player.radius,
+                state.world
+            );
+
+        player.x =
+            safe.x;
+
+        player.y =
+            safe.y;
+
+        player.facing =
+            facing;
+
+        return true;
+    }
+
+
+    /* ============================================================
+       PORTAIS
+       ============================================================ */
+
+    function canUsePortal(
+        portal
+    ) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !portal ||
+            !portal.active
+        ) {
+            return false;
+        }
+
+        if (
+            state.portalCooldown >
+            0
+        ) {
+            return false;
+        }
+
+        if (
+            portal.requirementBoss &&
+            !hasDefeatedBoss(
+                portal.requirementBoss
+            )
+        ) {
+            return false;
+        }
+
+        if (
+            portal.requiresSkyWave &&
+            player
+                .skyTrial
+                .wave <
+            portal
+                .requiresSkyWave
+        ) {
+            return false;
+        }
+
+        if (
+            portal.dungeonExit &&
+            state.voidRuntime
+                .arenaLocked
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    function getNearbyPortal() {
+        const player =
+            state.player;
+
+        const world =
+            state.world;
+
+        if (
+            !player ||
+            !world
+        ) {
+            return null;
+        }
+
+        for (
+            const portal of
+            world.portals
+        ) {
+            if (
+                distance(
+                    player.x,
+                    player.y,
+                    portal.x,
+                    portal.y
+                ) <=
+                portal.radius +
+                player.radius
+            ) {
+                return portal;
+            }
+        }
+
+        return null;
+    }
+
+
+    function usePortal(
+        portal
+    ) {
+        if (
+            !canUsePortal(
+                portal
+            )
+        ) {
+            return false;
+        }
+
+        /*
+            Saindo da Dungeon após Vaelkor.
+        */
+        if (
+            state.area ===
+                "voidDungeon" &&
+            portal.dungeonExit &&
+            state.player
+                .miguelQuest
+                .vaelkorDefeated
+        ) {
+            revealVoidDungeonOnMapAfterVictory();
+        }
+
+        const destination =
+            portal.destination;
+
+        const spawn =
+            portal
+                .destinationSpawn;
+
+        state.portalCooldown =
+            GAME_CONFIG
+                .portalCooldown;
+
+        loadWorld(
+            destination,
+            spawn
+        );
+
+        return true;
+    }
+
+
+    function updateAutomaticPortals() {
+        if (
+            state.houseMode ||
+            isPlayerControlBlocked()
+        ) {
+            return;
+        }
+
+        const portal =
+            getNearbyPortal();
+
+        if (
+            !portal ||
+            !canUsePortal(
+                portal
+            )
+        ) {
+            return;
+        }
+
+        usePortal(
+            portal
+        );
+    }
+
+
+    /* ============================================================
+       PORTÃO NORTE
+       ============================================================ */
+
+    function getNorthGateDialogue() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return [];
+        }
+
+        if (
+            !player.abilities.dashV1 &&
+            !player.abilities.dashV2
+        ) {
+            const index =
+                clamp(
+                    integer(
+                        player
+                            .gateDialogueIndex
+                            .north,
+                        0
+                    ),
+                    0,
+                    NORTH_GATE_DIALOGUES
+                        .length -
+                        1
+                );
+
+            const lines =
+                NORTH_GATE_DIALOGUES[
+                    index
+                ];
+
+            player
+                .gateDialogueIndex
+                .north =
+                (
+                    index + 1
+                ) %
+                NORTH_GATE_DIALOGUES
+                    .length;
+
+            return lines;
+        }
+
+        if (
+            !player.gateUnlocks.north
+        ) {
+            return [
+                "Você domina a técnica necessária, mas sua preparação ainda está incompleta.",
+                `Diamantes: ${getRealItemCount("diamante")}/${NORTH_GATE_COST.diamante}`,
+                `Rubis: ${getRealItemCount("rubi")}/${NORTH_GATE_COST.rubi}`
+            ];
+        }
+
+        return [
+            "O Caminho Norte está aberto."
+        ];
+    }
+
+
+    function canUnlockNorthGate() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return false;
+        }
+
+        if (
+            player.gateUnlocks.north
+        ) {
+            return true;
+        }
+
+        if (
+            !player.abilities.dashV1 &&
+            !player.abilities.dashV2
+        ) {
+            return false;
+        }
+
+        return (
+            getItemCount(
+                "diamante"
+            ) >=
+                NORTH_GATE_COST
+                    .diamante &&
+            getItemCount(
+                "rubi"
+            ) >=
+                NORTH_GATE_COST
+                    .rubi
+        );
+    }
+
+
+    function unlockNorthGate() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.gateUnlocks.north
+        ) {
+            return false;
+        }
+
+        if (
+            !canUnlockNorthGate()
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                "diamante",
+                NORTH_GATE_COST
+                    .diamante
+            )
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                "rubi",
+                NORTH_GATE_COST
+                    .rubi
+            )
+        ) {
+            /*
+                rollback diamante
+            */
+            addItem(
+                "diamante",
+                NORTH_GATE_COST
+                    .diamante,
+                {
+                    silent: true
+                }
+            );
+
+            return false;
+        }
+
+        player.gateUnlocks.north =
+            true;
+
+        unlockArea(
+            "gnomeGardens"
+        );
+
+        pushNotification(
+            "PORTÃO NORTE",
+            "O Caminho 2 foi liberado.",
+            "progress",
+            4
+        );
+
+        return true;
+    }
+
+
+    /* ============================================================
+       RITUAL DO DASH V1
+       ============================================================ */
+
+    function getDashRitualMaterialStatus() {
+        return {
+            rubi: {
+                current:
+                    getRealItemCount(
+                        "rubi"
+                    ),
+
+                required:
+                    DASH_RITUAL_COST
+                        .rubi
+            },
+
+            diamante: {
+                current:
+                    getRealItemCount(
+                        "diamante"
+                    ),
+
+                required:
+                    DASH_RITUAL_COST
+                        .diamante
+            }
+        };
+    }
+
+
+    function hasDashRitualMaterials() {
+        return (
+            getItemCount(
+                "rubi"
+            ) >=
+                DASH_RITUAL_COST
+                    .rubi &&
+            getItemCount(
+                "diamante"
+            ) >=
+                DASH_RITUAL_COST
+                    .diamante
+        );
+    }
+
+
+    function getDashAltarDialogue() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return [];
+        }
+
+        if (
+            player.abilities.dashV1 ||
+            player.abilities.dashV2
+        ) {
+            return [
+                "O altar está silencioso.",
+                "A energia que antes o preenchia agora repousa dentro de você."
+            ];
+        }
+
+        if (
+            !hasDashRitualMaterials()
+        ) {
+            const status =
+                getDashRitualMaterialStatus();
+
+            return [
+                "As inscrições do altar despertam sob seus pés.",
+                "Por um instante, uma força tenta alcançar você... mas o brilho desaparece.",
+                "A oferenda é insuficiente para despertar o poder adormecido.",
+                `Rubis: ${status.rubi.current}/${status.rubi.required}`,
+                `Diamantes: ${status.diamante.current}/${status.diamante.required}`
+            ];
+        }
+
+        if (
+            !player.monarchDefeated
+        ) {
+            return [
+                "A OFERENDA FOI ACEITA...",
+                "…MAS NÃO POR VOCÊ.",
+                "O MONARCA DESPERTOU"
+            ];
+        }
+
+        return [
+            "O Monarca caiu.",
+            "A energia da oferenda finalmente responde a você."
+        ];
+    }
+
+
+    function completeDashV1Ritual() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player.abilities.dashV1 ||
+            player.abilities.dashV2 ||
+            !player.monarchDefeated ||
+            !hasDashRitualMaterials()
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                "rubi",
+                DASH_RITUAL_COST
+                    .rubi
+            )
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                "diamante",
+                DASH_RITUAL_COST
+                    .diamante
+            )
+        ) {
+            addItem(
+                "rubi",
+                DASH_RITUAL_COST
+                    .rubi,
+                {
+                    silent: true
+                }
+            );
+
+            return false;
+        }
+
+        if (
+            !unlockDashV1(
+                player
+            )
+        ) {
+            /*
+                Rollback em caso impossível.
+            */
+            addItem(
+                "rubi",
+                DASH_RITUAL_COST
+                    .rubi,
+                {
+                    silent: true
+                }
+            );
+
+            addItem(
+                "diamante",
+                DASH_RITUAL_COST
+                    .diamante,
+                {
+                    silent: true
+                }
+            );
+
+            return false;
+        }
+
+        startCutscene({
+            type:
+                "dashV1Unlock",
+
+            duration:
+                3.4,
+
+            skippable:
+                false,
+
+            onFinish() {
+                pushNotification(
+                    "HABILIDADE DESBLOQUEADA",
+                    "DASH V1 — DASH DO VENTO",
+                    "ability",
+                    5
+                );
+            }
+        });
+
+        return true;
+    }
+
+
+    /* ============================================================
+       MISSÃO DO MIGUEL
+       ============================================================ */
+
+    function acceptMiguelQuest() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player
+                .miguelQuest
+                .completed ||
+            player
+                .miguelQuest
+                .missionAccepted ||
+            !player
+                .miguelQuest
+                .missionAvailable ||
+            (
+                !player
+                    .abilities
+                    .dashV1 &&
+                !player
+                    .abilities
+                    .dashV2
+            )
+        ) {
+            return false;
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        quest.missionAccepted =
+            true;
+
+        quest.dashV1SeenByMiguel =
+            true;
+
+        quest.trackerVisible =
+            true;
+
+        setMiguelQuestStage(
+            MIGUEL_QUEST_STAGE
+                .KEY_SEARCH
+        );
+
+        pushNotification(
+            "MISSÃO ACEITA",
+            "A PROVAÇÃO DO VAZIO",
+            "objective",
+            4
+        );
+
+        return true;
+    }
+
+
+    function getMiguelDialogueForCurrentState() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return [];
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        if (
+            !player.abilities.dashV1 &&
+            !player.abilities.dashV2
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .beforeDash
+            ];
+        }
+
+        if (
+            quest.completed ||
+            player.abilities.dashV2
+        ) {
+            const variants =
+                NPC_DIALOGUES
+                    .miguel
+                    .completed;
+
+            return [
+                ...choose(
+                    variants
+                )
+            ];
+        }
+
+        if (
+            quest.fragmentCollected &&
+            !quest.fragmentDelivered
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .fragmentReturn
+            ];
+        }
+
+        if (
+            quest.vaelkorDefeated &&
+            !quest.fragmentCollected
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .vaelkorDefeatedNoFragment
+            ];
+        }
+
+        if (
+            quest.secretDoorOpened
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .doorOpened
+            ];
+        }
+
+        if (
+            quest.keyCollected
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .hasKey
+            ];
+        }
+
+        if (
+            quest
+                .keyLocationDiscovered &&
+            !hasEnoughShadowEssence()
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .needsEssence
+            ];
+        }
+
+        if (
+            quest.missionAccepted
+        ) {
+            return [
+                ...NPC_DIALOGUES
+                    .miguel
+                    .searchingKey
+            ];
+        }
+
+        return [
+            ...NPC_DIALOGUES
+                .miguel
+                .offerQuest
+        ];
+    }
+
+
+    function deliverVoidFragmentToMiguel() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            player
+                .miguelQuest
+                .fragmentDelivered ||
+            !player
+                .miguelQuest
+                .fragmentCollected ||
+            getRealItemCount(
+                "fragmentoVazio"
+            ) <= 0
+        ) {
+            return false;
+        }
+
+        if (
+            !removeItem(
+                "fragmentoVazio",
+                1
+            )
+        ) {
+            return false;
+        }
+
+        /*
+            Marca entrega antes da cutscene para
+            evitar duplicação por clique repetido.
+        */
+        player
+            .miguelQuest
+            .fragmentDelivered =
+            true;
+
+        startCutscene({
+            type:
+                "dashV2Evolution",
+
+            duration:
+                4.6,
+
+            skippable:
+                false,
+
+            onFinish() {
+                unlockDashV2(
+                    player
+                );
+
+                state.itemPresentation = {
+                    title:
+                        "HABILIDADE EVOLUÍDA",
+
+                    itemId:
+                        null,
+
+                    name:
+                        "DASH V2",
+
+                    subtitle:
+                        "DASH DO VAZIO",
+
+                    description:
+                        "Seu Dash não rompe apenas o vento. Agora ele rasga o espaço por um instante.",
+
+                    timer: 0,
+
+                    duration:
+                        5.5
+                };
+            }
+        });
+
+        return true;
+    }
+
+
+    /* ============================================================
+       DESCANSO
+       ============================================================ */
+
+    function canRestAtHome() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !state.houseMode ||
+            state.currentHouse !==
+                "home" ||
+            player.dead
+        ) {
+            return false;
+        }
+
+        const bed =
+            state.world
+                ?.landmarks
+                ?.find(
+                    landmark =>
+                        landmark.id ===
+                        "home_rest_bed"
+                );
+
+        if (!bed) {
+            return false;
+        }
+
+        return (
+            distance(
+                player.x,
+                player.y,
+                bed.x,
+                bed.y
+            ) <=
+            90
+        );
+    }
+
+
+    function beginRest() {
+        const player =
+            state.player;
+
+        if (
+            !canRestAtHome() ||
+            player.resting.active
+        ) {
+            return false;
+        }
+
+        player.resting = {
+            active: true,
+
+            timer: 0,
+
+            duration:
+                GAME_CONFIG
+                    .restAnimationSeconds
+        };
+
+        startCutscene({
+            type:
+                "playerRest",
+
+            duration:
+                GAME_CONFIG
+                    .restAnimationSeconds,
+
+            skippable:
+                false,
+
+            onFinish() {
+                player.hp =
+                    player.maxHp;
+
+                player.magic =
+                    player.maxMagic;
+
+                player.energy =
+                    player.maxEnergy;
+
+                player.hunger =
+                    player.maxHunger;
+
+                player.fatigue =
+                    player.maxFatigue;
+
+                player.poisonEffect =
+                    null;
+
+                player.resting.active =
+                    false;
+
+                pushNotification(
+                    "DESCANSADO",
+                    "Suas forças foram recuperadas.",
+                    "success",
+                    3
+                );
+            }
+        });
+
+        return true;
+    }
+
+
+    /* ============================================================
+       ITEM PRESENTATION TIMER
+       ============================================================ */
+
+    function updateItemPresentation(dt) {
+        if (
+            !state.itemPresentation
+        ) {
+            return;
+        }
+
+        state
+            .itemPresentation
+            .timer +=
+            dt;
+
+        if (
+            state
+                .itemPresentation
+                .timer >=
+            state
+                .itemPresentation
+                .duration
+        ) {
+            state.itemPresentation =
+                null;
+        }
+    }
+
+
+    /* ============================================================
+       DANO FLASH
+       ============================================================ */
+
+    function updateDamageFlash(dt) {
+        state.damageFlash =
+            Math.max(
+                0,
+                state.damageFlash -
+                dt * 1.7
+            );
+    }
+
+
+    /* ============================================================
+       ATUALIZAÇÃO DA CÂMERA
+       ============================================================ */
+
+    function updateCamera(dt) {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            !state.world
+        ) {
+            return;
+        }
+
+        let targetX =
+            player.x;
+
+        let targetY =
+            player.y;
+
+
+        if (
+            state.cutscene
+        ) {
+            const cutscene =
+                state.cutscene;
+
+            if (
+                cutscene.type ===
+                    "vaelkorIntro" ||
+                cutscene.type ===
+                    "vaelkorPhaseTwo" ||
+                cutscene.type ===
+                    "vaelkorDeath"
+            ) {
+                const boss =
+                    getVaelkor();
+
+                if (boss) {
+                    targetX =
+                        lerp(
+                            player.x,
+                            boss.x,
+                            0.78
+                        );
+
+                    targetY =
+                        lerp(
+                            player.y,
+                            boss.y,
+                            0.78
+                        );
+                }
+            }
+
+            if (
+                cutscene.type ===
+                    "voidFragmentCondense"
+            ) {
+                targetX =
+                    cutscene.x;
+
+                targetY =
+                    cutscene.y;
+            }
+        }
+
+
+        state.camera.targetX =
+            targetX;
+
+        state.camera.targetY =
+            targetY;
+
+
+        const speed =
+            state.cutscene
+                ? VISUAL_CONFIG
+                    .camera
+                    .cutsceneFollowSpeed
+                : VISUAL_CONFIG
+                    .camera
+                    .followSpeed;
+
+
+        state.camera.x =
+            lerp(
+                state.camera.x,
+                targetX,
+                clamp(
+                    dt * speed,
+                    0,
+                    1
+                )
+            );
+
+
+        state.camera.y =
+            lerp(
+                state.camera.y,
+                targetY,
+                clamp(
+                    dt * speed,
+                    0,
+                    1
+                )
+            );
+    }
+
+
+    /* ============================================================
+       TRATAMENTO ESPECIAL DE PROJÉTEIS
+       ============================================================ */
+
+    function updateProjectileSecondaryEffects() {
+        /*
+            Mantido separado para expansão.
+            O status já é aplicado no impacto.
+        */
+    }
+
+
+    /* ============================================================
+       VAELKOR — RECONSTRUÇÃO DO FRAGMENTO APÓS LOAD
+       ============================================================ */
+
+    function repairVoidDungeonRuntimeAfterLoad() {
+        const player =
+            state.player;
+
+        if (
+            !player ||
+            state.area !==
+                "voidDungeon"
+        ) {
+            return;
+        }
+
+        if (
+            player
+                .miguelQuest
+                .vaelkorDefeated &&
+            !player
+                .miguelQuest
+                .fragmentCollected
+        ) {
+            player
+                .miguelQuest
+                .fragmentSpawned =
+                true;
+
+            spawnVoidFragmentEntity();
+        }
+    }
+
+
+    /* ============================================================
+       UPDATE PRINCIPAL DA PARTE 3
+
+       A Parte 5 ligará isto ao requestAnimationFrame.
+       ============================================================ */
+
+    function updateGameplaySystems(dt) {
+        const safeDt =
+            clamp(
+                finiteNumber(
+                    dt,
+                    0
+                ),
+                0,
+                GAME_CONFIG
+                    .maxDeltaTime
+            );
+
+        if (
+            safeDt <= 0
+        ) {
+            return;
+        }
+
+
+        state.time +=
+            safeDt;
+
+
+        updateNotifications(
+            safeDt
+        );
+
+        updateItemPresentation(
+            safeDt
+        );
+
+        updateDamageFlash(
+            safeDt
+        );
+
+        updateScreenShake(
+            safeDt
+        );
+
+        updateBloodMarks(
+            safeDt
+        );
+
+        updateWorldParticles(
+            safeDt
+        );
+
+        updateWorldEffects(
+            safeDt
+        );
+
+        updateCombatEffects(
+            safeDt
+        );
+
+        updateSkillEffects(
+            safeDt
+        );
+
+        updateCutsceneRuntime(
+            safeDt
+        );
+
+        updateDeathState(
+            safeDt
+        );
+
+        updateFragmentMinigame(
+            safeDt
+        );
+
+        updateCamera(
+            safeDt
+        );
+
+
+        if (
+            !state.player ||
+            !state.world
+        ) {
+            return;
+        }
+
+
+        /*
+            Recursos infinitos de teste.
+        */
+        maintainDevInfiniteResources();
+
+
+        if (
+            state.player.dead
+        ) {
+            return;
+        }
+
+
+        if (
+            state.portalCooldown >
+            0
+        ) {
+            state.portalCooldown =
+                Math.max(
+                    0,
+                    state.portalCooldown -
+                    safeDt
+                );
+        }
+
+
+        updatePlayerCooldowns(
+            safeDt
+        );
+
+        updatePlayerBuffs(
+            safeDt
+        );
+
+        updatePoisonEffect(
+            safeDt
+        );
+
+        updateSurvival(
+            safeDt
+        );
+
+        updatePlayerDash(
+            safeDt
+        );
+
+        updatePlayerMovement(
+            safeDt
+        );
+
+        updateAutomaticDoors(
+            safeDt
+        );
+
+        updateHoldAction(
+            safeDt
+        );
+
+        updateResourceRespawns(
+            safeDt
+        );
+
+
+        /*
+            Enquanto uma cutscene está ativa,
+            inimigos/boss não continuam atacando.
+        */
+        if (!state.cutscene) {
+            updateEnemies(
+                safeDt
+            );
+
+            updateBosses(
+                safeDt
+            );
+
+            updateProjectiles(
+                safeDt
+            );
+
+            updateSkyTrial();
+
+            checkVaelkorArenaTrigger();
+
+            updateAutomaticPortals();
+        }
+
+
+        cleanupDeadEnemies();
+
+        cleanupDeadBosses();
+
+        updateProjectileSecondaryEffects();
+    }
+
+
+    /* ============================================================
+       INTERAÇÕES DE COMBATE
+
+       A Parte 5 chama essas funções pelas teclas.
+       ============================================================ */
+
+    function handleGameplayAttackInput() {
+        if (
+            !state.running
+        ) {
+            return false;
+        }
+
+        return performBasicAttack();
+    }
+
+
+    function handleGameplaySkillInput(
+        key
+    ) {
+        if (
+            !state.running
+        ) {
+            return false;
+        }
+
+        return activatePlayerSkill(
+            key
+        );
+    }
+
+
+    function handleGameplayDashInput() {
+        if (
+            !state.running
+        ) {
+            return false;
+        }
+
+        return beginPlayerDash();
+    }
+
+
+    /* ============================================================
+       INTERAÇÃO E — PRIORIDADES
+
+       Ordem:
+       1. Fragmento
+       2. descanso
+       3. coleta
+       4. outras interações entram na Parte 4/5
+       ============================================================ */
+
+    function handlePrimaryHoldInteractionStart() {
+        if (
+            !state.running ||
+            !state.player
+        ) {
+            return false;
+        }
+
+        if (
+            canStartFragmentMinigame()
+        ) {
+            return startFragmentMinigame();
+        }
+
+        if (
+            canRestAtHome()
+        ) {
+            return beginRest();
+        }
+
+        return attemptStartHoldInteraction();
+    }
+
+
+    function handlePrimaryHoldInteractionEnd() {
+        if (
+            state.holdAction
+        ) {
+            cancelHoldAction();
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /* ============================================================
+       ANTI-BUG VAELKOR
+       ============================================================ */
+
+    function sanitizeVaelkorState() {
+        const player =
+            state.player;
+
+        if (!player) {
+            return;
+        }
+
+        const quest =
+            player.miguelQuest;
+
+        /*
+            Morto = não reaparece.
+        */
+        if (
+            quest.vaelkorDefeated
+        ) {
+            const boss =
+                getVaelkor();
+
+            if (boss) {
+                boss.dead = true;
+            }
+
+            removeProjectilesOwnedBy(
+                "vaelkor"
+            );
+
+            removeVaelkorSummons();
+        }
+
+
+        /*
+            Fragmento coletado não pode existir
+            novamente fisicamente.
+        */
+        if (
+            quest.fragmentCollected
+        ) {
+            if (
+                state.world
+                    ?.landmarks
+            ) {
+                state.world.landmarks =
+                    state
+                        .world
+                        .landmarks
+                        .filter(
+                            landmark =>
+                                landmark.id !==
+                                "voidFragment"
+                        );
+            }
+        }
+    }
+
+
+    /* ============================================================
+       VALIDAÇÃO DA PARTE 3
+       ============================================================ */
+
+    function validatePart3Data() {
+        const errors = [];
+
+
+        /*
+            DASH
+        */
+        if (
+            DASH_CONFIG.v1.cooldown !==
+            3
+        ) {
+            errors.push(
+                "Dash V1 deve ter cooldown de 3 segundos."
+            );
+        }
+
+
+        if (
+            DASH_CONFIG.v1
+                .generalInvulnerability !==
+            0
+        ) {
+            errors.push(
+                "Dash V1 não pode ter invulnerabilidade."
+            );
+        }
+
+
+        if (
+            DASH_CONFIG.v2
+                .generalInvulnerability !==
+            0
+        ) {
+            errors.push(
+                "Dash V2 não pode ter invulnerabilidade geral."
+            );
+        }
+
+
+        if (
+            DASH_CONFIG.v2
+                .projectilePhaseWindow <=
+            0
+        ) {
+            errors.push(
+                "Dash V2 precisa do timing especial contra projéteis."
+            );
+        }
+
+
+        /*
+            LOBO
+        */
+        const wolf =
+            ENEMY_SPECIES.wolf;
+
+        if (
+            !wolf ||
+            wolf.ability.type !==
+                "charge" ||
+            wolf.ability.cooldown !==
+                2
+        ) {
+            errors.push(
+                "Investida do lobo foi alterada."
+            );
+        }
+
+
+        /*
+            VAELKOR
+        */
+        const vaelkor =
+            BOSS_REGISTRY.vaelkor;
+
+        if (
+            !vaelkor ||
+            !vaelkor
+                .stationaryController
+        ) {
+            errors.push(
+                "Vaelkor deve permanecer como controlador central da arena."
+            );
+        }
+
+
+        const requiredVaelkorAttacks = [
+            "voidBarrage",
+            "voidBeam",
+            "shadowSummon"
+        ];
+
+
+        for (
+            const attack of
+            requiredVaelkorAttacks
+        ) {
+            if (
+                !vaelkor.attacks[
+                    attack
+                ]
+            ) {
+                errors.push(
+                    `Ataque de Vaelkor ausente: ${attack}.`
+                );
+            }
+        }
+
+
+        if (
+            vaelkor.phaseTwoAt !==
+            0.5
+        ) {
+            errors.push(
+                "Fase II de Vaelkor precisa começar em 50%."
+            );
+        }
+
+
+        /*
+            FRAGMENTO
+        */
+        if (
+            VOID_MISSION_CONFIG
+                .fragmentMiniGame
+                .rounds !==
+            3
+        ) {
+            errors.push(
+                "Minigame do Fragmento precisa ter 3 rodadas."
+            );
+        }
+
+
+        if (
+            !VOID_MISSION_CONFIG
+                .fragmentMiniGame
+                .resetToRoundOneOnMiss
+        ) {
+            errors.push(
+                "Errar o minigame precisa reiniciar da rodada 1."
+            );
+        }
+
+
+        /*
+            ESSÊNCIAS
+        */
+        if (
+            VOID_MISSION_CONFIG
+                .shadowEssenceRequired !==
+            15
+        ) {
+            errors.push(
+                "A Chave Obscura precisa exigir 15 Essências Sombrias."
+            );
+        }
+
+
+        /*
+            BRAN
+        */
+        if (
+            QUEST_CONFIG
+                .wood
+                .amount !==
+                10 ||
+            QUEST_CONFIG
+                .wood
+                .rewardCoins !==
+                100
+        ) {
+            errors.push(
+                "Missão de Bran deve exigir 10 madeiras e pagar 100 moedas."
+            );
+        }
+
+
+        /*
+            LEVEL
+        */
+        if (
+            STATUS_POINTS_PER_LEVEL !==
+            3
+        ) {
+            errors.push(
+                "Cada nível deve conceder +3 pontos de status."
+            );
+        }
+
+
+        /*
+            CÉU
+        */
+        const skyWaveNumbers = [
+            ...(buildSky1World()
+                .metadata
+                .skyTrialWaves ||
+                []),
+
+            ...(buildSky2World()
+                .metadata
+                .skyTrialWaves ||
+                []),
+
+            ...(buildSky3World()
+                .metadata
+                .skyTrialWaves ||
+                [])
+        ].map(
+            wave =>
+                wave.wave
+        );
+
+
+        if (
+            JSON.stringify(
+                skyWaveNumbers
+            ) !==
+            JSON.stringify([
+                1,
+                2,
+                3,
+                4,
+                5
+            ])
+        ) {
+            errors.push(
+                "O Céu precisa possuir exatamente as hordas 1, 2, 3, 4 e 5."
+            );
+        }
+
+
+        if (
+            errors.length > 0
+        ) {
+            console.error(
+                "VEYRA V30 — ERROS NA PARTE 3:",
+                errors
+            );
+
+            return {
+                ok: false,
+                errors
+            };
+        }
+
+
+        return {
+            ok: true,
+            errors: []
+        };
+    }
+
+
+    /* ============================================================
+       FIM DA PARTE 3/5
+
+       NÃO COLOQUE })(); AQUI.
+
+       PARTE 4/5 TERÁ PRINCIPALMENTE:
+
+       - desenho completo do Canvas
+       - mapa
+       - chão e biomas
+       - transição visual Fada -> Céu
+       - caminhos
+       - árvores/minérios
+       - casas diferentes
+       - portas animadas
+       - interiores
+       - móveis
+       - fonte
+       - NPCs modelados
+       - personagens modelados
+       - inimigos modelados
+       - bosses grandes/modelados
+       - Vaelkor completo visualmente
+       - partículas
+       - projéteis
+       - laser
+       - telegraphs
+       - cutscene de Vaelkor
+       - Fase II
+       - implosão/explosão
+       - Fragmento do Vazio
+       - minigame visual
+       - Lanterna correta usando OFFSCREEN CANVAS
+       - paredes bloqueando a luz
+       - HUD
+       - dinheiro sempre visível
+       - minimapa
+       - "SEM SINAL" na Dungeon
+       - rastreador da missão
+       - status
+       - inventário
+       - loja
+       - vender 1 / vender tudo
+       - diálogo typewriter
+       - apresentação de ITEM OBTIDO
+       - HABILIDADE EVOLUÍDA
+       - tela de morte
+
+       PARTE 5/5:
+
+       - HTML IDs centralizados
+       - botões
+       - eventos
+       - mouse
+       - teclado
+       - E
+       - Z
+       - Q/R/F
+       - Dash
+       - Novo Jogo
+       - Continuar
+       - Como Jogar
+       - Créditos
+       - escolha de personagem
+       - save/load
+       - migração
+       - comandos X+Y
+       - cheats
+       - loop principal
+       - inicialização
+       - validação FINAL
+       - ÚNICO })();
+       ============================================================ */
